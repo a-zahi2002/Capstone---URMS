@@ -63,8 +63,8 @@ export default function ResourcesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
     const [editingResource, setEditingResource] = useState<Resource | null>(null);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
-    const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | number | null>(null);
+    const [updatingStatusId, setUpdatingStatusId] = useState<string | number | null>(null);
 
     const isAdmin = true;
 
@@ -97,7 +97,7 @@ export default function ResourcesPage() {
         fetchResources();
     }, []);
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: string | number) => {
         if (!window.confirm("Are you sure you want to delete this resource?")) return;
         setDeletingId(id);
         try {

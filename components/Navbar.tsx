@@ -7,6 +7,7 @@ import { LogOut, Menu, X, ChevronDown, User, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import GlobalSearch from "./GlobalSearch";
 import { ThemeToggle } from "./ThemeToggle";
+import NotificationBell from "./NotificationBell";
 
 /* ── role colours ─────────────────────────────────────────── */
 const roleMeta: Record<string, { label: string; dot: string; badge: string; text: string }> = {
@@ -178,6 +179,7 @@ export default function Navbar() {
 
                         {/* ── USER / AUTH AREA ── */}
                         <div className="hidden md:flex items-center gap-3 shrink-0">
+                            {user && <NotificationBell />}
                             {user ? (
                                 <div className="relative" ref={userMenuRef}>
                                     <button
