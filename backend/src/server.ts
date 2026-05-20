@@ -16,6 +16,7 @@ dotenv.config();
 
 import { createServer } from 'http';
 import { initSocket } from './services/socketService';
+import { verifyEmailConfig } from './services/emailService';
 
 const PORT = process.env.PORT || 5000;
 
@@ -58,4 +59,7 @@ httpServer.listen(PORT, () => {
     // Start automated background tasks
     startReportScheduler();
     startBackupCron();
+
+    // Verify email / SMTP configuration
+    verifyEmailConfig();
 });
