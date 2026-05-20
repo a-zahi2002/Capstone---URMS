@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { sendNotificationToUser, broadcastNotification } from '../services/socketService';
+import { supabase } from '../config/supabaseClient';
+import { sendNotification } from '../services/notificationService';
 import {
     sendEmail,
     sendWelcomeEmail,
@@ -13,7 +15,7 @@ const router = Router();
 // ─── WebSocket Notification Routes ───────────────────────────
 
 // Trigger a real-time notification to a specific user
-router.post('/test', (req: Request, res: Response) => {
+router.post('/test', async (req: Request, res: Response) => {
     const { userId, title, message, type } = req.body;
 
     if (!userId || !title || !message) {
@@ -21,16 +23,24 @@ router.post('/test', (req: Request, res: Response) => {
         return;
     }
 
+    // 1. Save notification to database
+    const dbRecord = await sendNotification(supabase, userId, message, type || 'info', title);
+
+    // 2. Send live socket event with real database ID
     sendNotificationToUser(userId, 'notification', {
-        id: new Date().getTime().toString(),
-        title,
-        message,
-        type: type || 'info',
-        createdAt: new Date().toISOString(),
-        read: false,
+        id: dbRecord?.id || new Date().getTime().toString(),
+        title: dbRecord?.title || title,
+        message: dbRecord?.message || message,
+        type: dbRecord?.type || type || 'info',
+        createdAt: dbRecord?.timestamp || new Date().toISOString(),
+        read: dbRecord?.is_read || false,
     });
 
-    res.status(200).json({ success: true, message: `Notification sent to user ${userId}` });
+    res.status(200).json({ 
+        success: true, 
+        message: `Notification sent to user ${userId} and logged to database`,
+        notification: dbRecord 
+    });
 });
 
 // Broadcast a real-time notification to all connected users

@@ -1,20 +1,45 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
-export const sendNotification = async (supabase: SupabaseClient, userId: string, message: string, type: string = 'info') => {
+export const sendNotification = async (supabase: SupabaseClient, userId: string, message: string, type: string = 'info', title?: string) => {
     try {
-        const { error } = await supabase
-            .from('notifications')
-            .insert([{
-                user_id: userId,
-                message,
-                type,
-                timestamp: new Date().toISOString()
-            }]);
+        const payload: any = {
+            user_id: userId,
+            message,
+            type,
+            timestamp: new Date().toISOString()
+        };
         
-        if (error) throw error;
+        if (title) {
+            payload.title = title;
+        }
+
+        const { data, error } = await supabase
+            .from('notifications')
+            .insert([payload])
+            .select();
+        
+        if (error) {
+            // Handle case where title column doesn't exist on older db schemas
+            if (error.code === '42703' && title) {
+                console.warn("Table notifications lacks 'title' column. Retrying insert without 'title'...");
+                const fallbackPayload = { ...payload };
+                delete fallbackPayload.title;
+                const { data: fallbackData, error: retryError } = await supabase
+                    .from('notifications')
+                    .insert([fallbackPayload])
+                    .select();
+                if (retryError) throw retryError;
+                console.log(`Notification sent to ${userId}: ${message}`);
+                return fallbackData?.[0] || null;
+            } else {
+                throw error;
+            }
+        }
         console.log(`Notification sent to ${userId}: ${message}`);
+        return data?.[0] || null;
     } catch (error) {
         console.error("Error sending notification:", error);
+        return null;
     }
 };
 

@@ -16,7 +16,7 @@ import {
     signOut as firebaseSignOut,
 } from "firebase/auth";
 import { auth } from "./firebase";
-import { getUserProfile, UserProfile } from "./supabase";
+import { getUserProfile, UserProfile, setSupabaseAuthHeaders, clearSupabaseAuthHeaders } from "./supabase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,8 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (firebaseUser) {
                 const userProfile = await getUserProfile(firebaseUser.uid);
                 setProfile(userProfile);
+                if (userProfile) {
+                    setSupabaseAuthHeaders(userProfile.id, userProfile.role);
+                }
             } else {
                 setProfile(null);
+                clearSupabaseAuthHeaders();
             }
             setLoading(false);
         });
@@ -76,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await firebaseSignOut(auth);
         setProfile(null);
         setUser(null);
+        clearSupabaseAuthHeaders();
     };
 
     const setMockUser = (role: UserProfile["role"]) => {
@@ -88,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             created_at: new Date().toISOString()
         };
         setProfile(mockProfile);
+        setSupabaseAuthHeaders(mockProfile.id, mockProfile.role);
         // We set a fake user object to pass ProtectedRoute checks
         setUser({ 
             uid: mockProfile.id, 
