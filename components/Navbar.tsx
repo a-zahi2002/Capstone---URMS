@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, X, ChevronDown, User, Sparkles } from "lucide-react";
+import { LogOut, Menu, X, ChevronDown, User, Sparkles, Bell } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import GlobalSearch from "./GlobalSearch";
 import { ThemeToggle } from "./ThemeToggle";
@@ -238,6 +238,16 @@ export default function Navbar() {
                                                     </span>
                                                     My Profile
                                                 </Link>
+                                                <Link
+                                                    href="/notifications"
+                                                    onClick={() => setUserMenu(false)}
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-foreground/60 hover:text-foreground hover:bg-slate-100 dark:bg-foreground/5 transition-all group"
+                                                >
+                                                    <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-foreground/5 group-hover:bg-brand-primary/10 flex items-center justify-center transition-colors">
+                                                        <Bell className="w-3.5 h-3.5 text-slate-500 dark:text-foreground/40 group-hover:text-brand-primary transition-colors" />
+                                                    </span>
+                                                    Notifications
+                                                </Link>
                                                 <button
                                                     onClick={() => { signOut(); setUserMenu(false); }}
                                                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:text-red-600 hover:bg-red-500/10 transition-all group"
@@ -356,7 +366,15 @@ export default function Navbar() {
                                 >
                                     <User className="w-4 h-4 text-slate-500 dark:text-foreground/40" />
                                     My Profile
-                                </Link>
+                                                                </Link>
+                                                                <Link
+                                                                    href="/notifications"
+                                                                    onClick={() => setIsOpen(false)}
+                                                                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 dark:text-foreground/60 hover:text-foreground hover:bg-slate-50 dark:bg-white/5 transition-all"
+                                                                >
+                                                                    <Bell className="w-4 h-4 text-slate-500 dark:text-foreground/40" />
+                                                                    Notifications
+                                                                </Link>
                                 <button
                                     onClick={() => { signOut(); setIsOpen(false); }}
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all"

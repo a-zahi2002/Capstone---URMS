@@ -20,6 +20,7 @@ interface MaintenanceTicket {
   created_at: string;
   completed_at?: string;
   outcome?: string;
+  resourceName?: string;
 }
 
 interface MaintenanceTask {

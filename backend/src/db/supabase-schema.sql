@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS maintenance_tickets (
 CREATE TABLE IF NOT EXISTS notifications (
     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title        TEXT,                     -- Added for notification headers
     message      TEXT NOT NULL,
     type         TEXT DEFAULT 'info',      -- 'info', 'success', 'warning', 'error', 'alert'
     is_read      BOOLEAN DEFAULT FALSE,
