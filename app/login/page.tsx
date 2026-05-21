@@ -15,9 +15,19 @@ import {
   Zap, 
   Users, 
   ChevronLeft,
-  Activity,
+  LayoutDashboard,
   Calendar,
-  Wrench
+  Building2,
+  Wrench,
+  TrendingUp,
+  Settings,
+  Bell,
+  Search,
+  Activity,
+  ArrowUpRight,
+  ShieldCheck,
+  CheckCircle2,
+  Clock
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { motion } from "framer-motion";
@@ -33,13 +43,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [currentTime, setCurrentTime] = useState("");
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+    };
+    updateTime();
+    const clockInterval = setInterval(updateTime, 1000);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      clearInterval(clockInterval);
+    };
   }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -68,45 +90,181 @@ export default function LoginPage() {
     }
   };
 
+  const handleDemoClick = (role: "admin" | "maintenance" | "lecturer" | "student") => {
+    setMockUser(role);
+    router.push("/dashboard");
+  };
+
   return (
-    <div className="min-h-screen w-full flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-background text-foreground">
+    <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden relative flex items-center justify-center">
       
       {/* Premium Cursor Highlight */}
       <motion.div
-        className="pointer-events-none fixed inset-0 z-50 transition-opacity duration-300"
+        className="pointer-events-none fixed inset-0 z-40 transition-opacity duration-300 hidden lg:block"
         animate={{
-          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(124, 58, 237, 0.04), transparent 45%)`
+          background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(124, 58, 237, 0.05), transparent 45%)`
         }}
       />
 
-      {/* Background Glowing Blobs and Grid Pattern */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[20%] left-[10%] w-[50vw] h-[40vw] rounded-full bg-brand-primary/5 blur-[120px] animate-pulse [animation-duration:8s]" />
-        <div className="absolute bottom-[20%] right-[10%] w-[45vw] h-[45vw] rounded-full bg-blue-500/5 blur-[130px] animate-pulse [animation-duration:10s]" />
-        <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.015]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0v80M0 40h80' stroke='%237C3AED' stroke-width='1' fill='none'/%3E%3C/svg%3E\")" }} />
+      {/* BACKGROUND MOCKUP: Live simulated UniLink Dashboard (Visible only on Desktop for richness) */}
+      <div className="absolute inset-0 z-0 pointer-events-none select-none opacity-35 dark:opacity-20 hidden lg:flex">
+        
+        {/* Mock Sidebar */}
+        <div className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 flex flex-col justify-between">
+          <div className="space-y-8">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-brand-primary to-indigo-600 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white">UniLink</span>
+            </div>
+            
+            <div className="space-y-1">
+              {[
+                { name: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, active: true },
+                { name: "Bookings", icon: <Calendar className="w-4 h-4" /> },
+                { name: "Resources", icon: <Building2 className="w-4 h-4" /> },
+                { name: "Maintenance", icon: <Wrench className="w-4 h-4" /> },
+                { name: "Analytics", icon: <TrendingUp className="w-4 h-4" /> },
+                { name: "Settings", icon: <Settings className="w-4 h-4" /> }
+              ].map((item, idx) => (
+                <div 
+                  key={idx} 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
+                    item.active 
+                      ? "text-brand-primary bg-brand-primary/10" 
+                      : "text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700" />
+            <div>
+              <p className="text-[10px] font-black uppercase text-slate-400">Gateway Standby</p>
+              <p className="text-xs font-bold text-slate-600 dark:text-slate-350">Authorization Req.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Mock Main Dashboard View */}
+        <div className="flex-1 flex flex-col">
+          {/* Topbar */}
+          <div className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 px-8 flex items-center justify-between">
+            <div className="flex items-center gap-3 w-80 py-2 px-4 rounded-xl bg-slate-100 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50">
+              <Search className="w-4 h-4 text-slate-400" />
+              <span className="text-xs text-slate-450 dark:text-slate-400">Search spaces, lecturers, faculties...</span>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-brand-primary bg-brand-primary/10 px-3 py-1.5 rounded-lg border border-brand-primary/15">
+                <Clock className="w-3.5 h-3.5 animate-pulse" />
+                {currentTime || "19:20:00"}
+              </div>
+              <div className="relative p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-655 dark:text-slate-400">
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-primary" />
+              </div>
+              <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700" />
+            </div>
+          </div>
+
+          {/* Dashboard Main Grid Area */}
+          <div className="p-8 space-y-6 flex-1 overflow-hidden">
+            
+            {/* Stats Row */}
+            <div className="grid grid-cols-3 gap-6">
+              {[
+                { label: "Active Room Occupancy", value: "89.2%", change: "+4.2% from peak", color: "text-brand-primary bg-brand-primary/5" },
+                { label: "Conflict Resolution Solver", value: "99.8%", change: "14 conflicts auto-resolved", color: "text-emerald-500 bg-emerald-500/5" },
+                { label: "Sensors Online Node status", value: "98.4%", change: "264 active devices online", color: "text-blue-500 bg-blue-500/5" }
+              ].map((stat, i) => (
+                <div key={i} className="p-5 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 flex flex-col justify-between h-28">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.label}</span>
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${stat.color}`}>{stat.change}</span>
+                  </div>
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">{stat.value}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Room Availability Matrix Grid */}
+            <div className="space-y-3">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Campus Facilities Status Monitor</span>
+              <div className="grid grid-cols-4 gap-6">
+                {[
+                  { name: "Computing Lab 01", cap: "36/40 seats", status: "Occupied", desc: "CS302 Database Lecture", border: "border-brand-primary/20", fill: "bg-brand-primary" },
+                  { name: "Lecture Theatre B", cap: "0/120 seats", status: "Vacant", desc: "Next: 2:00 PM Lecture", border: "border-emerald-500/20", fill: "bg-emerald-500" },
+                  { name: "Seminar Room 02", cap: "15/30 seats", status: "Occupied", desc: "AI Ethics Symposium", border: "border-brand-primary/20", fill: "bg-brand-primary" },
+                  { name: "IoT & Robotics Lab", cap: "0/20 seats", status: "Maintenance", desc: "AC Repair In Progress", border: "border-rose-500/20", fill: "bg-rose-500" }
+                ].map((room, i) => (
+                  <div key={i} className={`p-5 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 flex flex-col justify-between h-36 ${room.border}`}>
+                    <div className="flex justify-between items-start">
+                      <span className="font-black text-sm text-slate-900 dark:text-white truncate max-w-[130px]">{room.name}</span>
+                      <span className="text-[9px] font-bold text-slate-400">{room.cap}</span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">{room.desc}</p>
+                      <div className="flex items-center gap-2 mt-3">
+                        <span className={`h-2 w-2 rounded-full ${room.fill}`} />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-350">{room.status}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Simulated Live Analytics Grid */}
+            <div className="p-5 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 h-32 flex flex-col justify-between">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Weekly Resource Allocations Telemetry</span>
+                <span className="text-[10px] font-bold text-brand-primary">Automated scheduler: Online</span>
+              </div>
+              <div className="flex items-end gap-2 h-14 pt-2">
+                {[60, 45, 80, 55, 90, 70, 85, 95, 60, 75, 85, 92, 78, 88].map((val, idx) => (
+                  <div key={idx} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-lg h-full relative overflow-hidden">
+                    <div className="absolute bottom-0 w-full rounded-t-lg bg-brand-primary/45" style={{ height: `${val}%` }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
-      {/* Top Controls: Back to Home */}
-      <div className="absolute top-6 left-6 z-20">
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-foreground/5 hover:bg-slate-200 dark:hover:bg-foreground/10 border border-slate-200 dark:border-border text-slate-700 dark:text-foreground/75 hover:text-foreground text-[10px] font-black uppercase tracking-widest transition-all group"
-        >
-          <ChevronLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-          Back to Home
-        </Link>
-      </div>
+      {/* Semi-transparent Glassmorphic Security Overlay */}
+      <div className="absolute inset-0 z-10 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-[6px]" />
 
-      {/* Centered Glassmorphic Authentication Card */}
+      {/* Floating Centered Authentication portal */}
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-[460px] bg-card/65 dark:bg-card/25 backdrop-blur-2xl border border-slate-200/60 dark:border-border/30 rounded-[2.5rem] shadow-2xl p-8 sm:p-10 relative z-10 space-y-6"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-[460px] mx-4 bg-white/75 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl p-8 sm:p-10 relative z-20 space-y-6"
       >
         
+        {/* Back to Home Control */}
+        <div className="absolute top-6 left-6 z-30">
+          <Link 
+            href="/" 
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100/90 dark:bg-foreground/5 hover:bg-slate-200/90 dark:hover:bg-foreground/10 border border-slate-200 dark:border-border text-slate-700 dark:text-foreground/75 hover:text-foreground text-[9px] font-black uppercase tracking-wider transition-all group"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            Home
+          </Link>
+        </div>
+
         {/* Card Header & Branding */}
-        <div className="text-center">
+        <div className="text-center pt-4">
           <div className="inline-flex items-center gap-2 bg-brand-primary/5 dark:bg-brand-primary/10 border border-brand-primary/15 rounded-full px-3 py-1 mb-5">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-primary opacity-75"></span>
@@ -145,7 +303,7 @@ export default function LoginPage() {
                 onBlur={() => setFocusedField(null)}
                 placeholder="name@university.ac.lk"
                 disabled={loading}
-                className="block w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-200 dark:border-border/80 rounded-2xl text-sm font-bold text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary/50 transition-all disabled:opacity-40"
+                className="block w-full pl-11 pr-4 py-3 bg-white/50 dark:bg-slate-950/20 border border-slate-200 dark:border-border/85 rounded-2xl text-sm font-bold text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary/50 transition-all disabled:opacity-40"
               />
             </div>
           </div>
@@ -177,7 +335,7 @@ export default function LoginPage() {
                 onBlur={() => setFocusedField(null)}
                 placeholder="••••••••"
                 disabled={loading}
-                className="block w-full pl-11 pr-12 py-3 bg-slate-50/50 dark:bg-slate-950/20 border border-slate-200 dark:border-border/80 rounded-2xl text-sm font-bold text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary/50 transition-all disabled:opacity-40"
+                className="block w-full pl-11 pr-12 py-3 bg-white/50 dark:bg-slate-950/20 border border-slate-200 dark:border-border/85 rounded-2xl text-sm font-bold text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary/50 transition-all disabled:opacity-40"
               />
               <button
                 type="button"
@@ -225,49 +383,37 @@ export default function LoginPage() {
 
         {/* Quick Demo Access Badges */}
         <div className="pt-5 border-t border-slate-200/60 dark:border-border/40 space-y-4">
-          <p className="text-center text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-foreground/40">
+          <p className="text-center text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-foreground/45">
             Quick Operator Access
           </p>
           <div className="grid grid-cols-2 gap-2">
             {(["admin", "maintenance", "lecturer", "student"] as const).map((role) => (
-              <DemoButton key={role} role={role} onClick={() => setMockUser(role)} />
+              <button
+                key={role}
+                onClick={() => handleDemoClick(role)}
+                className={`flex items-center justify-between px-3.5 py-2.5 border rounded-xl transition-all hover:scale-[1.02] shadow-sm text-left group cursor-pointer ${
+                  role === "admin" ? "bg-gradient-to-r from-purple-500/10 to-indigo-500/5 border-purple-500/20 text-purple-650 dark:text-purple-300 hover:border-purple-500/40" :
+                  role === "maintenance" ? "bg-gradient-to-r from-amber-500/10 to-orange-500/5 border-amber-500/20 text-amber-650 dark:text-amber-300 hover:border-amber-500/40" :
+                  role === "lecturer" ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/5 border-emerald-500/20 text-emerald-655 dark:text-emerald-300 hover:border-emerald-500/40" :
+                  "bg-gradient-to-r from-blue-500/10 to-sky-500/5 border-blue-500/20 text-blue-650 dark:text-blue-300 hover:border-blue-500/40"
+                }`}
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <div className="shrink-0 text-slate-500 dark:text-foreground/45 group-hover:text-current transition-colors">
+                    {role === "admin" ? <Shield className="w-3.5 h-3.5" /> :
+                     role === "maintenance" ? <Wrench className="w-3.5 h-3.5" /> :
+                     role === "lecturer" ? <Activity className="w-3.5 h-3.5" /> :
+                     <Users className="w-3.5 h-3.5" />}
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider capitalize truncate">{role}</span>
+                </div>
+                <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1 text-slate-400 group-hover:text-current" />
+              </button>
             ))}
           </div>
         </div>
 
       </motion.div>
     </div>
-  );
-}
-
-function DemoButton({ role, onClick }: { role: string; onClick: () => void }) {
-  const router = useRouter();
-  const handleClick = () => {
-    onClick();
-    router.push("/dashboard");
-  };
-
-  const icons: Record<string, React.ReactNode> = {
-    admin: <Shield className="w-3.5 h-3.5" />,
-    maintenance: <Wrench className="w-3.5 h-3.5" />,
-    lecturer: <Activity className="w-3.5 h-3.5" />,
-    student: <Users className="w-3.5 h-3.5" />
-  };
-
-  const colors: Record<string, string> = {
-    admin: "from-purple-500/10 to-indigo-500/5 border-purple-500/20 text-purple-600 dark:text-purple-300 hover:border-purple-500/40",
-    maintenance: "from-amber-500/10 to-orange-500/5 border-amber-500/20 text-amber-600 dark:text-amber-300 hover:border-amber-500/40",
-    lecturer: "from-emerald-500/10 to-teal-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-300 hover:border-emerald-500/40",
-    student: "from-blue-500/10 to-sky-500/5 border-blue-500/20 text-blue-600 dark:text-blue-300 hover:border-blue-500/40",
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className={`flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r border rounded-xl transition-all hover:scale-[1.02] shadow-sm text-left group cursor-pointer ${colors[role] ?? colors.student}`}
-    >
-      <div className="shrink-0">{icons[role]}</div>
-      <span className="text-[10px] font-black uppercase tracking-wider capitalize truncate">{role === "admin" ? "Admin" : role}</span>
-    </button>
   );
 }
