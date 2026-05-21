@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Calendar, Clock, MapPin, BookOpen } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, Calendar, Clock, MapPin, BookOpen, AlertTriangle } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 
 interface NewBookingModalProps {
     isOpen: boolean;
@@ -10,15 +12,44 @@ interface NewBookingModalProps {
 }
 
 export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBookingModalProps) {
+    const { profile, user } = useAuth();
     const [formData, setFormData] = useState({
-        resource: "",
+        resourceId: "",
         faculty: "",
         date: "",
         startTime: "",
         endTime: "",
         purpose: "",
     });
+    const [resources, setResources] = useState<any[]>([]);
+    const [loadingResources, setLoadingResources] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        const fetchResources = async () => {
+            setLoadingResources(true);
+            setError(null);
+            try {
+                const { data, error } = await supabase
+                    .from("resources")
+                    .select("id, name, department, availability_status")
+                    .eq("availability_status", "Available")
+                    .order("name");
+                if (error) throw error;
+                setResources(data || []);
+            } catch (err: any) {
+                console.error("Failed to fetch resources:", err);
+                setError("Failed to load available resources.");
+            } finally {
+                setLoadingResources(false);
+            }
+        };
+
+        if (isOpen) {
+            fetchResources();
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -29,20 +60,47 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setError(null);
+
+        const start = new Date(`${formData.date}T${formData.startTime}`);
+        const end = new Date(`${formData.date}T${formData.endTime}`);
+
+        if (end <= start) {
+            setError("End time must be after start time.");
+            setIsSubmitting(false);
+            return;
+        }
 
         try {
-            // TODO: Submit booking to Supabase
-            console.log("Submitting booking:", formData);
-            await new Promise((res) => setTimeout(res, 600));
+            const { error: insertError } = await supabase
+                .from("bookings")
+                .insert([
+                    {
+                        resource_id: formData.resourceId,
+                        user_id: profile?.id || user?.uid,
+                        start_time: start.toISOString(),
+                        end_time: end.toISOString(),
+                        status: "Pending",
+                    },
+                ]);
+
+            if (insertError) throw insertError;
+
             onSuccess();
             onClose();
-            setFormData({ resource: "", faculty: "", date: "", startTime: "", endTime: "", purpose: "" });
-        } catch (err) {
+            setFormData({ resourceId: "", faculty: "", date: "", startTime: "", endTime: "", purpose: "" });
+        } catch (err: any) {
             console.error("Booking failed:", err);
+            setError(err.message || "Failed to submit booking request.");
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    const filteredResources = resources.filter((res) => {
+        if (!formData.faculty) return true;
+        return res.department?.toLowerCase() === formData.faculty.toLowerCase();
+    });
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -67,6 +125,13 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                    {error && (
+                        <div className="flex items-center gap-3 p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs font-semibold">
+                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                            <p>{error}</p>
+                        </div>
+                    )}
+
                     {/* Resource */}
                     <div>
                         <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
@@ -74,14 +139,23 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
                         </label>
                         <div className="relative">
                             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <input
-                                name="resource"
-                                value={formData.resource}
+                            <select
+                                name="resourceId"
+                                value={formData.resourceId}
                                 onChange={handleChange}
                                 required
-                                placeholder="e.g. Advanced Robotics Lab"
-                                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
-                            />
+                                disabled={loadingResources}
+                                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all appearance-none"
+                            >
+                                <option value="">
+                                    {loadingResources ? "Loading resources..." : "Select Resource"}
+                                </option>
+                                {filteredResources.map((res) => (
+                                    <option key={res.id} value={res.id}>
+                                        {res.name} ({res.department || "General"})
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
