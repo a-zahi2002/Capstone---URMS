@@ -53,6 +53,7 @@ import userRoutes from "./routes/userRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
 import reportScheduleRoutes from "./routes/reportScheduleRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
+import bookingRoutes from "./routes/bookingRoutes";
 
 app.use("/api/resources", resourceRoutes);
 app.use("/api/maintenance-tickets", maintenanceTicketRoutes);
@@ -60,6 +61,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/admin/analytics", analyticsRoutes);
 app.use("/api/admin/reports", reportScheduleRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/bookings", bookingRoutes);
 
 import { checkSupabaseConnection } from "./config/supabaseClient";
 

@@ -197,6 +197,52 @@ export async function sendBookingConfirmationEmail(
     });
 }
 
+// ─── Template: Booking Rejection ───────────────────────────
+export async function sendBookingRejectionEmail(
+    to: string,
+    userName: string,
+    resourceName: string,
+    bookingDate: string,
+    bookingTime: string,
+    rejectionReason?: string
+): Promise<boolean> {
+    const content = `
+        <h2 style="margin:0 0 8px;color:#ef4444;font-size:22px;font-weight:700;">
+            Booking Declined ❌
+        </h2>
+        <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.7;">
+            Hi ${userName}, unfortunately, your request to book the following resource has been declined.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;overflow:hidden;margin-bottom:24px;border:1px solid #e2e8f0;">
+            <tr><td style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+                <p style="margin:0;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Resource</p>
+                <p style="margin:4px 0 0;color:#1e293b;font-size:16px;font-weight:700;">${resourceName}</p>
+            </td></tr>
+            <tr><td style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+                <p style="margin:0;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Date</p>
+                <p style="margin:4px 0 0;color:#1e293b;font-size:16px;font-weight:700;">${bookingDate}</p>
+            </td></tr>
+            <tr><td style="padding:20px 24px;${rejectionReason ? 'border-bottom:1px solid #e2e8f0;' : ''}">
+                <p style="margin:0;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Time Slot</p>
+                <p style="margin:4px 0 0;color:#1e293b;font-size:16px;font-weight:700;">${bookingTime}</p>
+            </td></tr>
+            ${rejectionReason ? `<tr><td style="padding:20px 24px;background:#fef2f2;">
+                <p style="margin:0;color:#991b1b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Reason for Rejection</p>
+                <p style="margin:4px 0 0;color:#991b1b;font-size:15px;line-height:1.6;">${rejectionReason}</p>
+            </td></tr>` : ''}
+        </table>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/bookings"
+           style="display:inline-block;padding:12px 28px;background:#4f46e5;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:10px;">
+            View My Bookings
+        </a>`;
+
+    return sendEmail({
+        to,
+        subject: `Booking Declined: ${resourceName} on ${bookingDate}`,
+        html: emailLayout(content),
+    });
+}
+
 // ─── Template: Maintenance Ticket Update ─────────────────────
 export async function sendTicketUpdateEmail(
     to: string,
