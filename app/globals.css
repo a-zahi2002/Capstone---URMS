@@ -1,9 +1,9 @@
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
 @theme {
-  --color-brand-primary: #1B5CC9;
-  --color-brand-secondary: #124296;
-  --color-brand-accent: #3B82F6;
+  --color-brand-primary: #7C3AED;
+  --color-brand-secondary: #6D28D9;
+  --color-brand-accent: #8B5CF6;
   --color-brand-success: #10B981;
   --color-brand-warning: #F59E0B;
   --color-brand-danger: #EF4444;
@@ -18,19 +18,19 @@
 
 @layer base {
   :root {
-    --background: #f1f5f9; /* slate-100 for better depth */
-    --foreground: #020617; /* slate-950 for maximum contrast */
+    --background: #fafafb; /* Clean premium gray-white */
+    --foreground: #09090b; /* High contrast dark text */
     --card: #ffffff;
-    --border: #cbd5e1; /* slate-300 for visible boundaries */
-    --ring: #3b82f6;
+    --border: #e2e8f0; /* slate-200 */
+    --ring: #7c3aed;
   }
 
   .dark {
-    --background: #0B0F19;
+    --background: #09070f; /* Deep purple-tinted dark */
     --foreground: #f8fafc;
-    --card: rgba(15, 23, 42, 0.6); /* Slightly more opaque dark card */
-    --border: rgba(255, 255, 255, 0.1);
-    --ring: #3b82f6;
+    --card: rgba(18, 14, 28, 0.7); /* Frosted dark purple card */
+    --border: rgba(139, 92, 246, 0.15); /* Soft violet border */
+    --ring: #8b5cf6;
   }
 
   * {

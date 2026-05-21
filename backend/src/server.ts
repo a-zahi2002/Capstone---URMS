@@ -14,7 +14,17 @@ import { startBackupCron } from './cron/backup.cron';
 
 dotenv.config();
 
+import { createServer } from 'http';
+import { initSocket } from './services/socketService';
+import { verifyEmailConfig } from './services/emailService';
+
 const PORT = process.env.PORT || 5000;
+
+// Create HTTP server
+const httpServer = createServer(app);
+
+// Initialize Socket.io
+initSocket(httpServer);
 
 /**
  * Verify Supabase connection on startup with retry logic.
@@ -42,11 +52,14 @@ async function connectWithRetry(retries = 10, delay = 5000): Promise<void> {
     }
 }
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`🚀 URMS Server running on http://localhost:${PORT}`);
     connectWithRetry();
     
     // Start automated background tasks
     startReportScheduler();
     startBackupCron();
+
+    // Verify email / SMTP configuration
+    verifyEmailConfig();
 });
