@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, X, ChevronDown, User, Sparkles } from "lucide-react";
+import { LogOut, Menu, X, ChevronDown, User, Sparkles, Bell } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import GlobalSearch from "./GlobalSearch";
 import { ThemeToggle } from "./ThemeToggle";
@@ -103,15 +103,11 @@ export default function Navbar() {
     return (
         <>
             {/* ════════════════════ NAVBAR ════════════════════ */}
-            <nav className={`sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md transition-all duration-300 ${
-                scrolled ? "shadow-sm border-b border-slate-200 dark:border-border" : "border-b border-transparent"
+            <nav className={`sticky top-0 z-50 w-full bg-background/70 backdrop-blur-md transition-all duration-300 ${
+                scrolled ? "shadow-sm border-b border-slate-200/60 dark:border-border/30" : "border-b border-transparent"
             }`}>
 
-                {/* animated top accent line */}
-                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-brand-primary via-blue-400 to-brand-primary bg-[length:200%_auto] animate-[shimmer_3s_linear_infinite]" />
-
                 <style>{`
-                    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
                     @keyframes fadeUp  { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
                     .nav-item-enter { animation: fadeUp 0.25s ease forwards; }
                 `}</style>
@@ -238,6 +234,16 @@ export default function Navbar() {
                                                     </span>
                                                     My Profile
                                                 </Link>
+                                                <Link
+                                                    href="/notifications"
+                                                    onClick={() => setUserMenu(false)}
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-foreground/60 hover:text-foreground hover:bg-slate-100 dark:bg-foreground/5 transition-all group"
+                                                >
+                                                    <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-foreground/5 group-hover:bg-brand-primary/10 flex items-center justify-center transition-colors">
+                                                        <Bell className="w-3.5 h-3.5 text-slate-500 dark:text-foreground/40 group-hover:text-brand-primary transition-colors" />
+                                                    </span>
+                                                    Notifications
+                                                </Link>
                                                 <button
                                                     onClick={() => { signOut(); setUserMenu(false); }}
                                                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:text-red-600 hover:bg-red-500/10 transition-all group"
@@ -261,11 +267,9 @@ export default function Navbar() {
                                     </Link>
                                     <Link
                                         href="/login"
-                                        className="relative overflow-hidden inline-flex items-center gap-1.5 px-5 py-2 text-sm font-bold text-white rounded-xl bg-gradient-to-r from-brand-primary to-blue-600 hover:from-blue-600 hover:to-brand-primary shadow-md shadow-brand-primary/25 hover:shadow-brand-primary/40 transition-all duration-300 active:scale-95 group"
+                                        className="inline-flex items-center gap-1.5 px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white rounded-full bg-brand-primary hover:bg-brand-secondary shadow-lg shadow-brand-primary/20 hover:shadow-brand-primary/30 transition-all duration-300 active:scale-95 group"
                                     >
-                                        {/* shimmer */}
-                                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
-                                        <Sparkles className="w-3.5 h-3.5 relative" />
+                                        <Sparkles className="w-3.5 h-3.5" />
                                         Sign In
                                     </Link>
                                 </div>
@@ -356,7 +360,15 @@ export default function Navbar() {
                                 >
                                     <User className="w-4 h-4 text-slate-500 dark:text-foreground/40" />
                                     My Profile
-                                </Link>
+                                                                </Link>
+                                                                <Link
+                                                                    href="/notifications"
+                                                                    onClick={() => setIsOpen(false)}
+                                                                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 dark:text-foreground/60 hover:text-foreground hover:bg-slate-50 dark:bg-white/5 transition-all"
+                                                                >
+                                                                    <Bell className="w-4 h-4 text-slate-500 dark:text-foreground/40" />
+                                                                    Notifications
+                                                                </Link>
                                 <button
                                     onClick={() => { signOut(); setIsOpen(false); }}
                                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all"
@@ -370,7 +382,7 @@ export default function Navbar() {
                                 <Link
                                     href="/login"
                                     onClick={() => setIsOpen(false)}
-                                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-brand-primary to-blue-600 shadow-md shadow-brand-primary/25 active:scale-95 transition-all"
+                                    className="w-full flex items-center justify-center gap-2 py-3 rounded-full text-sm font-bold text-white bg-brand-primary shadow-lg shadow-brand-primary/20 active:scale-95 transition-all"
                                 >
                                     <Sparkles className="w-4 h-4" />
                                     Sign In
@@ -378,7 +390,7 @@ export default function Navbar() {
                                 <Link
                                     href="/register"
                                     onClick={() => setIsOpen(false)}
-                                    className="w-full flex items-center justify-center py-3 rounded-xl text-sm font-bold text-slate-600 dark:text-foreground/60 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:bg-white/5 transition-all"
+                                    className="w-full flex items-center justify-center py-3 rounded-full text-sm font-bold text-slate-600 dark:text-foreground/60 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:bg-white/5 transition-all"
                                 >
                                     Create Account
                                 </Link>

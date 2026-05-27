@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { io, Socket } from 'socket.io-client';
 import { Bell, Check, X, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { supabase } from '@/lib/supabase';
 
 export interface Notification {
     id: string;
@@ -33,7 +35,41 @@ export default function NotificationBell() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Initialize socket connection
+    // Fetch historical notifications from database
+    useEffect(() => {
+        if (!profile?.id) return;
+
+        const fetchNotifications = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('notifications')
+                    .select('*')
+                    .eq('user_id', profile.id)
+                    .order('timestamp', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+
+                if (data) {
+                    const mapped: Notification[] = data.map((n: any) => ({
+                        id: n.id,
+                        title: n.title || (n.type ? n.type.charAt(0).toUpperCase() + n.type.slice(1) : 'Notification'),
+                        message: n.message,
+                        type: (n.type === 'alert' ? 'warning' : n.type) as any || 'info',
+                        createdAt: n.timestamp || new Date().toISOString(),
+                        read: n.is_read ?? false
+                    }));
+                    setNotifications(mapped);
+                }
+            } catch (err) {
+                console.error('Error fetching notifications:', err);
+            }
+        };
+
+        fetchNotifications();
+    }, [profile?.id]);
+
+    // Initialize socket connection for real-time notifications
     useEffect(() => {
         if (!profile?.id) return;
 
@@ -50,8 +86,16 @@ export default function NotificationBell() {
             socket.emit('join_user_room', profile.id);
         });
 
-        socket.on('notification', (newNotification: Notification) => {
-            setNotifications((prev) => [newNotification, ...prev]);
+        socket.on('notification', (newNotification: any) => {
+            const mapped: Notification = {
+                id: newNotification.id,
+                title: newNotification.title || (newNotification.type ? newNotification.type.charAt(0).toUpperCase() + newNotification.type.slice(1) : 'Notification'),
+                message: newNotification.message,
+                type: (newNotification.type === 'alert' ? 'warning' : newNotification.type) as any || 'info',
+                createdAt: newNotification.createdAt || new Date().toISOString(),
+                read: newNotification.read ?? false
+            };
+            setNotifications((prev) => [mapped, ...prev]);
         });
 
         return () => {
@@ -64,18 +108,44 @@ export default function NotificationBell() {
         setUnreadCount(notifications.filter((n) => !n.read).length);
     }, [notifications]);
 
-    const markAsRead = (id: string) => {
+    const markAsRead = async (id: string) => {
         setNotifications((prev) =>
             prev.map((n) => (n.id === id ? { ...n, read: true } : n))
         );
+        try {
+            await supabase
+                .from('notifications')
+                .update({ is_read: true })
+                .eq('id', id);
+        } catch (err) {
+            console.error('Error marking notification as read:', err);
+        }
     };
 
-    const markAllAsRead = () => {
+    const markAllAsRead = async () => {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        if (!profile?.id) return;
+        try {
+            await supabase
+                .from('notifications')
+                .update({ is_read: true })
+                .eq('user_id', profile.id)
+                .eq('is_read', false);
+        } catch (err) {
+            console.error('Error marking all notifications as read:', err);
+        }
     };
 
-    const removeNotification = (id: string) => {
+    const removeNotification = async (id: string) => {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
+        try {
+            await supabase
+                .from('notifications')
+                .delete()
+                .eq('id', id);
+        } catch (err) {
+            console.error('Error deleting notification:', err);
+        }
     };
 
     const getIcon = (type: string) => {
@@ -130,7 +200,7 @@ export default function NotificationBell() {
                     </div>
 
                     {/* Notifications List */}
-                    <div className="overflow-y-auto flex-1">
+                    <div className="overflow-y-auto flex-1 max-h-80">
                         {notifications.length === 0 ? (
                             <div className="p-8 text-center flex flex-col items-center justify-center text-slate-500 dark:text-foreground/40">
                                 <Bell className="w-12 h-12 mb-3 opacity-20" />
@@ -175,6 +245,17 @@ export default function NotificationBell() {
                                 ))}
                             </div>
                         )}
+                    </div>
+
+                    {/* View All Footer */}
+                    <div className="px-4 py-2.5 border-t border-slate-200 dark:border-border bg-slate-50 dark:bg-foreground/5 text-center">
+                        <Link
+                            href="/notifications"
+                            onClick={() => setIsOpen(false)}
+                            className="text-xs font-bold text-brand-primary hover:text-brand-primary/80 transition-colors inline-block w-full py-1"
+                        >
+                            View all notifications
+                        </Link>
                     </div>
                 </div>
             )}
