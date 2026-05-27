@@ -70,7 +70,7 @@ export default function AdminMaintenanceDashboard() {
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data: MaintenanceTicket[] = await res.json();
-      
+
       if (!Array.isArray(data)) {
         throw new Error("Invalid response format: expected an array of tickets");
       }
