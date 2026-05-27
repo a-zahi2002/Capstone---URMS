@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 interface MaintenanceTicket {
   id: string;
   resourceId: string;
+  resourceName?: string;
   title: string;
   description: string;
   status: "OPEN" | "IN_PROGRESS" | "COMPLETED";
