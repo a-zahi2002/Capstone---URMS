@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS maintenance_tickets (
 CREATE TABLE IF NOT EXISTS notifications (
     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title        TEXT,                     -- Added for notification headers
     message      TEXT NOT NULL,
     type         TEXT DEFAULT 'info',      -- 'info', 'success', 'warning', 'error', 'alert'
     is_read      BOOLEAN DEFAULT FALSE,
@@ -132,3 +133,28 @@ CREATE OR REPLACE FUNCTION get_urms_role()
 RETURNS TEXT AS $$
   SELECT current_setting('request.headers', true)::json->>'x-urms-user-role';
 $$ LANGUAGE sql STABLE;
+
+-- 2.8 USER PREFERENCES TABLE
+CREATE TABLE IF NOT EXISTS user_preferences (
+    user_id           TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    email_bookings    BOOLEAN DEFAULT TRUE,
+    email_maintenance BOOLEAN DEFAULT TRUE,
+    email_system      BOOLEAN DEFAULT TRUE,
+    push_bookings     BOOLEAN DEFAULT TRUE,
+    push_maintenance  BOOLEAN DEFAULT TRUE,
+    push_system       BOOLEAN DEFAULT TRUE,
+    updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ENABLE RLS ON user_preferences
+ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+
+-- RLS POLICIES FOR user_preferences
+CREATE POLICY select_user_preferences ON user_preferences
+    FOR SELECT TO public
+    USING (get_urms_uid() = user_id);
+
+CREATE POLICY upsert_user_preferences ON user_preferences
+    FOR ALL TO public
+    USING (get_urms_uid() = user_id)
+    WITH CHECK (get_urms_uid() = user_id);

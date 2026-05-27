@@ -5,6 +5,25 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+export function setSupabaseAuthHeaders(userId: string, role: string) {
+  const client = supabase as any;
+  if (client.rest) {
+    client.rest.headers = {
+      ...client.rest.headers,
+      "x-urms-user-id": userId,
+      "x-urms-user-role": role,
+    };
+  }
+}
+
+export function clearSupabaseAuthHeaders() {
+  const client = supabase as any;
+  if (client.rest) {
+    delete client.rest.headers["x-urms-user-id"];
+    delete client.rest.headers["x-urms-user-role"];
+  }
+}
+
 export type UserRole = "admin" | "lecturer" | "student" | "maintenance";
 
 export interface UserProfile {
