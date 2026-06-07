@@ -81,7 +81,7 @@ export default function MaintenanceRequestPage() {
             </p>
           </div>
           {/* Subtle background decoration */}
-          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-slate-100 dark:bg-white/10 rounded-full blur-2xl"></div>
           <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-24 h-24 bg-brand-accent/20 rounded-full blur-xl"></div>
         </div>
 

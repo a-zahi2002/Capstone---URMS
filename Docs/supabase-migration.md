@@ -167,7 +167,7 @@ npm run dev
 Verify health:
 
 ```
-GET http://localhost:5000/api/health
+GET http://localhost:5000/api/health3
 ```
 
 Expected response:

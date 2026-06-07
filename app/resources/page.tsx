@@ -5,7 +5,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AddResourceModal from "@/components/AddResourceModal";
 import EditResourceModal, { Resource } from "@/components/EditResourceModal";
 import BulkImport from "@/components/BulkImport";
-import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 import {
     Search,
     Plus,
@@ -27,8 +27,30 @@ import {
 type SortField = "name" | "type" | "capacity" | "availability_status";
 type SortDir = "asc" | "desc";
 
+const parseEquipment = (value: unknown): string[] => {
+    if (Array.isArray(value)) return value.map((item) => String(item));
+    if (typeof value === "string" && value.trim()) {
+        try {
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) {
+                return parsed.map((item) => String(item));
+            }
+        } catch {
+            return [];
+        }
+    }
+    return [];
+};
+
+const STATUS_SEQUENCE = ["Available", "Booked", "Maintenance"] as const;
+
+const getNextStatus = (current: string) => {
+    const index = STATUS_SEQUENCE.indexOf(current as typeof STATUS_SEQUENCE[number]);
+    if (index === -1) return STATUS_SEQUENCE[0];
+    return STATUS_SEQUENCE[(index + 1) % STATUS_SEQUENCE.length];
+};
+
 export default function ResourcesPage() {
-    const { user } = useAuth();
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -41,20 +63,29 @@ export default function ResourcesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
     const [editingResource, setEditingResource] = useState<Resource | null>(null);
-    const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [deletingId, setDeletingId] = useState<string | number | null>(null);
+    const [updatingStatusId, setUpdatingStatusId] = useState<string | number | null>(null);
 
     const isAdmin = true;
 
     const fetchResources = async () => {
         setLoading(true);
         try {
-            const token = user ? await user.getIdToken() : "dev-token";
-            const res = await fetch("http://localhost:5000/api/resources", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!res.ok) throw new Error("Failed to fetch resources");
-            const json = await res.json();
-            setResources(json.data);
+            const { data, error } = await supabase
+                .from("resources")
+                .select("id, name, type, capacity, location, availability_status, equipment")
+                .order("name");
+            if (error) throw error;
+            const mappedResources = (data || []).map((row) => ({
+                id: row.id,
+                name: row.name ?? "",
+                type: row.type ?? "Lecture Halls",
+                capacity: row.capacity?.toString() ?? "",
+                location: row.location ?? "",
+                availability_status: row.availability_status ?? "Available",
+                equipment: parseEquipment(row.equipment),
+            }));
+            setResources(mappedResources);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -64,26 +95,46 @@ export default function ResourcesPage() {
 
     useEffect(() => {
         fetchResources();
-    }, [user]);
+    }, []);
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: string | number) => {
         if (!window.confirm("Are you sure you want to delete this resource?")) return;
         setDeletingId(id);
         try {
-            const token = user ? await user.getIdToken() : "dev-token";
-            const res = await fetch(`http://localhost:5000/api/resources/${id}`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.message || "Failed to delete resource");
-            }
+            const { error: deleteError } = await supabase
+                .from("resources")
+                .delete()
+                .eq("id", id);
+            if (deleteError) throw deleteError;
             fetchResources();
         } catch (err: any) {
             alert(err.message);
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const handleToggleStatus = async (resource: Resource) => {
+        if (updatingStatusId) return;
+        const nextStatus = getNextStatus(resource.availability_status);
+        setUpdatingStatusId(resource.id);
+        try {
+            const { error: updateError } = await supabase
+                .from("resources")
+                .update({ availability_status: nextStatus })
+                .eq("id", resource.id);
+            if (updateError) throw updateError;
+            setResources((prev) =>
+                prev.map((item) =>
+                    item.id === resource.id
+                        ? { ...item, availability_status: nextStatus }
+                        : item
+                )
+            );
+        } catch (err: any) {
+            alert(err.message || "Failed to update status");
+        } finally {
+            setUpdatingStatusId(null);
         }
     };
 
@@ -335,26 +386,31 @@ export default function ResourcesPage() {
 
                                                 {/* Status */}
                                                 <td className="px-6 py-4">
-                                                    <span
-                                                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
-                                                            resource.availability_status === "Available"
-                                                                ? "bg-emerald-100 text-emerald-700"
-                                                                : resource.availability_status === "Booked"
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleToggleStatus(resource)}
+                                                        disabled={updatingStatusId === resource.id}
+                                                        title="Click to toggle status"
+                                                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-colors ${resource.availability_status === "Available"
+                                                            ? "bg-emerald-100 text-emerald-700"
+                                                            : resource.availability_status === "Booked"
                                                                 ? "bg-red-100 text-red-600"
                                                                 : "bg-amber-100 text-amber-700"
-                                                        }`}
+                                                            } ${updatingStatusId === resource.id
+                                                                ? "opacity-60 cursor-wait"
+                                                                : "hover:opacity-90"
+                                                            }`}
                                                     >
                                                         <span
-                                                            className={`w-1.5 h-1.5 rounded-full ${
-                                                                resource.availability_status === "Available"
-                                                                    ? "bg-emerald-500"
-                                                                    : resource.availability_status === "Booked"
+                                                            className={`w-1.5 h-1.5 rounded-full ${resource.availability_status === "Available"
+                                                                ? "bg-emerald-500"
+                                                                : resource.availability_status === "Booked"
                                                                     ? "bg-red-500"
                                                                     : "bg-amber-500"
-                                                            }`}
+                                                                }`}
                                                         />
                                                         {resource.availability_status}
-                                                    </span>
+                                                    </button>
                                                 </td>
 
                                                 {/* Actions */}

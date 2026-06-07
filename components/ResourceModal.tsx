@@ -184,7 +184,7 @@ export default function ResourceModal({ resource, isOpen, onClose }: ResourceMod
                           >
                             <span>{slot.time}</span>
                             <span className={`text-xs font-bold px-2 py-1 rounded-md ${
-                              isBooked ? "bg-slate-200 text-slate-500" : isSelected ? "bg-white/20 text-white" : "bg-green-100 text-green-700"
+                              isBooked ? "bg-slate-200 text-slate-500" : isSelected ? "bg-slate-200 dark:bg-white/20 text-white" : "bg-green-100 text-green-700"
                             }`}>
                               {slot.status}
                             </span>

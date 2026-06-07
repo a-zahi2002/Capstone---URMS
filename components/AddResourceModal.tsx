@@ -50,7 +50,7 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
         setLoading(true);
         setError(null);
         try {
-            const token = user ? await user.getIdToken() : 'dev-token';
+            const token = (user && typeof user.getIdToken === 'function') ? await user.getIdToken() : 'dev-token';
             const response = await fetch('http://localhost:5000/api/resources', {
                 method: 'POST',
                 headers: {

@@ -23,11 +23,13 @@
  * the rest of the backend to preserve the existing API contract.
  * ─────────────────────────────────────────────────────────────
  */
-import supabase from '../config/supabaseClient';
+import { SupabaseClient } from '@supabase/supabase-js';
+import globalSupabase from '../config/supabaseClient';
 
 export interface MaintenanceTicket {
     id?: string;           // uuid (was number)
     resourceId: string;    // maps to resource_id column
+    resourceName?: string; // joined from resources table
     title: string;
     description: string;
     priority: 'Low' | 'Medium' | 'High';
@@ -42,7 +44,8 @@ export interface MaintenanceTicket {
 // ─── Fallback mock data ───────────────────────────────────────
 const MOCK_TICKETS: MaintenanceTicket[] = [
     { id: '1', resourceId: '1', title: 'Projector Issue',  description: 'Screen flickering',  priority: 'High',   status: 'OPEN',        createdBy: 'dev-user' },
-    { id: '2', resourceId: '2', title: 'AC Maintenance',   description: 'Blowing warm air',    priority: 'Medium', status: 'IN_PROGRESS', createdBy: 'staff-1', assignedTo: 'tech-1' }
+    { id: '2', resourceId: '2', title: 'AC Maintenance',   description: 'Blowing warm air',    priority: 'Medium', status: 'IN_PROGRESS', createdBy: 'staff-1', assignedTo: 'tech-1' },
+    { id: '3', resourceId: '3', title: 'Bulb Replacement', description: 'Burnt out after power surge', priority: 'Low', status: 'COMPLETED', createdBy: 'admin', assignedTo: 'tech-1', completed_at: new Date(), outcome: 'Fixed' }
 ];
 
 // ─── Column mapping helpers ───────────────────────────────────
@@ -51,6 +54,7 @@ function fromRow(row: any): MaintenanceTicket {
     return {
         id:           row.id,
         resourceId:   row.resource_id,
+        resourceName: row.resources?.name || 'Unknown Resource',
         title:        row.title,
         description:  row.description,
         priority:     row.priority,
@@ -82,9 +86,14 @@ function toRow(ticket: Partial<MaintenanceTicket>): Record<string, any> {
 export class MaintenanceTicketModel {
 
     // ── findAll ─────────────────────────────────────────────
-    static async findAll(filters: any = {}): Promise<MaintenanceTicket[]> {
+    static async findAll(filters: any = {}, client: SupabaseClient = globalSupabase): Promise<MaintenanceTicket[]> {
         try {
-            let query = supabase.from('maintenance_tickets').select('*');
+            let query = client.from('maintenance_tickets').select(`
+                *,
+                resources:resource_id (
+                    name
+                )
+            `);
 
             if (filters.status)     query = query.eq('status',      filters.status) as any;
             if (filters.priority)   query = query.eq('priority',    filters.priority) as any;
@@ -97,13 +106,19 @@ export class MaintenanceTicketModel {
             const { data, error } = await query;
 
             if (error) {
-                console.warn('⚠️  Supabase query failed in MaintenanceTicketModel.findAll:', error.message);
+                console.error('❌ Supabase query failed in MaintenanceTicketModel.findAll:', error.message);
+                if (error.code === 'PGRST116' || error.code === 'PGRST205' || error.message.includes('fetch')) {
+                    return MOCK_TICKETS;
+                }
                 throw new Error(error.message);
             }
 
             return (data as any[]).map(fromRow);
-        } catch (err) {
-            console.warn('⚠️  DB connection failed or table missing, falling back to mock data');
+        } catch (err: any) {
+            console.warn('⚠️  DB connection failed or table missing:', err.message);
+            if (err.message && !err.message.includes('fetch')) {
+                throw err;
+            }
             let results = [...MOCK_TICKETS];
             if (filters.status)     results = results.filter(t => t.status     === filters.status);
             if (filters.priority)   results = results.filter(t => t.priority   === filters.priority);
@@ -115,119 +130,106 @@ export class MaintenanceTicketModel {
     }
 
     // ── findById ────────────────────────────────────────────
-    static async findById(id: string | number): Promise<MaintenanceTicket | null> {
+    static async findById(id: string | number, client: SupabaseClient = globalSupabase): Promise<MaintenanceTicket | null> {
         try {
-            const { data, error } = await supabase
+            const { data, error } = await client
                 .from('maintenance_tickets')
-                .select('*')
+                .select(`
+                    *,
+                    resources:resource_id (
+                        name
+                    )
+                `)
                 .eq('id', String(id))
                 .maybeSingle();
 
             if (error) {
-                console.warn('⚠️  Supabase query failed in MaintenanceTicketModel.findById:', error.message);
-                return MOCK_TICKETS.find(t => t.id === String(id)) || null;
+                console.error('❌ Supabase query failed in MaintenanceTicketModel.findById:', error.message);
+                throw new Error(error.message);
             }
 
             if (!data) return null;
             return fromRow(data);
-        } catch {
+        } catch (err: any) {
             return MOCK_TICKETS.find(t => t.id === String(id)) || null;
         }
     }
 
     // ── create ──────────────────────────────────────────────
-    static async create(ticket: Partial<MaintenanceTicket>): Promise<string> {
-        try {
-            const row = toRow({
-                ...ticket,
-                status:   'OPEN',
-                priority: ticket.priority || 'Low'
-            });
+    static async create(ticket: Partial<MaintenanceTicket>, client: SupabaseClient = globalSupabase): Promise<string> {
+        const row = toRow({
+            ...ticket,
+            status:   'OPEN',
+            priority: ticket.priority || 'Low'
+        });
 
-            const { data, error } = await supabase
-                .from('maintenance_tickets')
-                .insert(row)
-                .select('id')
-                .single();
+        const { data, error } = await client
+            .from('maintenance_tickets')
+            .insert(row)
+            .select('id')
+            .single();
 
-            if (error || !data) {
-                throw new Error(error?.message || 'Insert returned no data');
+        if (error) {
+            console.error('❌ Supabase insert failed:', error.message);
+            if (error.code === '42501') {
+                throw new Error(`Permission denied (RLS) on maintenance_tickets.`);
             }
-
-            return (data as any).id as string;
-        } catch (err: any) {
-            // Mock fallback
-            console.warn('⚠️  Supabase insert failed, using mock:', err.message);
-            const newId = String(Date.now());
-            MOCK_TICKETS.unshift({
-                id:          newId,
-                resourceId:  String(ticket.resourceId!),
-                title:       ticket.title!,
-                description: ticket.description!,
-                priority:    (ticket.priority as 'Low' | 'Medium' | 'High') || 'Low',
-                status:      'OPEN',
-                createdBy:   ticket.createdBy!,
-                created_at:  new Date()
-            });
-            return newId;
+            
+            if (error.message.includes('fetch')) {
+                const newId = String(Date.now());
+                MOCK_TICKETS.unshift({
+                    id:          newId,
+                    resourceId:  String(ticket.resourceId!),
+                    title:       ticket.title!,
+                    description: ticket.description!,
+                    priority:    (ticket.priority as 'Low' | 'Medium' | 'High') || 'Low',
+                    status:      'OPEN',
+                    createdBy:   ticket.createdBy!,
+                    created_at:  new Date(),
+                    completed_at: null,
+                    outcome:      null
+                });
+                return newId;
+            }
+            throw new Error(error.message);
         }
+
+        if (!data) throw new Error('Insert returned no data');
+        return (data as any).id as string;
     }
 
     // ── update ──────────────────────────────────────────────
-    static async update(id: string | number, data: Partial<MaintenanceTicket>): Promise<boolean> {
-        try {
-            const row = toRow(data);
-            if (Object.keys(row).length === 0) return true;
+    static async update(id: string | number, data: Partial<MaintenanceTicket>, client: SupabaseClient = globalSupabase): Promise<boolean> {
+        const row = toRow(data);
+        if (Object.keys(row).length === 0) return true;
 
-            const { error } = await supabase
-                .from('maintenance_tickets')
-                .update(row)
-                .eq('id', String(id));
+        const { error } = await client
+            .from('maintenance_tickets')
+            .update(row)
+            .eq('id', String(id));
 
-            if (error) {
-                console.warn('⚠️  Supabase update failed:', error.message);
-                throw new Error(error.message);
-            }
-
-            return true;
-        } catch {
-            // Mock fallback
-            const ticket = MOCK_TICKETS.find(t => t.id === String(id));
-            if (ticket) {
-                if (data.status       !== undefined) ticket.status       = data.status as any;
-                if (data.priority     !== undefined) ticket.priority     = data.priority as any;
-                if (data.description  !== undefined) ticket.description  = data.description;
-                if (data.assignedTo   !== undefined) ticket.assignedTo   = data.assignedTo;
-                if (data.completed_at !== undefined) ticket.completed_at = data.completed_at;
-                if (data.outcome      !== undefined) ticket.outcome      = data.outcome as any;
-                return true;
-            }
-            return false;
+        if (error) {
+            console.error('❌ Supabase update failed:', error.message);
+            if (error.code === '42501') throw new Error('Permission denied (RLS)');
+            throw new Error(error.message);
         }
+
+        return true;
     }
 
     // ── delete ──────────────────────────────────────────────
-    static async delete(id: string | number): Promise<boolean> {
-        try {
-            const { error } = await supabase
-                .from('maintenance_tickets')
-                .delete()
-                .eq('id', String(id));
+    static async delete(id: string | number, client: SupabaseClient = globalSupabase): Promise<boolean> {
+        const { error } = await client
+            .from('maintenance_tickets')
+            .delete()
+            .eq('id', String(id));
 
-            if (error) {
-                console.warn('⚠️  Supabase delete failed:', error.message);
-                throw new Error(error.message);
-            }
-
-            return true;
-        } catch {
-            // Mock fallback
-            const index = MOCK_TICKETS.findIndex(t => t.id === String(id));
-            if (index !== -1) {
-                MOCK_TICKETS.splice(index, 1);
-                return true;
-            }
-            return false;
+        if (error) {
+            console.error('❌ Supabase delete failed:', error.message);
+            if (error.code === '42501') throw new Error('Permission denied (RLS)');
+            throw new Error(error.message);
         }
+
+        return true;
     }
 }
