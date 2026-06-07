@@ -56,8 +56,10 @@ export default function LandingPage() {
 
   // Time tracker for simulator status bar
   const [currentTime, setCurrentTime] = useState("");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
@@ -295,8 +297,8 @@ export default function LandingPage() {
                 ))}
                 
                 {/* Simulated timestamp */}
-                <div className="ml-auto self-center pb-2 pr-1 text-[10px] font-mono text-slate-500 hidden sm:block">
-                  {currentTime || "12:00:00 PM"}
+                <div className="ml-auto self-center pb-2 pr-1 text-[10px] font-mono text-slate-500 hidden sm:block" suppressHydrationWarning>
+                  {mounted ? currentTime : "12:00:00 PM"}
                 </div>
               </div>
 
@@ -785,6 +787,7 @@ export default function LandingPage() {
                 <button
                   key={n}
                   onClick={() => setConflictStep(n)}
+                  suppressHydrationWarning
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs z-10 transition-all ${
                     n <= conflictStep
                       ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20 scale-110"

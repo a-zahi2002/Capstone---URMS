@@ -67,7 +67,7 @@ export default function GlobalSearch() {
         fetchResources();
     };
 
-    const getCategoryIcon = (category: string) => {
+    const getCategoryIcon = (category?: string) => {
         switch (category) {
             case "Lecture Halls": return <Building2 className="w-4 h-4" />;
             case "Labs": return <MonitorPlay className="w-4 h-4" />;
@@ -80,10 +80,10 @@ export default function GlobalSearch() {
     const filteredResources = resources.filter(res => {
         const lowerQuery = query.toLowerCase();
         const matchesQuery = 
-            res.name.toLowerCase().includes(lowerQuery) ||
-            res.category.toLowerCase().includes(lowerQuery) ||
-            res.capacity.toLowerCase().includes(lowerQuery) ||
-            res.location.toLowerCase().includes(lowerQuery);
+            (res.name && String(res.name).toLowerCase().includes(lowerQuery)) ||
+            (res.category && String(res.category).toLowerCase().includes(lowerQuery)) ||
+            (res.capacity && String(res.capacity).toLowerCase().includes(lowerQuery)) ||
+            (res.location && String(res.location).toLowerCase().includes(lowerQuery));
         
         const matchesStatus = filterStatus === "All" || res.status === filterStatus;
 
@@ -160,20 +160,20 @@ export default function GlobalSearch() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between gap-2 mb-1">
                                                 <h4 className="text-sm font-bold text-slate-900 truncate">
-                                                    {res.name}
+                                                    {res.name || "Unnamed Resource"}
                                                 </h4>
                                                 <div className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest shrink-0 ${
                                                     res.status === 'Available' ? 'bg-emerald-50 text-emerald-600' :
                                                     res.status === 'Booked' ? 'bg-red-50 text-red-600' :
                                                     'bg-amber-50 text-amber-600'
                                                 }`}>
-                                                    {res.status}
+                                                    {res.status || "Unknown"}
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                                                <span className="truncate">{res.location}</span>
+                                                <span className="truncate">{res.location || "Unknown"}</span>
                                                 <span>•</span>
-                                                <span>Capacity: {res.capacity}</span>
+                                                <span>Capacity: {res.capacity || "N/A"}</span>
                                             </div>
                                         </div>
                                         <div className="flex items-center self-center shrink-0 text-slate-300 group-hover:text-brand-primary transition-colors pl-2">
