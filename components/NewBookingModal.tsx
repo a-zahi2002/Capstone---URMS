@@ -5,6 +5,8 @@ import { X, Calendar, Clock, MapPin, BookOpen, AlertTriangle } from "lucide-reac
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 interface NewBookingModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -72,19 +74,27 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
         }
 
         try {
-            const { error: insertError } = await supabase
-                .from("bookings")
-                .insert([
-                    {
-                        resource_id: formData.resourceId,
-                        user_id: profile?.id || user?.uid,
-                        start_time: start.toISOString(),
-                        end_time: end.toISOString(),
-                        status: "Pending",
-                    },
-                ]);
+            const token = user ? await user.getIdToken() : "dev-token";
+            const res = await fetch(`${API}/api/bookings`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    resource_id: formData.resourceId,
+                    user_id: profile?.id || user?.uid,
+                    start_time: start.toISOString(),
+                    end_time: end.toISOString(),
+                    purpose: formData.purpose,
+                }),
+            });
 
-            if (insertError) throw insertError;
+            const result = await res.json();
+            
+            if (!res.ok || result.status === "error") {
+                throw new Error(result.message || "Failed to submit booking request.");
+            }
 
             onSuccess();
             onClose();
