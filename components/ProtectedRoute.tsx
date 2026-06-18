@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import SessionProvider from "./SessionProvider";
 
 export default function ProtectedRoute({
     children,
@@ -57,5 +58,9 @@ export default function ProtectedRoute({
         }
     }
 
-    return <>{children}</>;
+    return (
+        <SessionProvider>
+            {children}
+        </SessionProvider>
+    );
 }
