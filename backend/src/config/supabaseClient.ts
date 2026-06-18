@@ -27,31 +27,61 @@ dotenv.config({
     override: true
 });
 
-const supabaseUrl     = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl           = process.env.SUPABASE_URL;
+const supabaseAnonKey       = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceKey    = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// ── Validation ──────────────────────────────────────────────
 if (!supabaseUrl || supabaseUrl.includes('your-project-ref')) {
-    console.warn(
-        '\x1b[33m%s\x1b[0m',
-        '⚠️  SUPABASE_URL is not configured. Edit .env.local and set SUPABASE_URL.'
-    );
+    console.warn('\x1b[33m%s\x1b[0m', '⚠️  SUPABASE_URL is missing in .env.local');
 }
 
 if (!supabaseAnonKey || supabaseAnonKey.includes('your-supabase-anon-key')) {
+    console.warn('\x1b[33m%s\x1b[0m', '⚠️  SUPABASE_ANON_KEY is missing in .env.local');
+}
+
+if (!supabaseServiceKey) {
     console.warn(
         '\x1b[33m%s\x1b[0m',
-        '⚠️  SUPABASE_ANON_KEY is not configured. Edit .env.local and set SUPABASE_ANON_KEY.'
+        '⚠️  SUPABASE_SERVICE_ROLE_KEY is missing. Backend write operations (INSERT/UPDATE/DELETE) will fail due to RLS.'
     );
 }
 
+// ── Choose the key to use ────────────────────────────────────
+// If we have a service role key, use it to bypass RLS (backend operations).
+// Otherwise, fall back to the anon key.
+const activeKey = supabaseServiceKey || supabaseAnonKey;
+
 /**
  * Singleton Supabase client.
- * Uses the anon key — pair with RLS policies for production.
+ * Uses the service role key to bypass RLS for backend operations.
  */
 export const supabase: SupabaseClient = createClient(
     supabaseUrl  || '',
-    supabaseAnonKey || ''
+    supabaseServiceKey || supabaseAnonKey || ''
 );
+
+/**
+ * Creates a scoped Supabase client for a specific user.
+ * This client uses the ANON key so that RLS policies are enforced,
+ * and it passes the user's ID and Role in custom headers.
+ */
+export function getSupabaseClient(user?: { uid: string, role: string }): SupabaseClient {
+    if (!user) return supabase;
+
+    return createClient(
+        supabaseUrl || '',
+        supabaseAnonKey || '',
+        {
+            global: {
+                headers: {
+                    'x-urms-user-id': user.uid,
+                    'x-urms-user-role': user.role
+                }
+            }
+        }
+    );
+}
 
 /**
  * Lightweight connectivity check.

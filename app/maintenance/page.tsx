@@ -1,427 +1,433 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import { 
-  AlertTriangle, 
-  CheckCircle2, 
-  Clock, 
-  ListTodo, 
-  CalendarDays,
-  Wrench,
-  Activity,
-  ShieldAlert
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import {
+  AlertTriangle, CheckCircle2, Clock, ListTodo,
+  CalendarDays, Wrench, Activity, ShieldAlert,
+  Search, X, Plus, RefreshCcw, ChevronRight
 } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
-// Types
+interface MaintenanceTicket {
+  id: string;
+  resourceId: string;
+  resourceName?: string;
+  title: string;
+  description: string;
+  status: "OPEN" | "IN_PROGRESS" | "COMPLETED";
+  priority: "High" | "Medium" | "Low";
+  createdBy: string;
+  assignedTo?: string;
+  created_at: string;
+  completed_at?: string;
+  outcome?: string;
+  resourceName?: string;
+}
+
 interface MaintenanceTask {
   id: string;
+  rawId: string;
   resourceName: string;
   description: string;
+  title: string;
   requestedDate: string;
-  dueDate: string | null;
-  status: 'Pending' | 'In Progress' | 'Completed';
-  priority: 'High' | 'Medium' | 'Low';
+  status: "Pending" | "In Progress" | "Completed";
+  rawStatus: "OPEN" | "IN_PROGRESS" | "COMPLETED";
+  priority: "High" | "Medium" | "Low";
   assignedTo?: string;
 }
 
-// Mock Data
-const mockTasks: MaintenanceTask[] = [
-  {
-    id: "REQ-001",
-    resourceName: "Lab 1 (Computer Eng)",
-    description: "Projector color distortion and flickering.",
-    requestedDate: "2026-04-15",
-    dueDate: "2026-04-18",
-    status: "Pending",
-    priority: "High",
-  },
-  {
-    id: "REQ-002",
-    resourceName: "Lecture Hall A",
-    description: "AC unit 02 blowing warm air.",
-    requestedDate: "2026-04-10",
-    dueDate: "2026-04-12",
-    status: "In Progress",
-    priority: "High",
-    assignedTo: "Tech - HVAC Team"
-  },
-  {
-    id: "REQ-003",
-    resourceName: "Network Server Room",
-    description: "Routine filter replacement.",
-    requestedDate: "2026-04-20",
-    dueDate: "2026-04-25",
-    status: "Pending",
-    priority: "Medium",
-  },
-  {
-    id: "REQ-004",
-    resourceName: "Staff Room",
-    description: "Replace broken chair wheel.",
-    requestedDate: "2026-04-18",
-    dueDate: null,
-    status: "Completed",
-    priority: "Low",
-    assignedTo: "Facilities"
-  },
-  {
-    id: "REQ-005",
-    resourceName: "Auditorium",
-    description: "Microphone static noise during use.",
-    requestedDate: "2026-04-21",
-    dueDate: "2026-04-23",
-    status: "In Progress",
-    priority: "Medium",
-    assignedTo: "Tech - AV Team"
-  },
-  {
-    id: "REQ-006",
-    resourceName: "Library System",
-    description: "Kiosk touchscreen unresponsive.",
-    requestedDate: "2026-04-12",
-    dueDate: "2026-04-14",
-    status: "Pending",
-    priority: "High",
-  }
-];
+const STATUS_DISPLAY: Record<string, string> = {
+  OPEN: "Pending", IN_PROGRESS: "In Progress", COMPLETED: "Completed"
+};
+const NEXT_STATUS: Record<string, "IN_PROGRESS" | "COMPLETED"> = {
+  OPEN: "IN_PROGRESS", IN_PROGRESS: "COMPLETED"
+};
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function AdminMaintenanceDashboard() {
-  const [filter, setFilter] = useState<'All' | 'Pending' | 'Completed' | 'Overdue'>('All');
-  const [mounted, setMounted] = useState(false);
+  const { user } = useAuth();
+  const [filter, setFilter] = useState<"All" | "Pending" | "Completed" | "Overdue">("All");
+  const [search, setSearch] = useState("");
+  const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [form, setForm] = useState({ resourceId: "", title: "", description: "", priority: "Medium" });
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const getToken = useCallback(async () => {
+    if (user && typeof user.getIdToken === "function") return user.getIdToken();
+    return "dev-token";
+  }, [user]);
 
-  const getCurrentDateStr = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  const fetchTasks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API}/api/maintenance-tickets`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data: MaintenanceTicket[] = await res.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid response format: expected an array of tickets");
+      }
+
+      setTasks(data.map(t => ({
+        id: `REQ-${String(t.id).slice(0, 8).toUpperCase()}`,
+        rawId: t.id,
+        resourceName: t.resourceName || `Resource #${String(t.resourceId).slice(0, 8)}`,
+        title: t.title,
+        description: t.description || t.title,
+        requestedDate: t.created_at ? new Date(t.created_at).toLocaleDateString() : 'N/A',
+        status: (STATUS_DISPLAY[t.status] || "Pending") as MaintenanceTask["status"],
+        rawStatus: t.status,
+        priority: t.priority,
+        assignedTo: t.assignedTo
+      })));
+    } catch (e: any) {
+      console.error("Failed to fetch maintenance tasks:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [getToken]);
+
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
+
+  const handleExport = async (format: "pdf" | "excel") => {
+    try {
+      const token = await getToken();
+      const endpoint = format === "pdf" ? "report/pdf" : "report/excel";
+      const res = await fetch(`${API}/api/maintenance-tickets/${endpoint}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `maintenance-report-${new Date().toISOString().split("T")[0]}.${format === "pdf" ? "pdf" : "xlsx"}`;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+    } catch (e) {
+      alert("Export failed. Please try again.");
+    }
   };
 
-  const todayStr = getCurrentDateStr();
-
-  const isOverdue = (task: MaintenanceTask) => {
-    if (!task.dueDate || task.status === 'Completed') return false;
-    return task.dueDate < todayStr;
+  const handleAdvanceStatus = async (task: MaintenanceTask) => {
+    if (task.rawStatus === "COMPLETED") return;
+    const next = NEXT_STATUS[task.rawStatus];
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API}/api/maintenance-tickets/${task.rawId}/status`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next })
+      });
+      if (!res.ok) throw new Error("Status update failed");
+      await fetchTasks();
+    } catch (e) {
+      alert("Could not update status. Check permissions.");
+    }
   };
 
-  const tasksWithOverdue = useMemo(() => {
-    return mockTasks.map(task => ({
-      ...task,
-      overdue: isOverdue(task)
-    }));
-  }, [todayStr]);
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.resourceId || !form.title) { setCreateError("Resource ID and title are required."); return; }
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API}/api/maintenance-tickets`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.message || "Create failed"); }
+      setShowCreate(false);
+      setForm({ resourceId: "", title: "", description: "", priority: "Medium" });
+      await fetchTasks();
+    } catch (e: any) {
+      setCreateError(e.message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const stats = useMemo(() => ({
+    total: tasks.length,
+    pending: tasks.filter(t => t.status !== "Completed").length,
+    completed: tasks.filter(t => t.status === "Completed").length,
+    overdue: 0,
+  }), [tasks]);
 
   const filteredTasks = useMemo(() => {
-    switch (filter) {
-      case 'Pending':
-        return tasksWithOverdue.filter(t => t.status === 'Pending' || t.status === 'In Progress');
-      case 'Completed':
-        return tasksWithOverdue.filter(t => t.status === 'Completed');
-      case 'Overdue':
-        return tasksWithOverdue.filter(t => t.overdue);
-      default:
-        return tasksWithOverdue;
+    let list = tasks;
+    if (filter === "Pending") list = list.filter(t => t.status !== "Completed");
+    else if (filter === "Completed") list = list.filter(t => t.status === "Completed");
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(t =>
+        t.id.toLowerCase().includes(q) ||
+        t.description.toLowerCase().includes(q) ||
+        t.title.toLowerCase().includes(q) ||
+        (t.assignedTo || "").toLowerCase().includes(q) ||
+        t.resourceName.toLowerCase().includes(q)
+      );
     }
-  }, [filter, tasksWithOverdue]);
-
-  const stats = useMemo(() => {
-    return {
-      total: tasksWithOverdue.length,
-      pending: tasksWithOverdue.filter(t => t.status !== 'Completed').length,
-      completed: tasksWithOverdue.filter(t => t.status === 'Completed').length,
-      overdue: tasksWithOverdue.filter(t => t.overdue).length,
-    };
-  }, [tasksWithOverdue]);
-
-  if (!mounted) return null;
+    return list;
+  }, [filter, tasks, search]);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-background p-4 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* Header Section */}
-        <div 
-          className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 md:p-10 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500"
-        >
-          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <Wrench className="w-64 h-64 rotate-12 transform" />
-          </div>
-          <div className="absolute -top-24 -left-24 w-64 h-64 bg-brand-primary/30 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-red-600/20 rounded-full blur-3xl pointer-events-none" />
 
+        {/* Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-card border border-slate-200 dark:border-border p-8 shadow-2xl">
+          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none"><Wrench className="w-64 h-64 rotate-12" /></div>
           <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-sm font-semibold tracking-wide text-blue-200 mb-4 border border-white/10">
-                <ShieldAlert className="w-4 h-4" />
-                Admin Console
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-foreground/5 rounded-full text-sm font-semibold text-brand-primary mb-4 border border-slate-200 dark:border-border">
+                <ShieldAlert className="w-4 h-4" /> Admin Console
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2">
-                Maintenance <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Overview</span>
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2">
+                Maintenance <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Overview</span>
               </h1>
-              <p className="text-slate-400 text-lg max-w-xl">
-                Monitor facility health, track active repair requests, and identify critical overdue maintenance tasks.
+              <p className="text-slate-600 dark:text-foreground/50 text-lg font-medium max-w-xl">
+                Monitor facility health, track repair requests, and manage maintenance workflows.
               </p>
             </div>
-            
-            {stats.overdue > 0 && (
-              <div 
-                className="bg-red-500/10 border border-red-500/20 backdrop-blur-md px-6 py-4 rounded-2xl flex items-center gap-4 animate-in fade-in zoom-in duration-500"
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => setShowCreate(true)}
+                className="bg-brand-primary hover:opacity-90 px-6 py-3 rounded-xl text-white font-bold transition-all shadow-lg flex items-center gap-2"
               >
-                <div className="bg-red-500/20 p-3 rounded-full text-red-400 animate-pulse">
-                  <AlertTriangle className="w-8 h-8" />
-                </div>
-                <div>
-                  <div className="text-red-400 font-bold text-sm uppercase tracking-wider">Critical Attention</div>
-                  <div className="text-white font-extrabold text-2xl">{stats.overdue} Tasks Overdue</div>
-                </div>
+                <Plus className="w-5 h-5" /> Create Task
+              </button>
+              <div className="flex gap-2">
+                <button onClick={() => handleExport("pdf")} className="flex-1 bg-card hover:bg-slate-100 dark:hover:bg-foreground/5 px-4 py-2.5 rounded-xl text-foreground text-xs font-bold border border-slate-200 dark:border-border flex items-center justify-center gap-2">
+                  <Activity className="w-4 h-4 text-blue-500" /> Export PDF
+                </button>
+                <button onClick={() => handleExport("excel")} className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2.5 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20 flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Export Excel
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard 
-            title="Total Requests" 
-            value={stats.total} 
-            icon={ListTodo} 
-            color="blue"
-            active={filter === 'All'}
-            onClick={() => setFilter('All')}
-          />
-          <StatCard 
-            title="Active / Pending" 
-            value={stats.pending} 
-            icon={Activity} 
-            color="amber"
-            active={filter === 'Pending'}
-            onClick={() => setFilter('Pending')}
-          />
-          <StatCard 
-            title="Tasks Completed" 
-            value={stats.completed} 
-            icon={CheckCircle2} 
-            color="emerald"
-            active={filter === 'Completed'}
-            onClick={() => setFilter('Completed')}
-          />
-          <StatCard 
-            title="Overdue Tasks" 
-            value={stats.overdue} 
-            icon={AlertTriangle} 
-            color="red"
-            active={filter === 'Overdue'}
-            onClick={() => setFilter('Overdue')}
-            isAlert={stats.overdue > 0}
-          />
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { title: "Total Requests", value: stats.total, icon: ListTodo, color: "blue", f: "All" },
+            { title: "Active / Pending", value: stats.pending, icon: Activity, color: "amber", f: "Pending" },
+            { title: "Tasks Completed", value: stats.completed, icon: CheckCircle2, color: "emerald", f: "Completed" },
+            { title: "Overdue Tasks", value: stats.overdue, icon: AlertTriangle, color: "red", f: "Overdue" },
+          ].map(({ title, value, icon: Icon, color, f }) => (
+            <StatCard key={f} title={title} value={value} icon={Icon} color={color} active={filter === f} onClick={() => setFilter(f as any)} />
+          ))}
         </div>
 
-        {/* Data Table Section */}
-        <div 
-          className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700"
-        >
-          <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-              Task Directory
-              {filter !== 'All' && (
-                <span className="px-3 py-1 bg-slate-100 text-slate-600 text-sm font-semibold rounded-full border border-slate-200">
-                  {filter}
-                </span>
-              )}
-            </h2>
-            <div className="flex bg-slate-100 p-1 rounded-xl">
-               {['All', 'Pending', 'Completed', 'Overdue'].map((f) => (
-                 <button
-                   key={f}
-                   onClick={() => setFilter(f as any)}
-                   className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${
-                     filter === f 
-                      ? 'bg-white text-slate-900 shadow-sm' 
-                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-                   }`}
-                 >
-                   {f}
-                 </button>
-               ))}
+        {/* Table */}
+        <div className="bg-card rounded-3xl shadow-xl border border-slate-200 dark:border-border overflow-hidden">
+          <div className="p-6 md:p-8 border-b border-slate-200 dark:border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h2 className="text-2xl font-black text-foreground">Task Directory</h2>
+            <div className="flex gap-3 flex-wrap">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search tasks..."
+                  className="pl-9 pr-4 py-2 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 w-52"
+                />
+              </div>
+              {/* Filter tabs */}
+              <div className="flex bg-slate-100 dark:bg-foreground/5 p-1 rounded-xl border border-slate-200 dark:border-border">
+                {["All", "Pending", "Completed"].map(f => (
+                  <button key={f} onClick={() => setFilter(f as any)}
+                    className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all ${filter === f ? "bg-card text-foreground shadow-sm" : "text-slate-500 dark:text-foreground/40"}`}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+              <button onClick={fetchTasks} title="Refresh" className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-foreground/5 border border-slate-200 dark:border-border transition-colors">
+                <RefreshCcw className="w-4 h-4 text-slate-500" />
+              </button>
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-6 py-4 font-bold text-slate-500 text-sm uppercase tracking-wider">ID / Resource</th>
-                  <th className="px-6 py-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Issue Description</th>
-                  <th className="px-6 py-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Timeline</th>
-                  <th className="px-6 py-4 font-bold text-slate-500 text-sm uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 font-bold text-slate-500 text-sm uppercase tracking-wider hidden md:table-cell">Priority</th>
+                <tr className="bg-foreground/[0.02] border-b border-slate-200 dark:border-border">
+                  {["ID / Resource", "Issue", "Requested", "Status", "Priority", "Action"].map(h => (
+                    <th key={h} className="px-6 py-4 font-black text-slate-500 dark:text-foreground/40 text-[10px] uppercase tracking-widest">{h}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredTasks.map((task) => (
-                  <tr 
-                    key={task.id}
-                    className={`group transition-colors hover:bg-slate-50 ${task.overdue ? 'bg-red-50/30' : ''}`}
-                  >
-                    <td className="px-6 py-5 align-top">
-                      <div className="flex items-start gap-3">
-                        {task.overdue ? (
-                          <div className="mt-1 text-red-500 animate-pulse" title="Task is overdue!">
-                            <AlertTriangle className="w-5 h-5" />
-                          </div>
-                        ) : (
-                          <div className="mt-1 text-slate-400">
-                            <Wrench className="w-5 h-5" />
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-bold text-slate-900">{task.id}</div>
-                          <div className="text-sm font-medium text-slate-500 mt-0.5">{task.resourceName}</div>
-                        </div>
+              <tbody className="divide-y divide-border/50">
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      {Array.from({ length: 6 }).map((_, j) => (
+                        <td key={j} className="px-6 py-5"><div className="h-4 bg-slate-200 dark:bg-foreground/10 rounded animate-pulse w-24" /></td>
+                      ))}
+                    </tr>
+                  ))
+                ) : filteredTasks.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-16 text-center">
+                      <div className="inline-flex flex-col items-center gap-3">
+                        <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-foreground/5 flex items-center justify-center"><Wrench className="w-7 h-7 text-slate-400" /></div>
+                        <p className="font-black text-foreground">No tasks found</p>
+                        <p className="text-sm text-slate-500 dark:text-foreground/40 font-bold">No tasks match the current filter or search.</p>
+                        <button onClick={() => { setFilter("All"); setSearch(""); }} className="text-brand-primary font-black text-sm hover:underline">Clear filters</button>
                       </div>
                     </td>
-                    <td className="px-6 py-5 align-top">
-                      <p className="text-slate-700 font-medium line-clamp-2 max-w-sm">
-                        {task.description}
-                      </p>
-                      {task.assignedTo && (
-                        <div className="text-xs font-bold text-slate-400 mt-2 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                          {task.assignedTo}
-                        </div>
+                  </tr>
+                ) : filteredTasks.map(task => (
+                  <tr key={task.rawId} className="hover:bg-foreground/[0.02] transition-colors group">
+                    <td className="px-6 py-5">
+                      <div className="font-black text-foreground text-sm">{task.id}</div>
+                      <div className="text-[10px] font-bold text-slate-500 dark:text-foreground/40 uppercase tracking-wider mt-0.5">{task.resourceName}</div>
+                    </td>
+                    <td className="px-6 py-5 max-w-xs">
+                      <p className="font-bold text-slate-700 dark:text-foreground/80 text-sm line-clamp-2">{task.description}</p>
+                      {task.assignedTo && <p className="text-[10px] text-slate-400 dark:text-foreground/30 font-bold mt-1 uppercase tracking-widest">→ {task.assignedTo}</p>}
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-foreground/60 font-bold">
+                        <CalendarDays className="w-3.5 h-3.5 text-slate-400" /> {task.requestedDate}
+                      </div>
+                    </td>
+                    <td className="px-6 py-5"><StatusBadge status={task.status} /></td>
+                    <td className="px-6 py-5"><PriorityBadge priority={task.priority} /></td>
+                    <td className="px-6 py-5">
+                      {task.rawStatus !== "COMPLETED" ? (
+                        <button
+                          onClick={() => handleAdvanceStatus(task)}
+                          title={`Advance to ${NEXT_STATUS[task.rawStatus]?.replace("_", " ")}`}
+                          className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-brand-primary hover:bg-blue-500/10 px-2.5 py-1.5 rounded-lg transition-all border border-transparent hover:border-blue-500/20"
+                        >
+                          {task.rawStatus === "OPEN" ? "Start" : "Complete"} <ChevronRight className="w-3 h-3" />
+                        </button>
+                      ) : (
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-foreground/20 uppercase tracking-widest">Done</span>
                       )}
-                    </td>
-                    <td className="px-6 py-5 align-top">
-                      <div className="space-y-1.5 text-sm">
-                        <div className="flex items-center gap-2 text-slate-600">
-                          <CalendarDays className="w-4 h-4 text-slate-400" />
-                          {task.requestedDate}
-                        </div>
-                        {task.dueDate && (
-                          <div className={`flex items-center gap-2 font-bold ${task.overdue ? 'text-red-600' : 'text-slate-500'}`}>
-                            <Clock className="w-4 h-4" />
-                            {task.dueDate}
-                            {task.overdue && <span className="text-[10px] uppercase tracking-wider bg-red-100 text-red-700 px-1.5 py-0.5 rounded ml-1">Overdue</span>}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 align-top">
-                      <Badge type="status" value={task.status} overdue={task.overdue} />
-                    </td>
-                    <td className="px-6 py-5 align-top hidden md:table-cell">
-                      <Badge type="priority" value={task.priority} />
                     </td>
                   </tr>
                 ))}
-                
-                {filteredTasks.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-16 text-center">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4 text-slate-400">
-                        <ActTriangle className="w-8 h-8" />
-                      </div>
-                      <h3 className="text-lg font-bold text-slate-800">No tasks found</h3>
-                      <p className="text-slate-500 mt-1">There are no maintenance tasks matching the '{filter}' filter.</p>
-                      <button 
-                        onClick={() => setFilter('All')}
-                        className="mt-4 text-brand-primary font-bold hover:underline"
-                      >
-                        Clear Filters
-                      </button>
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
+
+      {/* Create Task Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-slate-200 dark:border-border rounded-3xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-border">
+              <h3 className="text-xl font-black text-foreground">Create Maintenance Task</h3>
+              <button onClick={() => { setShowCreate(false); setCreateError(null); }} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-foreground/5"><X className="w-5 h-5 text-slate-500" /></button>
+            </div>
+            <form onSubmit={handleCreate} className="p-6 space-y-4">
+              {createError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-sm font-bold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {createError}
+                </div>
+              )}
+              <div>
+                <label className="block text-xs font-black text-slate-600 dark:text-foreground/60 uppercase tracking-widest mb-2">Resource ID *</label>
+                <input value={form.resourceId} onChange={e => setForm(p => ({ ...p, resourceId: e.target.value }))}
+                  placeholder="e.g. a3f2..." className="w-full px-4 py-3 bg-slate-50 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-foreground" />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-slate-600 dark:text-foreground/60 uppercase tracking-widest mb-2">Title *</label>
+                <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+                  placeholder="Brief issue title" className="w-full px-4 py-3 bg-slate-50 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-foreground" />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-slate-600 dark:text-foreground/60 uppercase tracking-widest mb-2">Description</label>
+                <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                  rows={3} placeholder="Describe the issue in detail..."
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-none text-foreground" />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-slate-600 dark:text-foreground/60 uppercase tracking-widest mb-2">Priority</label>
+                <select value={form.priority} onChange={e => setForm(p => ({ ...p, priority: e.target.value }))}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/40 text-foreground">
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => { setShowCreate(false); setCreateError(null); }}
+                  className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-border text-foreground font-black text-sm hover:bg-slate-50 dark:hover:bg-foreground/5 transition-all">
+                  Cancel
+                </button>
+                <button type="submit" disabled={creating}
+                  className="flex-1 px-4 py-3 rounded-xl bg-brand-primary text-white font-black text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                  {creating ? <><RefreshCcw className="w-4 h-4 animate-spin" /> Creating…</> : <><Plus className="w-4 h-4" /> Create Task</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// Helper Components
-
-function ActTriangle(props: any) {
-    return <AlertTriangle {...props} />;
-}
-
-function StatCard({ title, value, icon: Icon, color, active, onClick, isAlert }: any) {
-  const colorStyles = {
-    blue: "bg-blue-50 text-blue-600 border-blue-200 group-hover:bg-blue-600 group-hover:text-white",
-    amber: "bg-amber-50 text-amber-600 border-amber-200 group-hover:bg-amber-500 group-hover:text-white",
-    emerald: "bg-emerald-50 text-emerald-600 border-emerald-200 group-hover:bg-emerald-500 group-hover:text-white",
-    red: "bg-red-50 text-red-600 border-red-200 group-hover:bg-red-600 group-hover:text-white",
+function StatCard({ title, value, icon: Icon, color, active, onClick }: any) {
+  const colors: Record<string, string> = {
+    blue: `bg-blue-500/10 text-blue-500 ${active ? "ring-2 ring-blue-500 border-blue-500" : "border-slate-200 dark:border-border"}`,
+    amber: `bg-amber-500/10 text-amber-500 ${active ? "ring-2 ring-amber-500 border-amber-500" : "border-slate-200 dark:border-border"}`,
+    emerald: `bg-emerald-500/10 text-emerald-500 ${active ? "ring-2 ring-emerald-500 border-emerald-500" : "border-slate-200 dark:border-border"}`,
+    red: `bg-red-500/10 text-red-500 ${active ? "ring-2 ring-red-500 border-red-500" : "border-slate-200 dark:border-border"}`,
   };
-
-  const bgStyles = {
-    blue: active ? "border-brand-primary shadow-brand-primary/20 ring-1 ring-brand-primary" : "border-slate-100 hover:border-blue-200",
-    amber: active ? "border-amber-500 shadow-amber-500/20 ring-1 ring-amber-500" : "border-slate-100 hover:border-amber-200",
-    emerald: active ? "border-emerald-500 shadow-emerald-500/20 ring-1 ring-emerald-500" : "border-slate-100 hover:border-emerald-200",
-    red: active ? "border-red-500 shadow-red-500/20 ring-1 ring-red-500" : "border-slate-100 hover:border-red-200",
+  const iconBg: Record<string, string> = {
+    blue: "bg-blue-500/10 text-blue-500", amber: "bg-amber-500/10 text-amber-500",
+    emerald: "bg-emerald-500/10 text-emerald-500", red: "bg-red-500/10 text-red-500",
   };
-
   return (
-    <div
-      onClick={onClick}
-      className={`group cursor-pointer bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/40 border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl animate-in fade-in zoom-in duration-500 ${bgStyles[color as keyof typeof bgStyles]} ${isAlert ? 'animate-pulse' : ''}`}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-2xl border transition-colors duration-300 ${colorStyles[color as keyof typeof colorStyles]}`}>
-          <Icon className="w-6 h-6" />
-        </div>
-        <div className="text-slate-300 group-hover:text-slate-400 group-hover:translate-x-1 transition-all">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
-      </div>
-      <div>
-        <h3 className="text-slate-500 font-semibold text-sm mb-1 group-hover:text-slate-600 transition-colors uppercase tracking-wider">{title}</h3>
-        <p className="text-4xl font-extrabold text-slate-800 transition-colors">{value}</p>
-      </div>
+    <div onClick={onClick} className={`cursor-pointer bg-card rounded-3xl p-6 shadow-xl border-2 transition-all hover:-translate-y-1 ${colors[color]}`}>
+      <div className={`p-3 rounded-2xl w-fit mb-4 ${iconBg[color]}`}><Icon className="w-6 h-6" /></div>
+      <p className="text-[10px] font-black text-slate-500 dark:text-foreground/40 uppercase tracking-widest mb-1">{title}</p>
+      <p className="text-4xl font-black text-foreground">{value}</p>
     </div>
   );
 }
 
-function Badge({ type, value, overdue }: { type: 'status' | 'priority', value: string, overdue?: boolean }) {
-  if (type === 'status') {
-    if (overdue) {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 shadow-sm">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping absolute"></span>
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 relative"></span>
-          Overdue
-        </span>
-      );
-    }
-    
-    switch (value) {
-      case 'Pending':
-        return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200"><span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Pending</span>;
-      case 'In Progress':
-        return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>In Progress</span>;
-      case 'Completed':
-        return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Completed</span>;
-      default:
-        return <span>{value}</span>;
-    }
-  }
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    "Pending": "bg-slate-100 text-slate-700 border-slate-200",
+    "In Progress": "bg-blue-50 text-blue-700 border-blue-200",
+    "Completed": "bg-emerald-50 text-emerald-700 border-emerald-200",
+  };
+  const dot: Record<string, string> = {
+    "Pending": "bg-slate-400", "In Progress": "bg-blue-500 animate-pulse", "Completed": "bg-emerald-500"
+  };
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${map[status] || "bg-slate-100 text-slate-700 border-slate-200"}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dot[status] || "bg-slate-400"}`} />{status}
+    </span>
+  );
+}
 
-  // Priority
-  switch (value) {
-    case 'High':
-      return <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold text-amber-700 bg-amber-50">High</span>;
-    case 'Medium':
-      return <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold text-slate-600 bg-slate-100">Medium</span>;
-    case 'Low':
-      return <span className="inline-flex px-3 py-1 rounded-lg text-xs font-bold text-slate-500 bg-slate-50">Low</span>;
-    default:
-      return <span>{value}</span>;
-  }
+function PriorityBadge({ priority }: { priority: string }) {
+  const map: Record<string, string> = {
+    High: "text-red-700 bg-red-50 border border-red-200",
+    Medium: "text-amber-700 bg-amber-50 border border-amber-200",
+    Low: "text-slate-600 bg-slate-100 border border-slate-200",
+  };
+  return <span className={`inline-flex px-3 py-1 rounded-lg text-xs font-bold ${map[priority] || ""}`}>{priority}</span>;
 }

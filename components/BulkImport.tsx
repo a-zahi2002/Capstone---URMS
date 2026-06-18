@@ -124,7 +124,7 @@ export default function BulkImport({ isOpen, onClose, onSuccess }: BulkImportPro
     setErrors([]);
 
     try {
-      const token = user ? await user.getIdToken() : "dev-token";
+      const token = (user && typeof user.getIdToken === 'function') ? await user.getIdToken() : "dev-token";
       
       const response = await fetch("http://localhost:5000/api/resources/import", {
         method: "POST",

@@ -8,10 +8,38 @@ import { resourcesData, ResourceInterface } from "@/data/resources";
 export default function ExploreResourcesPage() {
   const [selectedResource, setSelectedResource] = useState<ResourceInterface | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [resourcesData, setResourcesData] = useState<ResourceInterface[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Categories for filtering
   const categories = ["All", "Academic", "Research", "Public", "Facilities"];
   const [activeCategory, setActiveCategory] = useState("All");
+
+  React.useEffect(() => {
+    fetch('http://localhost:5000/api/resources', {
+      headers: {
+        'Authorization': `Bearer dev-token`
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        // Map backend resources to frontend interface
+        const mapped = data.data?.map((r: any) => ({
+          id: r.id.toString(),
+          name: r.name,
+          category: r.type === 'Labs' ? 'Research' : r.type === 'Lecture Halls' ? 'Academic' : 'Facilities',
+          image: "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=800", // placeholder
+          location: r.location || "Main Campus",
+          capacity: r.capacity || 0,
+          status: r.availability_status === 'Available' ? 'Available' : 'Booked',
+          description: "Resource provided by university.",
+          amenities: ["Wi-Fi", "Whiteboard"]
+        })) || [];
+        setResourcesData(mapped);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
   const filteredResources = resourcesData.filter((res) => 
     activeCategory === "All" ? true : res.category === activeCategory
@@ -62,17 +90,23 @@ export default function ExploreResourcesPage() {
       </div>
 
       {/* Grid Layout */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredResources.map((resource) => (
-          <ResourceCard 
-            key={resource.id} 
-            resource={resource} 
-            onClick={() => handleOpenModal(resource)} 
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="max-w-7xl mx-auto py-20 text-center">
+            <p className="text-slate-500 text-lg">Loading resources...</p>
+        </div>
+      ) : (
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredResources.map((resource) => (
+            <ResourceCard 
+              key={resource.id} 
+              resource={resource} 
+              onClick={() => handleOpenModal(resource)} 
+            />
+          ))}
+        </div>
+      )}
 
-      {filteredResources.length === 0 && (
+      {!loading && filteredResources.length === 0 && (
         <div className="max-w-3xl mx-auto text-center py-20 bg-white rounded-3xl border border-slate-200 mt-8">
           <p className="text-slate-500 text-lg font-medium">No resources found in this category.</p>
         </div>
