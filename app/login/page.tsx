@@ -125,9 +125,47 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoClick = (role: "admin" | "maintenance" | "lecturer" | "student") => {
-    setMockUser(role);
-    router.push("/dashboard");
+  const handleDemoClick = async (role: "admin" | "maintenance" | "lecturer" | "student") => {
+    setError(null);
+    setLoading(true);
+    try {
+      const email = `${role}@demo.lk`;
+      const password = "Password123";
+      
+      if (auth) {
+        await signIn(email, password);
+        try {
+          const token = await auth.currentUser?.getIdToken();
+          if (token) {
+            await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/users/verify-password`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ email, password }),
+              }
+            );
+          }
+        } catch (verifyErr) {
+          console.warn("Bcrypt verification failed:", verifyErr);
+        }
+      } else {
+        // Fallback to mock user if Firebase is not initialized
+        setMockUser(role);
+      }
+      router.push("/dashboard");
+    } catch (err: any) {
+      if (role !== "admin" && (err.message.includes("user-not-found") || err.message.includes("invalid-credential"))) {
+        setError(`Demo ${role} user does not exist. Please log in as Admin (admin@demo.lk / Password123) and create this user via the User Management panel.`);
+      } else {
+        setError(`Demo login failed: ${err.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

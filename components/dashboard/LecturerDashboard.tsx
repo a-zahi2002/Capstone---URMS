@@ -33,6 +33,9 @@ export default function LecturerDashboard() {
     const { profile, user } = useAuth();
     const searchParams = useSearchParams();
     const activeTab = searchParams.get("tab") || "overview";
+    const [deptResourcesCount, setDeptResourcesCount] = useState<number | string>("—");
+    const [upcomingClassesCount, setUpcomingClassesCount] = useState<number | string>("—");
+    const [studentsActiveCount, setStudentsActiveCount] = useState<number | string>("—");
     const [pendingBookings, setPendingBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -45,15 +48,47 @@ export default function LecturerDashboard() {
         setError(null);
         try {
             const token = user ? await user.getIdToken() : "dev-token";
-            const res = await fetch(`${API}/api/bookings/pending`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!res.ok) throw new Error("Failed to load pending requests");
-            const result = await res.json();
-            if (result.status === "success") {
+            const headers = { Authorization: `Bearer ${token}` };
+
+            const [pendingRes, allResourcesRes, allBookingsRes] = await Promise.allSettled([
+                fetch(`${API}/api/bookings/pending`, { headers }),
+                fetch(`${API}/api/resources`, { headers }),
+                fetch(`${API}/api/bookings`, { headers }),
+            ]);
+
+            if (pendingRes.status === "fulfilled" && pendingRes.value.ok) {
+                const result = await pendingRes.value.json();
                 setPendingBookings(result.data || []);
-            } else {
-                throw new Error(result.message || "Unknown error");
+            }
+
+            let resources: any[] = [];
+            if (allResourcesRes.status === "fulfilled" && allResourcesRes.value.ok) {
+                const data = await allResourcesRes.value.json();
+                resources = Array.isArray(data) ? data : data.data || [];
+                const deptRes = resources.filter((r: any) => r.department === profile?.department);
+                setDeptResourcesCount(deptRes.length);
+            }
+
+            if (allBookingsRes.status === "fulfilled" && allBookingsRes.value.ok && resources.length > 0) {
+                const resJson = await allBookingsRes.value.json();
+                const bookings = Array.isArray(resJson.data) ? resJson.data : (Array.isArray(resJson) ? resJson : []);
+                
+                const deptResIds = new Set(resources.filter((r: any) => r.department === profile?.department).map((r: any) => r.id));
+                
+                const now = new Date();
+                const upcoming = bookings.filter((b: any) => 
+                    deptResIds.has(b.resource_id) && 
+                    b.status === "Approved" && 
+                    new Date(b.start_time) > now
+                );
+                setUpcomingClassesCount(upcoming.length);
+
+                const activeStudents = new Set(
+                    bookings
+                        .filter((b: any) => deptResIds.has(b.resource_id) && b.users?.role === "student")
+                        .map((b: any) => b.user_id)
+                );
+                setStudentsActiveCount(activeStudents.size);
             }
         } catch (err: any) {
             console.error("fetchPending error:", err);
@@ -61,7 +96,7 @@ export default function LecturerDashboard() {
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, profile]);
 
     useEffect(() => { fetchPending(); }, [fetchPending]);
 
@@ -159,9 +194,9 @@ export default function LecturerDashboard() {
                     <motion.div variants={fadeInUp} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
                             { label: "Pending Approvals", value: pendingBookings.length, icon: Clock, color: "amber", link: "/dashboard?tab=approvals" },
-                            { label: "Dept. Resources", value: "—", icon: Package, color: "emerald" },
-                            { label: "Upcoming Classes", value: "—", icon: CalendarDays, color: "blue", link: "/bookings?view=all" },
-                            { label: "Students Active", value: "—", icon: Users, color: "purple" },
+                            { label: "Dept. Resources", value: deptResourcesCount, icon: Package, color: "emerald" },
+                            { label: "Upcoming Classes", value: upcomingClassesCount, icon: CalendarDays, color: "blue", link: "/bookings?view=all" },
+                            { label: "Students Active", value: studentsActiveCount, icon: Users, color: "purple" },
                         ].map(({ label, value, icon: Icon, color, link }) => {
                             const card = (
                                 <div className="bg-card border border-slate-200 dark:border-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-emerald-500/30 transition-all h-full">

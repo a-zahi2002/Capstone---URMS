@@ -39,6 +39,10 @@ export default function AdminDashboard() {
         totalResources: 0,
         activeBookings: 0,
         maintenanceTickets: 0,
+        studentCount: 0,
+        lecturerCount: 0,
+        maintenanceCount: 0,
+        adminCount: 0,
     });
     const [loading, setLoading] = useState(true);
     const [recentActivity, setRecentActivity] = useState<any[]>([]);
@@ -53,13 +57,21 @@ export default function AdminDashboard() {
         try {
             const token = await getToken();
             // Fetch multiple endpoints in parallel for dashboard stats
-            const [resourcesRes, ticketsRes] = await Promise.allSettled([
+            const [resourcesRes, ticketsRes, usersRes, bookingsRes] = await Promise.allSettled([
                 fetch(`${API}/api/resources`, { headers: { Authorization: `Bearer ${token}` } }),
                 fetch(`${API}/api/maintenance-tickets`, { headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`${API}/api/users`, { headers: { Authorization: `Bearer ${token}` } }),
+                fetch(`${API}/api/bookings`, { headers: { Authorization: `Bearer ${token}` } }),
             ]);
 
             let resourceCount = 0;
             let ticketCount = 0;
+            let userCount = 0;
+            let activeBookingCount = 0;
+            let studentCount = 0;
+            let lecturerCount = 0;
+            let maintenanceCount = 0;
+            let adminCount = 0;
 
             if (resourcesRes.status === "fulfilled" && resourcesRes.value.ok) {
                 const data = await resourcesRes.value.json();
@@ -72,11 +84,36 @@ export default function AdminDashboard() {
                 ticketCount = Array.isArray(data) ? data.filter((t: any) => t.status !== "COMPLETED").length : 0;
             }
 
+            if (usersRes.status === "fulfilled" && usersRes.value.ok) {
+                const resJson = await usersRes.value.json();
+                const users = Array.isArray(resJson.data) ? resJson.data : (Array.isArray(resJson) ? resJson : []);
+                userCount = users.length;
+                users.forEach((u: any) => {
+                    if (u.role === "student") studentCount++;
+                    else if (u.role === "lecturer") lecturerCount++;
+                    else if (u.role === "maintenance") maintenanceCount++;
+                    else if (u.role === "admin") adminCount++;
+                });
+            }
+
+            if (bookingsRes.status === "fulfilled" && bookingsRes.value.ok) {
+                const resJson = await bookingsRes.value.json();
+                const bookings = Array.isArray(resJson.data) ? resJson.data : (Array.isArray(resJson) ? resJson : []);
+                const now = new Date();
+                activeBookingCount = bookings.filter((b: any) => 
+                    b.status === "Approved" && new Date(b.end_time) > now
+                ).length;
+            }
+
             setStats({
-                totalUsers: 842, // Placeholder — would come from user management API
-                totalResources: resourceCount || 156,
-                activeBookings: 67, // Placeholder — would come from bookings count API
-                maintenanceTickets: ticketCount || 12,
+                totalUsers: userCount,
+                totalResources: resourceCount,
+                activeBookings: activeBookingCount,
+                maintenanceTickets: ticketCount,
+                studentCount,
+                lecturerCount,
+                maintenanceCount,
+                adminCount,
             });
         } catch (e) {
             console.error("Failed to fetch admin stats:", e);
@@ -227,10 +264,10 @@ export default function AdminDashboard() {
                     </div>
                     <div className="space-y-3">
                         {[
-                            { role: "Students", count: 623, color: "blue" },
-                            { role: "Lecturers", count: 87, color: "emerald" },
-                            { role: "Maintenance", count: 15, color: "amber" },
-                            { role: "Admins", count: 5, color: "purple" },
+                            { role: "Students", count: stats.studentCount, color: "blue" },
+                            { role: "Lecturers", count: stats.lecturerCount, color: "emerald" },
+                            { role: "Maintenance", count: stats.maintenanceCount, color: "amber" },
+                            { role: "Admins", count: stats.adminCount, color: "purple" },
                         ].map(item => (
                             <div key={item.role} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-border">
                                 <div className="flex items-center gap-3">

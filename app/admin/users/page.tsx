@@ -21,7 +21,9 @@ import {
     Save,
     CheckCircle2,
     AlertCircle,
-    KeyRound
+    KeyRound,
+    Eye,
+    EyeOff
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -83,6 +85,7 @@ export default function UserManagementPage() {
     });
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
+    const [showFormPassword, setShowFormPassword] = useState(false);
 
     const getToken = useCallback(async () => {
         if (user && typeof user.getIdToken === "function") return user.getIdToken();
@@ -227,6 +230,7 @@ export default function UserManagementPage() {
             password: "" // Keep empty unless updating
         });
         setFormError(null);
+        setShowFormPassword(false);
         setEditModalOpen(true);
     };
 
@@ -269,6 +273,7 @@ export default function UserManagementPage() {
                             onClick={() => {
                                 setFormData({ name: "", email: "", role: "student", department: "", password: "" });
                                 setFormError(null);
+                                setShowFormPassword(false);
                                 setCreateModalOpen(true);
                             }}
                             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-primary text-white font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-brand-primary/20"
@@ -428,7 +433,7 @@ export default function UserManagementPage() {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                onClick={() => { setCreateModalOpen(false); setEditModalOpen(false); }}
+                                onClick={() => { setCreateModalOpen(false); setEditModalOpen(false); setShowFormPassword(false); }}
                                 className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
                             />
 
@@ -445,7 +450,7 @@ export default function UserManagementPage() {
                                         {createModalOpen ? "Register Member" : "Update Member"}
                                     </h3>
                                     <button
-                                        onClick={() => { setCreateModalOpen(false); setEditModalOpen(false); }}
+                                        onClick={() => { setCreateModalOpen(false); setEditModalOpen(false); setShowFormPassword(false); }}
                                         className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-foreground/10 text-slate-400"
                                     >
                                         <X className="w-5 h-5" />
@@ -523,14 +528,28 @@ export default function UserManagementPage() {
                                         <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">
                                             {createModalOpen ? "Credentials Password" : "New Password (optional)"}
                                         </label>
-                                        <input
-                                            type="password"
-                                            required={createModalOpen}
-                                            value={formData.password}
-                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            placeholder={createModalOpen ? "Min 8 characters" : "Leave blank to keep unchanged"}
-                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none"
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type={showFormPassword ? "text" : "password"}
+                                                required={createModalOpen}
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                placeholder={createModalOpen ? "Min 8 characters" : "Leave blank to keep unchanged"}
+                                                className="block w-full pl-4 pr-11 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowFormPassword(!showFormPassword)}
+                                                className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                                title={showFormPassword ? "Hide password" : "Show password"}
+                                            >
+                                                {showFormPassword ? (
+                                                    <EyeOff className="w-4 h-4" />
+                                                ) : (
+                                                    <Eye className="w-4 h-4" />
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {/* Actions */}
@@ -545,7 +564,7 @@ export default function UserManagementPage() {
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => { setCreateModalOpen(false); setEditModalOpen(false); }}
+                                            onClick={() => { setCreateModalOpen(false); setEditModalOpen(false); setShowFormPassword(false); }}
                                             className="px-5 py-3 border border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-foreground/5 text-slate-600 dark:text-slate-400 font-bold text-xs uppercase tracking-widest rounded-xl transition-all"
                                         >
                                             Cancel
