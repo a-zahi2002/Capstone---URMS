@@ -15,6 +15,7 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import morgan from "morgan";
 import { globalLimiter, authLimiter } from "./middleware/rateLimiter";
 
 dotenv.config();
@@ -98,11 +99,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Simple logger
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
+// ✅ Security Logging (morgan)
+// Use 'combined' format to capture IP addresses, status codes (including 401/403s), and endpoints.
+app.use(morgan('combined'));
 
 // ✅ Rate Limiting
 // Global limiter — 100 requests per 15 min per IP for all API routes
@@ -154,6 +153,17 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({
     status: "error",
     message: "Route not found",
+  });
+});
+
+// ✅ Global Error Handler (Hides stack traces in production)
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error(`[Global Error] ${err.message}`, err.stack);
+  
+  res.status(err.status || 500).json({
+    status: "error",
+    message: process.env.NODE_ENV === 'production' ? "Internal Server Error" : err.message,
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
   });
 });
 
