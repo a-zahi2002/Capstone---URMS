@@ -3,7 +3,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import NewBookingModal from "@/components/NewBookingModal";
+import EditBookingModal from "@/components/EditBookingModal";
+import DeleteBookingModal from "@/components/DeleteBookingModal";
+import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 import {
     Plus,
     Search,
@@ -157,7 +162,11 @@ const getBookingStatusClasses = (statusLabel: string) => {
 };
 
 export default function BookingsPage() {
+    const { user } = useAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editBooking, setEditBooking] = useState<BookingRow | null>(null);
+    const [deleteBooking, setDeleteBooking] = useState<BookingRow | null>(null);
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
     const [resources, setResources] = useState<ResourceItem[]>([]);
     const [bookings, setBookings] = useState<BookingRow[]>([]);
     const [loadingResources, setLoadingResources] = useState(true);
@@ -259,22 +268,24 @@ export default function BookingsPage() {
             setLoadingBookings(true);
             setBookingError(null);
             try {
-                let query = supabase
-                    .from("bookings")
-                    .select(
-                        "id, resource_id, start_time, end_time, status, resources ( id, name, type, location )"
-                    )
-                    .lt("start_time", rangeEndIso)
-                    .gt("end_time", rangeStartIso)
-                    .order("start_time", { ascending: true });
-
+                const token = user ? await user.getIdToken() : "dev-token";
+                let url = `${API}/api/bookings?from=${rangeStartIso}&to=${rangeEndIso}`;
                 if (selectedResourceId !== "all") {
-                    query = query.eq("resource_id", selectedResourceId);
+                    url += `&resource_id=${selectedResourceId}`;
                 }
 
-                const { data, error } = await query;
-                if (error) throw error;
-                if (isActive) setBookings((data as BookingRow[]) || []);
+                const res = await fetch(url, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                const result = await res.json();
+                if (!res.ok || result.status === "error") {
+                    throw new Error(result.message || "Failed to load bookings.");
+                }
+
+                if (isActive) setBookings((result.data as BookingRow[]) || []);
             } catch (err: any) {
                 if (isActive) {
                     setBookingError(err.message || "Failed to load bookings.");
@@ -287,7 +298,7 @@ export default function BookingsPage() {
         return () => {
             isActive = false;
         };
-    }, [rangeStartIso, rangeEndIso, selectedResourceId, refreshSignal]);
+    }, [rangeStartIso, rangeEndIso, selectedResourceId, refreshSignal, user]);
 
     const daySummaries = useMemo(() => {
         const summaries = new Map<string, DaySummary>();
@@ -427,6 +438,28 @@ export default function BookingsPage() {
 
     const handleBookingRefresh = () => {
         setRefreshSignal((value) => value + 1);
+    };
+
+    const handleCancelBooking = async (bookingId: string) => {
+        try {
+            const token = user ? await user.getIdToken() : "dev-token";
+            const res = await fetch(`${API}/api/bookings/${bookingId}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: "Cancelled" })
+            });
+            const result = await res.json();
+            if (!res.ok || result.status === "error") {
+                throw new Error(result.message || "Failed to cancel booking");
+            }
+            handleBookingRefresh();
+            setActiveDropdown(null);
+        } catch (err: any) {
+            alert(err.message || "An error occurred");
+        }
     };
 
     return (
@@ -724,10 +757,42 @@ export default function BookingsPage() {
                                                         {statusLabel}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-5 text-right">
-                                                    <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-slate-600">
+                                                <td className="px-6 py-5 text-right relative">
+                                                    <button 
+                                                        onClick={() => setActiveDropdown(activeDropdown === booking.id ? null : booking.id)}
+                                                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
+                                                    >
                                                         <MoreVertical className="w-5 h-5" />
                                                     </button>
+                                                    
+                                                    {activeDropdown === booking.id && (
+                                                        <div className="absolute right-8 top-10 z-10 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden text-left animate-in fade-in zoom-in-95">
+                                                            <div className="py-1">
+                                                                {booking.status === "Pending" && (
+                                                                    <button 
+                                                                        onClick={() => { setEditBooking(booking); setActiveDropdown(null); }}
+                                                                        className="w-full px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 text-left"
+                                                                    >
+                                                                        Edit Booking
+                                                                    </button>
+                                                                )}
+                                                                {(booking.status === "Pending" || booking.status === "Confirmed") && (
+                                                                    <button 
+                                                                        onClick={() => handleCancelBooking(booking.id)}
+                                                                        className="w-full px-4 py-2 text-sm font-semibold text-amber-600 hover:bg-amber-50 text-left"
+                                                                    >
+                                                                        Cancel Booking
+                                                                    </button>
+                                                                )}
+                                                                <button 
+                                                                    onClick={() => { setDeleteBooking(booking); setActiveDropdown(null); }}
+                                                                    className="w-full px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 text-left"
+                                                                >
+                                                                    Delete Record
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );
@@ -765,6 +830,20 @@ export default function BookingsPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSuccess={handleBookingRefresh}
+            />
+
+            <EditBookingModal
+                isOpen={!!editBooking}
+                onClose={() => setEditBooking(null)}
+                onSuccess={handleBookingRefresh}
+                booking={editBooking}
+            />
+
+            <DeleteBookingModal
+                isOpen={!!deleteBooking}
+                onClose={() => setDeleteBooking(null)}
+                onSuccess={handleBookingRefresh}
+                booking={deleteBooking}
             />
         </ProtectedRoute>
     );
