@@ -56,3 +56,5 @@ export const broadcastNotification = (event: string, payload: any) => {
         io.emit(event, payload);
     }
 };
+
+// Trigger nodemon restart
