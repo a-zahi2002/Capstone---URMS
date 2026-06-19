@@ -6,6 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import NewBookingModal from "@/components/NewBookingModal";
 import EditBookingModal from "@/components/EditBookingModal";
 import DeleteBookingModal from "@/components/DeleteBookingModal";
+import PersonalBookingDashboard from "@/components/dashboard/PersonalBookingDashboard";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
 
@@ -672,201 +673,195 @@ function BookingsPageContent() {
                 </section>
                 )}
 
-                {/* Status Tabs (Booking Status View Only) */}
-                {view === "status" && (
-                    <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-200/50 dark:border-white/[0.06] pb-4">
-                        {["All", "Pending", "Confirmed", "Rejected"].map((status) => (
-                            <button
-                                key={status}
-                                onClick={() => setStatusFilter(status)}
-                                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                                    statusFilter === status
-                                        ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/10"
-                                        : "bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-foreground/60 hover:bg-slate-100 dark:hover:bg-white/10"
-                                }`}
-                            >
-                                {status}
-                            </button>
-                        ))}
-                    </div>
-                )}
+                {view === "my" || view === "status" ? (
+                    <PersonalBookingDashboard
+                        bookings={bookings}
+                        loadingBookings={loadingBookings}
+                        onEditBooking={setEditBooking}
+                        onDeleteBooking={setDeleteBooking}
+                        onCancelBooking={handleCancelBooking}
+                        view={view}
+                    />
+                ) : (
+                    <>
+                        {/* Filters & Search */}
+                        <div className="bg-white dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm mb-8 flex flex-col lg:flex-row gap-4">
+                            <div className="relative flex-1 group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-brand-primary" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search by resource name, type, or location..."
+                                    className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#0c0a14] border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
+                                />
+                            </div>
+                            <div className="flex gap-4">
+                                <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                    <Filter className="w-4 h-4" />
+                                    Filters
+                                </button>
+                                <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                    <Calendar className="w-4 h-4" />
+                                    {calendarLabel || "Select range"}
+                                </button>
+                            </div>
+                        </div>
 
-                {/* Filters & Search */}
-                <div className="bg-white dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm mb-8 flex flex-col lg:flex-row gap-4">
-                    <div className="relative flex-1 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-brand-primary" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search by resource name, type, or location..."
-                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#0c0a14] border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
-                        />
-                    </div>
-                    <div className="flex gap-4">
-                        <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                            <Filter className="w-4 h-4" />
-                            Filters
-                        </button>
-                        <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                            <Calendar className="w-4 h-4" />
-                            {calendarLabel || "Select range"}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Bookings Table */}
-                <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="bg-slate-50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/[0.06]">
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Resource / Facility</th>
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Date & Time</th>
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Status</th>
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50 dark:divide-white/[0.04]">
-                                {loadingBookings ? (
-                                    <tr>
-                                        <td
-                                            colSpan={4}
-                                            className="px-6 py-10 text-center text-sm font-semibold text-slate-400"
-                                        >
-                                            Loading bookings...
-                                        </td>
-                                    </tr>
-                                ) : filteredBookings.length === 0 ? (
-                                    <tr>
-                                        <td
-                                            colSpan={4}
-                                            className="px-6 py-10 text-center text-sm font-semibold text-slate-400"
-                                        >
-                                            No bookings found for this range.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredBookings.map((booking) => {
-                                        const statusLabel = normalizeBookingStatus(booking.status);
-                                        const resource = getBookingResource(booking);
-                                        const resourceName =
-                                            resource?.name || "Unknown resource";
-                                        const resourceMeta = resource
-                                            ? `${resource.type} - ${resource.location}`
-                                            : "Resource details unavailable";
-                                        const dateLabel = formatDateLabel(booking.start_time);
-                                        const timeLabel = `${formatTimeLabel(
-                                            booking.start_time
-                                        )} - ${formatTimeLabel(booking.end_time)}`;
-
-                                        return (
-                                            <tr
-                                                key={booking.id}
-                                                className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors group"
-                                            >
-                                                <td className="px-6 py-5">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-2xl bg-brand-primary/5 flex items-center justify-center">
-                                                            <MapPin className="w-5 h-5 text-brand-primary" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-bold text-slate-900 dark:text-foreground">
-                                                                {resourceName}
-                                                            </p>
-                                                            <p className="text-xs font-medium text-slate-500 dark:text-foreground/45 italic">
-                                                                {resourceMeta}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <div className="flex flex-col gap-1">
-                                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-foreground/80">
-                                                            <Calendar className="w-3.5 h-3.5" />
-                                                            {dateLabel}
-                                                        </div>
-                                                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-foreground/50">
-                                                            <Clock className="w-3.5 h-3.5" />
-                                                            {timeLabel}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <span
-                                                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${getBookingStatusClasses(
-                                                            statusLabel
-                                                        )}`}
-                                                    >
-                                                        {statusLabel}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-5 text-right relative">
-                                                    <button 
-                                                        onClick={() => setActiveDropdown(activeDropdown === booking.id ? null : booking.id)}
-                                                        className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
-                                                    >
-                                                        <MoreVertical className="w-5 h-5" />
-                                                    </button>
-                                                    
-                                                    {activeDropdown === booking.id && (
-                                                        <div className="absolute right-8 top-10 z-10 w-48 bg-white dark:bg-slate-950 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 overflow-hidden text-left animate-in fade-in zoom-in-95">
-                                                            <div className="py-1">
-                                                                {booking.status === "Pending" && (
-                                                                    <button 
-                                                                        onClick={() => { setEditBooking(booking); setActiveDropdown(null); }}
-                                                                        className="w-full px-4 py-2 text-sm font-semibold text-slate-700 dark:text-foreground/80 hover:bg-slate-55 dark:hover:bg-white/5 text-left"
-                                                                    >
-                                                                        Edit Booking
-                                                                    </button>
-                                                                )}
-                                                                {(booking.status === "Pending" || booking.status === "Confirmed") && (
-                                                                    <button 
-                                                                        onClick={() => handleCancelBooking(booking.id)}
-                                                                        className="w-full px-4 py-2 text-sm font-semibold text-amber-650 hover:bg-amber-50 dark:hover:bg-amber-500/10 text-left"
-                                                                    >
-                                                                        Cancel Booking
-                                                                    </button>
-                                                                )}
-                                                                <button 
-                                                                    onClick={() => { setDeleteBooking(booking); setActiveDropdown(null); }}
-                                                                    className="w-full px-4 py-2 text-sm font-semibold text-rose-650 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-left"
-                                                                >
-                                                                    Delete Record
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
+                        {/* Bookings Table */}
+                        <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-slate-50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/[0.06]">
+                                            <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Resource / Facility</th>
+                                            <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Date & Time</th>
+                                            <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Status</th>
+                                            <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+                                        {loadingBookings ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={4}
+                                                    className="px-6 py-10 text-center text-sm font-semibold text-slate-400"
+                                                >
+                                                    Loading bookings...
                                                 </td>
                                             </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div className="px-6 py-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
-                        <p className="text-xs font-bold text-slate-500 dark:text-foreground/45 items-center">
-                            {loadingBookings
-                                ? "Loading bookings..."
-                                : `Showing ${shownBookings} of ${totalBookings} bookings`}
-                        </p>
-                        <div className="flex gap-2">
-                            <button
-                                disabled
-                                className="px-3 py-1 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold bg-white dark:bg-white/5 text-slate-400 dark:text-foreground/30 cursor-not-allowed"
-                            >
-                                Prev
-                            </button>
-                            <button
-                                disabled
-                                className="px-3 py-1 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold bg-white dark:bg-white/5 text-slate-400 dark:text-foreground/30 cursor-not-allowed"
-                            >
-                                Next
-                            </button>
+                                        ) : filteredBookings.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={4}
+                                                    className="px-6 py-10 text-center text-sm font-semibold text-slate-400"
+                                                >
+                                                    No bookings found for this range.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            filteredBookings.map((booking) => {
+                                                const statusLabel = normalizeBookingStatus(booking.status);
+                                                const resource = getBookingResource(booking);
+                                                const resourceName =
+                                                    resource?.name || "Unknown resource";
+                                                const resourceMeta = resource
+                                                    ? `${resource.type} - ${resource.location}`
+                                                    : "Resource details unavailable";
+                                                const dateLabel = formatDateLabel(booking.start_time);
+                                                const timeLabel = `${formatTimeLabel(
+                                                    booking.start_time
+                                                )} - ${formatTimeLabel(booking.end_time)}`;
+
+                                                return (
+                                                    <tr
+                                                        key={booking.id}
+                                                        className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors group"
+                                                    >
+                                                        <td className="px-6 py-5">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-10 h-10 rounded-2xl bg-brand-primary/5 flex items-center justify-center">
+                                                                    <MapPin className="w-5 h-5 text-brand-primary" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-slate-900 dark:text-foreground">
+                                                                        {resourceName}
+                                                                    </p>
+                                                                    <p className="text-xs font-medium text-slate-500 dark:text-foreground/45 italic">
+                                                                        {resourceMeta}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-5">
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-foreground/80">
+                                                                    <Calendar className="w-3.5 h-3.5" />
+                                                                    {dateLabel}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-foreground/50">
+                                                                    <Clock className="w-3.5 h-3.5" />
+                                                                    {timeLabel}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-5">
+                                                            <span
+                                                                className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${getBookingStatusClasses(
+                                                                    statusLabel
+                                                                )}`}
+                                                            >
+                                                                {statusLabel}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-5 text-right relative">
+                                                            <button 
+                                                                onClick={() => setActiveDropdown(activeDropdown === booking.id ? null : booking.id)}
+                                                                className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
+                                                            >
+                                                                <MoreVertical className="w-5 h-5" />
+                                                            </button>
+                                                            
+                                                            {activeDropdown === booking.id && (
+                                                                <div className="absolute right-8 top-10 z-10 w-48 bg-white dark:bg-slate-950 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 overflow-hidden text-left animate-in fade-in zoom-in-95">
+                                                                    <div className="py-1">
+                                                                        {booking.status === "Pending" && (
+                                                                            <button 
+                                                                                onClick={() => { setEditBooking(booking); setActiveDropdown(null); }}
+                                                                                className="w-full px-4 py-2 text-sm font-semibold text-slate-700 dark:text-foreground/80 hover:bg-slate-55 dark:hover:bg-white/5 text-left"
+                                                                            >
+                                                                                Edit Booking
+                                                                            </button>
+                                                                        )}
+                                                                        {(booking.status === "Pending" || booking.status === "Confirmed") && (
+                                                                            <button 
+                                                                                onClick={() => handleCancelBooking(booking.id)}
+                                                                                className="w-full px-4 py-2 text-sm font-semibold text-amber-650 hover:bg-amber-50 dark:hover:bg-amber-500/10 text-left"
+                                                                            >
+                                                                                Cancel Booking
+                                                                            </button>
+                                                                        )}
+                                                                        <button 
+                                                                            onClick={() => { setDeleteBooking(booking); setActiveDropdown(null); }}
+                                                                            className="w-full px-4 py-2 text-sm font-semibold text-rose-650 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-left"
+                                                                        >
+                                                                            Delete Record
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="px-6 py-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+                                <p className="text-xs font-bold text-slate-500 dark:text-foreground/45 items-center">
+                                    {loadingBookings
+                                        ? "Loading bookings..."
+                                        : `Showing ${shownBookings} of ${totalBookings} bookings`}
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        disabled
+                                        className="px-3 py-1 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold bg-white dark:bg-white/5 text-slate-400 dark:text-foreground/30 cursor-not-allowed"
+                                    >
+                                        Prev
+                                    </button>
+                                    <button
+                                        disabled
+                                        className="px-3 py-1 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold bg-white dark:bg-white/5 text-slate-400 dark:text-foreground/30 cursor-not-allowed"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </>
+                )}
             </div>
 
             {/* New Booking Modal */}

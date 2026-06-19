@@ -51,6 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser);
             if (firebaseUser) {
+                // Set temporary headers with UID so that Supabase RLS allows the user to query their own profile
+                setSupabaseAuthHeaders(firebaseUser.uid, "student");
                 let userProfile = await getUserProfile(firebaseUser.uid);
                 
                 // If user exists in Firebase but has no profile in Supabase yet,

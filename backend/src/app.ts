@@ -23,9 +23,12 @@ app.use(cors({
     // Allow requests with no origin (e.g. server-to-server, curl)
     if (!origin) return callback(null, true);
     
-    // In development, allow localhost and 127.0.0.1 on any port
+    // In development, allow localhost, 127.0.0.1, and private local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) on any port
     if (process.env.NODE_ENV !== 'production') {
-      if (origin.match(/^http:\/\/localhost(:\d+)?$/) || origin.match(/^http:\/\/127\.0\.0\.1(:\d+)?$/)) {
+      const isLocal = origin.match(/^http:\/\/localhost(:\d+)?$/) ||
+                      origin.match(/^http:\/\/127\.0\.0\.1(:\d+)?$/) ||
+                      origin.match(/^http:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/);
+      if (isLocal) {
         return callback(null, true);
       }
     }

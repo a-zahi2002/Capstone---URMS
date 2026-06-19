@@ -22,7 +22,28 @@ import { supabase } from "../config/supabaseClient";
 import { BookingModel } from "../models/booking.model";
 import { sendNotification } from "../services/notificationService";
 import { sendNotificationToUser } from "../services/socketService";
-import { sendBookingConfirmationEmail, sendBookingRejectionEmail } from "../services/emailService";
+import {
+  sendBookingConfirmationEmail,
+  sendBookingRejectionEmail,
+  sendBookingCreatedEmail,
+  sendBookingCancelledEmail,
+  sendBookingModifiedEmail
+} from "../services/emailService";
+
+// Helper to check user email preferences
+const checkEmailPreference = async (userId: string): Promise<boolean> => {
+  try {
+    const { data: prefData } = await supabase
+      .from("user_preferences")
+      .select("email_bookings")
+      .eq("user_id", userId)
+      .maybeSingle();
+    return prefData ? prefData.email_bookings : true;
+  } catch (error) {
+    console.error("Error checking email preferences:", error);
+    return true; // default to true on error
+  }
+};
 
 // ── GET /api/bookings ──────────────────────────────────────
 /**
@@ -121,6 +142,47 @@ export const createBooking = async (req: AuthRequest, res: Response): Promise<vo
       req.supabase
     );
 
+    // Send email asynchronously in the background
+    (async () => {
+      try {
+        const isEmailEnabled = await checkEmailPreference(user_id);
+        if (!isEmailEnabled) return;
+
+        // Fetch user info
+        const { data: userData } = await supabase
+          .from("users")
+          .select("name, email")
+          .eq("id", user_id)
+          .single();
+
+        if (!userData || !userData.email) return;
+
+        // Fetch resource info
+        const { data: resData } = await supabase
+          .from("resources")
+          .select("name, location")
+          .eq("id", resource_id)
+          .single();
+
+        if (!resData) return;
+
+        const startObj = new Date(start_time);
+        const endObj = new Date(end_time);
+        const bookingDate = startObj.toLocaleDateString("en-US", { dateStyle: "medium" });
+        const bookingTime = `${startObj.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })} - ${endObj.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+
+        await sendBookingCreatedEmail(
+          userData.email,
+          userData.name,
+          resData.name,
+          bookingDate,
+          bookingTime
+        );
+      } catch (emailErr) {
+        console.error("❌ Failed to send booking created email:", emailErr);
+      }
+    })();
+
     res.status(201).json({ status: "success", message: "Booking created", data: created });
   } catch (error: any) {
     console.error("Error creating booking:", error);
@@ -180,6 +242,87 @@ export const updateBooking = async (req: AuthRequest, res: Response): Promise<vo
     if (!updated) {
       res.status(404).json({ status: "error", message: "Booking not found or no fields to update" });
       return;
+    }
+
+    // Trigger async emails based on transitions
+    const isCancelled = status === "Cancelled" && existing.status !== "Cancelled";
+    
+    // We only treat it as modified if the status isn't also being cancelled, and there's a real change in resource or times
+    const isModified = !isCancelled && (
+      (start_time && new Date(start_time).getTime() !== new Date(existing.start_time).getTime()) ||
+      (end_time && new Date(end_time).getTime() !== new Date(existing.end_time).getTime()) ||
+      (resource_id && resource_id !== existing.resource_id)
+    );
+
+    if (isCancelled || isModified) {
+      (async () => {
+        try {
+          const userId = existing.user_id;
+          const isEmailEnabled = await checkEmailPreference(userId);
+          if (!isEmailEnabled) return;
+
+          const targetUser = existing.users;
+          if (!targetUser || !targetUser.email) return;
+
+          // For cancellation
+          if (isCancelled) {
+            const resourceName = existing.resources?.name || "Resource";
+            const startObj = new Date(existing.start_time);
+            const endObj = new Date(existing.end_time);
+            const bookingDate = startObj.toLocaleDateString("en-US", { dateStyle: "medium" });
+            const bookingTime = `${startObj.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })} - ${endObj.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+
+            await sendBookingCancelledEmail(
+              targetUser.email,
+              targetUser.name,
+              resourceName,
+              bookingDate,
+              bookingTime
+            );
+          }
+
+          // For modification
+          if (isModified) {
+            // We need to fetch the new resource info if resource_id changed
+            let newResourceName = existing.resources?.name || "Resource";
+            if (resource_id && resource_id !== existing.resource_id) {
+              const { data: newRes } = await supabase
+                .from("resources")
+                .select("name")
+                .eq("id", resource_id)
+                .single();
+              if (newRes) newResourceName = newRes.name;
+            }
+
+            const oldStart = new Date(existing.start_time);
+            const oldEnd = new Date(existing.end_time);
+            const oldDate = oldStart.toLocaleDateString("en-US", { dateStyle: "medium" });
+            const oldTime = `${oldStart.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })} - ${oldEnd.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+
+            const newStartDate = new Date(newStart);
+            const newEndDate = new Date(newEnd);
+            const newDate = newStartDate.toLocaleDateString("en-US", { dateStyle: "medium" });
+            const newTime = `${newStartDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })} - ${newEndDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+
+            await sendBookingModifiedEmail(
+              targetUser.email,
+              targetUser.name,
+              {
+                resourceName: existing.resources?.name || "Resource",
+                bookingDate: oldDate,
+                bookingTime: oldTime
+              },
+              {
+                resourceName: newResourceName,
+                bookingDate: newDate,
+                bookingTime: newTime
+              }
+            );
+          }
+        } catch (emailErr) {
+          console.error("❌ Failed to send async update booking email:", emailErr);
+        }
+      })();
     }
 
     res.json({ status: "success", message: "Booking updated", data: updated });
