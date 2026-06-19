@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     email      TEXT UNIQUE NOT NULL,
     role       TEXT NOT NULL DEFAULT 'student', -- 'student', 'lecturer', 'admin', 'maintenance'
     department TEXT,                       -- Added for department-wise analytics
+    password_hash TEXT,                    -- Bcrypt hash for secure password storage (nullable for legacy/mock users)
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

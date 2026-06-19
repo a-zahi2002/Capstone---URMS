@@ -30,6 +30,8 @@ import {
   Clock
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { auth } from "@/lib/firebase";
+import { signOut as firebaseSignOut } from "firebase/auth";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
@@ -70,6 +72,39 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signIn(email, password);
+
+      // Secondary bcrypt verification against stored hash
+      try {
+        const token = await auth?.currentUser?.getIdToken();
+        if (token) {
+          const verifyResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/users/verify-password`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ email, password }),
+            }
+          );
+          if (verifyResponse.ok) {
+            const verifyData = await verifyResponse.json();
+            if (verifyData.valid === false) {
+              // Bcrypt hash mismatch — sign out and block login
+              if (auth) await firebaseSignOut(auth);
+              setError("Password verification failed. Please reset your password.");
+              setLoading(false);
+              return;
+            }
+          }
+          // If verify endpoint is unreachable, we allow login (graceful degradation)
+        }
+      } catch (verifyErr) {
+        // If bcrypt verification call fails, allow login but log a warning
+        console.warn("Bcrypt verification endpoint unreachable. Proceeding with Firebase auth only.", verifyErr);
+      }
+
       router.push("/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) {
