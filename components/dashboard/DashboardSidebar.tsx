@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -51,33 +51,33 @@ function getNavItems(role: string): NavItem[] {
         case "student":
             return [
                 { label: "Dashboard",        href: "/dashboard",  icon: LayoutDashboard },
-                { label: "My Bookings",      href: "/bookings",   icon: CalendarCheck },
+                { label: "My Bookings",      href: "/bookings?view=my",   icon: CalendarCheck },
                 { label: "Reserve Resources", href: "/resources",  icon: PackagePlus },
-                { label: "Booking Status",   href: "/bookings",   icon: ClipboardList },
+                { label: "Booking Status",   href: "/bookings?view=status",   icon: ClipboardList },
                 { label: "Notifications",    href: "/notifications", icon: Clock },
             ];
         case "lecturer":
             return [
                 { label: "Dashboard",           href: "/dashboard",      icon: LayoutDashboard },
                 { label: "Dept. Resources",     href: "/resources",      icon: Package },
-                { label: "Approval Queue",      href: "/dashboard",      icon: CheckCircle2 },
-                { label: "Schedule Overview",   href: "/bookings",       icon: CalendarDays },
-                { label: "My Bookings",         href: "/bookings",       icon: BookOpen },
+                { label: "Approval Queue",      href: "/dashboard?tab=approvals",      icon: CheckCircle2 },
+                { label: "Schedule Overview",   href: "/bookings?view=all",       icon: CalendarDays },
+                { label: "My Bookings",         href: "/bookings?view=my",       icon: BookOpen },
                 { label: "Notifications",       href: "/notifications",  icon: Clock },
             ];
         case "maintenance":
             return [
-                { label: "Dashboard",            href: "/dashboard",       icon: LayoutDashboard },
-                { label: "Ticket Queue",         href: "/maintenance",     icon: ListTodo },
-                { label: "Update Resources",     href: "/maintenance",     icon: Wrench },
-                { label: "Maint. Schedule",      href: "/maintenance/timeline", icon: CalendarDays },
-                { label: "Reports",              href: "/maintenance",     icon: FileText },
+                { label: "Dashboard",            href: "/dashboard",             icon: LayoutDashboard },
+                { label: "Ticket Queue",         href: "/maintenance",           icon: ListTodo },
+                { label: "Update Resources",     href: "/maintenance/resources",  icon: Wrench },
+                { label: "Maint. Schedule",      href: "/maintenance/timeline",   icon: CalendarDays },
+                { label: "Reports",              href: "/maintenance/reports",    icon: FileText },
             ];
         case "admin":
             return [
                 { label: "Dashboard",          href: "/dashboard",         icon: LayoutDashboard },
                 { label: "System Analytics",   href: "/admin/analytics",   icon: BarChart3 },
-                { label: "User Management",    href: "/profile",           icon: Users },
+                { label: "User Management",    href: "/admin/users",       icon: Users },
                 { label: "Resource Catalog",   href: "/resources",         icon: Package },
                 { label: "All Bookings",       href: "/bookings",          icon: CalendarCheck },
                 { label: "Maintenance",        href: "/maintenance",       icon: Wrench },
@@ -105,6 +105,7 @@ export default function DashboardSidebar({
     onMobileClose,
 }: DashboardSidebarProps) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { profile, signOut } = useAuth();
     const role = profile?.role || "student";
     const meta = roleMeta[role] || roleMeta.student;
@@ -150,7 +151,20 @@ export default function DashboardSidebar({
                     </p>
                 )}
                 {navItems.map((item) => {
-                    const isActive = pathname === item.href;
+                    const isActive = (() => {
+                        const [itemPath, itemQuery] = item.href.split("?");
+                        if (pathname !== itemPath) return false;
+                        if (!itemQuery) {
+                            return !searchParams.get("tab") && !searchParams.get("view");
+                        }
+                        const navParams = new URLSearchParams(itemQuery);
+                        for (const [key, value] of Array.from(navParams.entries())) {
+                            if (searchParams.get(key) !== value) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    })();
                     const Icon = item.icon;
                     return (
                         <Link

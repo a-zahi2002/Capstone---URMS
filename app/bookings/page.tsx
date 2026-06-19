@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import NewBookingModal from "@/components/NewBookingModal";
 import EditBookingModal from "@/components/EditBookingModal";
@@ -161,8 +162,13 @@ const getBookingStatusClasses = (statusLabel: string) => {
     return "bg-slate-100 dark:bg-white/5 text-slate-650 dark:text-foreground/60 border border-slate-200 dark:border-white/10";
 };
 
-export default function BookingsPage() {
-    const { user } = useAuth();
+function BookingsPageContent() {
+    const { user, profile } = useAuth();
+    const searchParams = useSearchParams();
+    const role = profile?.role || "student";
+    const defaultView = role === "student" ? "my" : "all";
+    const view = searchParams.get("view") || defaultView;
+    const [statusFilter, setStatusFilter] = useState("All");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editBooking, setEditBooking] = useState<BookingRow | null>(null);
     const [deleteBooking, setDeleteBooking] = useState<BookingRow | null>(null);
@@ -262,16 +268,22 @@ export default function BookingsPage() {
     }, []);
 
     useEffect(() => {
-        if (!rangeStartIso || !rangeEndIso) return;
         let isActive = true;
         const loadBookings = async () => {
             setLoadingBookings(true);
             setBookingError(null);
             try {
                 const token = user ? await user.getIdToken() : "dev-token";
-                let url = `${API}/api/bookings?from=${rangeStartIso}&to=${rangeEndIso}`;
-                if (selectedResourceId !== "all") {
-                    url += `&resource_id=${selectedResourceId}`;
+                let url = `${API}/api/bookings`;
+
+                if (view === "my" || view === "status") {
+                    url = `${API}/api/bookings/my`;
+                } else {
+                    if (!rangeStartIso || !rangeEndIso) return;
+                    url = `${API}/api/bookings?from=${rangeStartIso}&to=${rangeEndIso}`;
+                    if (selectedResourceId !== "all") {
+                        url += `&resource_id=${selectedResourceId}`;
+                    }
                 }
 
                 const res = await fetch(url, {
@@ -298,7 +310,7 @@ export default function BookingsPage() {
         return () => {
             isActive = false;
         };
-    }, [rangeStartIso, rangeEndIso, selectedResourceId, refreshSignal, user]);
+    }, [rangeStartIso, rangeEndIso, selectedResourceId, refreshSignal, user, view]);
 
     const daySummaries = useMemo(() => {
         const summaries = new Map<string, DaySummary>();
@@ -386,9 +398,14 @@ export default function BookingsPage() {
     }, [calendarDays, bookings, resources, selectedResourceId]);
 
     const filteredBookings = useMemo(() => {
-        if (!searchQuery) return bookings;
+        let list = bookings;
+        if (view === "status" && statusFilter !== "All") {
+            const normalizedFilter = statusFilter === "Confirmed" ? "Approved" : statusFilter;
+            list = list.filter(b => b.status === normalizedFilter);
+        }
+        if (!searchQuery) return list;
         const q = searchQuery.toLowerCase();
-        return bookings.filter((booking) => {
+        return list.filter((booking) => {
             const resource = getBookingResource(booking);
             const name = resource?.name || "";
             const location = resource?.location || "";
@@ -399,7 +416,7 @@ export default function BookingsPage() {
                 type.toLowerCase().includes(q)
             );
         });
-    }, [bookings, searchQuery]);
+    }, [bookings, searchQuery, view, statusFilter]);
 
     const totalBookings = bookings.length;
     const shownBookings = filteredBookings.length;
@@ -467,8 +484,14 @@ export default function BookingsPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-foreground">
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Resource Bookings</h1>
-                        <p className="text-slate-500 dark:text-foreground/50 font-medium">Manage and monitor facility schedules across all university faculties.</p>
+                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+                            {view === "my" || view === "status" ? "My Bookings" : "Resource Bookings"}
+                        </h1>
+                        <p className="text-slate-500 dark:text-foreground/50 font-medium">
+                            {view === "my" || view === "status"
+                                ? "Manage, track, and edit your personal resource reservations."
+                                : "Manage and monitor facility schedules across all university faculties."}
+                        </p>
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
@@ -485,8 +508,9 @@ export default function BookingsPage() {
                     </div>
                 )}
 
-                {/* Availability Calendar */}
-                <section className="mb-8">
+                {/* Availability Calendar (Hidden in personal bookings view) */}
+                {view !== "my" && view !== "status" && (
+                    <section className="mb-8">
                     <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm p-6">
                         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6">
                             <div>
@@ -646,6 +670,26 @@ export default function BookingsPage() {
                         </div>
                     </div>
                 </section>
+                )}
+
+                {/* Status Tabs (Booking Status View Only) */}
+                {view === "status" && (
+                    <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-200/50 dark:border-white/[0.06] pb-4">
+                        {["All", "Pending", "Confirmed", "Rejected"].map((status) => (
+                            <button
+                                key={status}
+                                onClick={() => setStatusFilter(status)}
+                                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                                    statusFilter === status
+                                        ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/10"
+                                        : "bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-foreground/60 hover:bg-slate-100 dark:hover:bg-white/10"
+                                }`}
+                            >
+                                {status}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 {/* Filters & Search */}
                 <div className="bg-white dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm mb-8 flex flex-col lg:flex-row gap-4">
@@ -846,6 +890,14 @@ export default function BookingsPage() {
                 booking={deleteBooking}
             />
         </ProtectedRoute>
+    );
+}
+
+export default function BookingsPage() {
+    return (
+        <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-10 text-center font-bold text-slate-500">Loading Bookings...</div>}>
+            <BookingsPageContent />
+        </Suspense>
     );
 }
 

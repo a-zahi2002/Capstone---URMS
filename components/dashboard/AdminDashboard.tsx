@@ -221,7 +221,7 @@ export default function AdminDashboard() {
                         <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                             <UserCog className="w-5 h-5 text-purple-500" /> User Management
                         </h3>
-                        <Link href="/profile" className="text-xs font-bold text-brand-primary hover:underline">
+                        <Link href="/admin/users" className="text-xs font-bold text-brand-primary hover:underline">
                             Manage →
                         </Link>
                     </div>
@@ -250,7 +250,7 @@ export default function AdminDashboard() {
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
                         {[
-                            { href: "/profile",          label: "Manage Users",     icon: Users,         color: "purple" },
+                            { href: "/admin/users",      label: "Manage Users",     icon: Users,         color: "purple" },
                             { href: "/resources",        label: "Edit Resources",   icon: Package,       color: "blue" },
                             { href: "/maintenance",      label: "View Tickets",     icon: Wrench,        color: "amber" },
                             { href: "/bookings",         label: "All Bookings",     icon: CalendarCheck,  color: "emerald" },

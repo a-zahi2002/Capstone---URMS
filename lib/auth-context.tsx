@@ -51,7 +51,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser);
             if (firebaseUser) {
-                const userProfile = await getUserProfile(firebaseUser.uid);
+                let userProfile = await getUserProfile(firebaseUser.uid);
+                
+                // If user exists in Firebase but has no profile in Supabase yet,
+                // call the backend profile endpoint which will trigger auto-sync/creation.
+                if (!userProfile) {
+                    try {
+                        const token = await firebaseUser.getIdToken();
+                        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+                        const res = await fetch(`${API_URL}/api/users/profile`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        if (res.ok) {
+                            // Fetch again from Supabase now that the backend has auto-synced the user
+                            userProfile = await getUserProfile(firebaseUser.uid);
+                        }
+                    } catch (err) {
+                        console.error("Failed to auto-sync profile with backend:", err);
+                    }
+                }
+
                 setProfile(userProfile);
                 if (userProfile) {
                     setSupabaseAuthHeaders(userProfile.id, userProfile.role);
@@ -98,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({ 
             uid: mockProfile.id, 
             email: mockProfile.email,
-            getIdToken: async () => "mock-id-token"
+            getIdToken: async () => `mock-token:${mockProfile.id}:${mockProfile.role}`
         } as unknown as User);
     };
 
