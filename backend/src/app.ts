@@ -82,7 +82,10 @@ app.use(cors({
 
     // In development, allow localhost and 127.0.0.1 on any port
     if (process.env.NODE_ENV !== 'production') {
-      if (origin.match(/^http:\/\/localhost(:\d+)?$/) || origin.match(/^http:\/\/127\.0\.0\.1(:\d+)?$/)) {
+      const isLocal = origin.match(/^http:\/\/localhost(:\d+)?$/) ||
+                      origin.match(/^http:\/\/127\.0\.0\.1(:\d+)?$/) ||
+                      origin.match(/^http:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/);
+      if (isLocal) {
         return callback(null, true);
       }
     }
