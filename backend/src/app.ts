@@ -3,17 +3,59 @@
  * ─────────────────────────────────────────────────────────────
  * Express application setup.
  * Health check now verifies Supabase connectivity.
+ *
+ * Security:
+ *   • helmet   — sets Strict-Transport-Security (HSTS) and
+ *                 other hardening headers on every response.
+ *   • httpsRedirect — 301-redirects http:// → https:// in
+ *                      production (skipped in development).
  * ─────────────────────────────────────────────────────────────
  */
-import express, { Application, Request, Response } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const app: Application = express();
 
-// ✅ Middleware
+// ─── HTTPS Redirect Middleware ──────────────────────────────
+// In production the app sits behind a TLS-terminating reverse
+// proxy (Vercel, Nginx, AWS ALB). The proxy sets the header
+// `x-forwarded-proto: http|https` so we can detect plain HTTP
+// and redirect the client to the secure URL.
+//
+// In development (NODE_ENV !== 'production') the redirect is
+// skipped entirely so localhost testing works without certs.
+// ────────────────────────────────────────────────────────────
+function httpsRedirect(req: Request, res: Response, next: NextFunction): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol;
+
+  if (isProduction && proto !== 'https') {
+    const secureUrl = `https://${req.hostname}${req.originalUrl}`;
+    res.redirect(301, secureUrl);
+    return;
+  }
+  next();
+}
+
+// ✅ Security Middleware (order matters: redirect → helmet → cors)
+app.use(httpsRedirect);
+
+app.use(
+  helmet({
+    // Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+    strictTransportSecurity: {
+      maxAge: 31536000,        // 1 year in seconds
+      includeSubDomains: true, // apply to *.yourdomain.com
+      preload: true,           // eligible for browser preload lists
+    },
+  })
+);
+
+// ✅ CORS
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:3000'];
@@ -37,6 +79,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-urms-user-id', 'x-urms-user-role']
 }));
+
+// ✅ Body Parsers
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
