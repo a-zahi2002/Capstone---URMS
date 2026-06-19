@@ -15,10 +15,24 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import { globalLimiter, authLimiter } from "./middleware/rateLimiter";
 
 dotenv.config();
 
 const app: Application = express();
+
+// ─── Proxy Trust Configuration ─────────────────────────────
+// When deployed behind a reverse proxy (Nginx, Render, Heroku,
+// AWS ALB, etc.), Express sees every request as coming from
+// the proxy's IP (127.0.0.1 / internal IP). Setting
+// 'trust proxy' to 1 tells Express to read the *first*
+// address in the `X-Forwarded-For` header — the real client
+// IP — so that express-rate-limit (and req.ip) work correctly.
+//
+// Without this, ALL users would share the same rate-limit
+// bucket (the proxy's IP), causing false 429 errors.
+// ────────────────────────────────────────────────────────────
+app.set('trust proxy', 1 /* number of proxies */);
 
 // ─── HTTPS Redirect Middleware ──────────────────────────────
 // In production the app sits behind a TLS-terminating reverse
@@ -89,6 +103,16 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
+
+// ✅ Rate Limiting
+// Global limiter — 100 requests per 15 min per IP for all API routes
+app.use("/api", globalLimiter);
+
+// Strict auth limiter — 5 requests per 15 min per IP on sensitive endpoints
+// Prevents brute-force & credential-stuffing on password operations.
+// Add future /api/login and /api/register routes here when created.
+app.post("/api/users/verify-password", authLimiter);
+app.post("/api/users/hash-password", authLimiter);
 
 // ✅ Routes
 import resourceRoutes from "./routes/resourceRoutes";
