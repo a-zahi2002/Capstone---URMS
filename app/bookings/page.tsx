@@ -132,12 +132,12 @@ const getOverlapMinutes = (
 
 const getAvailabilityClasses = (status: AvailabilityStatus) => {
     if (status === "Available") {
-        return "bg-emerald-50 text-emerald-700 border border-emerald-100";
+        return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20";
     }
     if (status === "Limited") {
-        return "bg-amber-50 text-amber-700 border border-amber-100";
+        return "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20";
     }
-    return "bg-rose-50 text-rose-700 border border-rose-100";
+    return "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/20";
 };
 
 const normalizeBookingStatus = (status: string) => {
@@ -150,15 +150,15 @@ const normalizeBookingStatus = (status: string) => {
 
 const getBookingStatusClasses = (statusLabel: string) => {
     if (statusLabel === "Confirmed") {
-        return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+        return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20";
     }
     if (statusLabel === "Pending") {
-        return "bg-amber-50 text-amber-600 border border-amber-100";
+        return "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20";
     }
     if (statusLabel === "Cancelled") {
-        return "bg-red-50 text-red-600 border border-red-100";
+        return "bg-red-50 dark:bg-red-500/10 text-red-650 dark:text-red-400 border border-red-100 dark:border-red-500/20";
     }
-    return "bg-slate-100 text-slate-600 border border-slate-200";
+    return "bg-slate-100 dark:bg-white/5 text-slate-650 dark:text-foreground/60 border border-slate-200 dark:border-white/10";
 };
 
 export default function BookingsPage() {
@@ -464,11 +464,11 @@ export default function BookingsPage() {
 
     return (
         <ProtectedRoute>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-foreground">
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Resource Bookings</h1>
-                        <p className="text-slate-500 font-medium">Manage and monitor facility schedules across all university faculties.</p>
+                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Resource Bookings</h1>
+                        <p className="text-slate-500 dark:text-foreground/50 font-medium">Manage and monitor facility schedules across all university faculties.</p>
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
@@ -480,39 +480,39 @@ export default function BookingsPage() {
                 </header>
 
                 {combinedError && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-sm font-semibold">
+                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl text-sm font-semibold">
                         {combinedError}
                     </div>
                 )}
 
                 {/* Availability Calendar */}
                 <section className="mb-8">
-                    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                    <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm p-6">
                         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6">
                             <div>
-                                <h2 className="text-xl font-black text-slate-900">Booking Availability</h2>
-                                <p className="text-sm font-medium text-slate-500">{calendarSubLabel}</p>
+                                <h2 className="text-xl font-black text-slate-900 dark:text-white">Booking Availability</h2>
+                                <p className="text-sm font-medium text-slate-500 dark:text-foreground/40">{calendarSubLabel}</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                <div className="flex items-center gap-2 px-2 py-1.5 border border-slate-200 rounded-xl bg-slate-50">
+                                <div className="flex items-center gap-2 px-2 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50 dark:bg-white/5">
                                     <button
                                         onClick={handlePrev}
-                                        className="p-1.5 rounded-lg hover:bg-white transition-colors text-slate-500"
+                                        className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-white/5 transition-colors text-slate-500 dark:text-foreground/60"
                                         aria-label="Previous"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </button>
-                                    <span className="text-sm font-bold text-slate-700 whitespace-nowrap">{calendarLabel}</span>
+                                    <span className="text-sm font-bold text-slate-700 dark:text-foreground/80 whitespace-nowrap">{calendarLabel}</span>
                                     <button
                                         onClick={handleNext}
-                                        className="p-1.5 rounded-lg hover:bg-white transition-colors text-slate-500"
+                                        className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-white/5 transition-colors text-slate-500 dark:text-foreground/60"
                                         aria-label="Next"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={handleToday}
-                                        className="px-2.5 py-1 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                                        className="px-2.5 py-1 text-xs font-bold text-slate-600 dark:text-foreground/80 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
                                     >
                                         Today
                                     </button>
@@ -522,7 +522,7 @@ export default function BookingsPage() {
                                         onClick={() => setCalendarView("week")}
                                         className={`px-3 py-2 border rounded-xl text-xs font-bold transition-colors ${calendarView === "week"
                                             ? "bg-brand-primary text-white border-brand-primary"
-                                            : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5"
                                             }`}
                                     >
                                         Week
@@ -531,7 +531,7 @@ export default function BookingsPage() {
                                         onClick={() => setCalendarView("month")}
                                         className={`px-3 py-2 border rounded-xl text-xs font-bold transition-colors ${calendarView === "month"
                                             ? "bg-brand-primary text-white border-brand-primary"
-                                            : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5"
                                             }`}
                                     >
                                         Month
@@ -541,7 +541,7 @@ export default function BookingsPage() {
                                     value={selectedResourceId}
                                     onChange={(e) => setSelectedResourceId(e.target.value)}
                                     disabled={loadingResources}
-                                    className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 bg-slate-50 hover:bg-white transition-colors min-w-[180px]"
+                                    className="px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-foreground/60 bg-slate-50 dark:bg-[#0c0a14] hover:bg-white dark:hover:bg-white/5 transition-colors min-w-[180px]"
                                 >
                                     <option value="all">
                                         {loadingResources ? "Loading resources..." : "All resources"}
@@ -561,7 +561,7 @@ export default function BookingsPage() {
                             </div>
                         ) : (
                             <>
-                                <div className="grid grid-cols-7 gap-2 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                                <div className="grid grid-cols-7 gap-2 text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-foreground/30">
                                     {WEEKDAYS.map((label) => (
                                         <span key={label} className="text-center">
                                             {label}
@@ -590,8 +590,8 @@ export default function BookingsPage() {
                                             <div
                                                 key={dayKey}
                                                 className={`rounded-2xl border p-3 min-h-[110px] flex flex-col justify-between ${isOutsideMonth
-                                                    ? "bg-slate-50 text-slate-400 border-slate-100"
-                                                    : "bg-slate-50/60 border-slate-100"
+                                                    ? "bg-slate-50 dark:bg-white/[0.01] text-slate-400 dark:text-foreground/30 border-slate-100 dark:border-white/[0.04]"
+                                                    : "bg-slate-50/60 dark:bg-white/[0.03] border-slate-100 dark:border-white/[0.06]"
                                                     } ${isToday
                                                         ? "ring-2 ring-brand-primary/20"
                                                         : ""
@@ -601,13 +601,13 @@ export default function BookingsPage() {
                                                     <span
                                                         className={`text-sm font-bold ${isOutsideMonth
                                                             ? "text-slate-400"
-                                                            : "text-slate-800"
+                                                            : "text-slate-800 dark:text-foreground/80"
                                                             }`}
                                                     >
                                                         {day.getDate()}
                                                     </span>
                                                     {bookingCount > 0 && (
-                                                        <span className="text-[10px] font-bold text-slate-400">
+                                                        <span className="text-[10px] font-bold text-slate-400 dark:text-foreground/30">
                                                             {bookingCount} booking{bookingCount > 1 ? "s" : ""}
                                                         </span>
                                                     )}
@@ -620,7 +620,7 @@ export default function BookingsPage() {
                                                         {status}
                                                     </span>
                                                 </div>
-                                                <div className="mt-2 text-[11px] font-semibold text-slate-400">
+                                                <div className="mt-2 text-[11px] font-semibold text-slate-400 dark:text-foreground/45">
                                                     {metaText}
                                                 </div>
                                             </div>
@@ -630,7 +630,7 @@ export default function BookingsPage() {
                             </>
                         )}
 
-                        <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-slate-500">
+                        <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-slate-500 dark:text-foreground/50">
                             <span className="inline-flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                                 Available
@@ -648,7 +648,7 @@ export default function BookingsPage() {
                 </section>
 
                 {/* Filters & Search */}
-                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-8 flex flex-col lg:flex-row gap-4">
+                <div className="bg-white dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm mb-8 flex flex-col lg:flex-row gap-4">
                     <div className="relative flex-1 group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-brand-primary" />
                         <input
@@ -656,15 +656,15 @@ export default function BookingsPage() {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search by resource name, type, or location..."
-                            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#0c0a14] border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
                         />
                     </div>
                     <div className="flex gap-4">
-                        <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                        <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                             <Filter className="w-4 h-4" />
                             Filters
                         </button>
-                        <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                        <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                             <Calendar className="w-4 h-4" />
                             {calendarLabel || "Select range"}
                         </button>
@@ -672,18 +672,18 @@ export default function BookingsPage() {
                 </div>
 
                 {/* Bookings Table */}
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="bg-slate-50 border-b border-slate-100">
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Resource / Facility</th>
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Date & Time</th>
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Status</th>
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400"></th>
+                                <tr className="bg-slate-50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/[0.06]">
+                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Resource / Facility</th>
+                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Date & Time</th>
+                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Status</th>
+                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40"></th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
+                            <tbody className="divide-y divide-slate-50 dark:divide-white/[0.04]">
                                 {loadingBookings ? (
                                     <tr>
                                         <td
@@ -719,7 +719,7 @@ export default function BookingsPage() {
                                         return (
                                             <tr
                                                 key={booking.id}
-                                                className="hover:bg-slate-50/50 transition-colors group"
+                                                className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors group"
                                             >
                                                 <td className="px-6 py-5">
                                                     <div className="flex items-center gap-4">
@@ -727,10 +727,10 @@ export default function BookingsPage() {
                                                             <MapPin className="w-5 h-5 text-brand-primary" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-bold text-slate-900">
+                                                            <p className="text-sm font-bold text-slate-900 dark:text-foreground">
                                                                 {resourceName}
                                                             </p>
-                                                            <p className="text-xs font-medium text-slate-500 italic">
+                                                            <p className="text-xs font-medium text-slate-500 dark:text-foreground/45 italic">
                                                                 {resourceMeta}
                                                             </p>
                                                         </div>
@@ -738,11 +738,11 @@ export default function BookingsPage() {
                                                 </td>
                                                 <td className="px-6 py-5">
                                                     <div className="flex flex-col gap-1">
-                                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                                        <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-foreground/80">
                                                             <Calendar className="w-3.5 h-3.5" />
                                                             {dateLabel}
                                                         </div>
-                                                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                                                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-foreground/50">
                                                             <Clock className="w-3.5 h-3.5" />
                                                             {timeLabel}
                                                         </div>
@@ -760,18 +760,18 @@ export default function BookingsPage() {
                                                 <td className="px-6 py-5 text-right relative">
                                                     <button 
                                                         onClick={() => setActiveDropdown(activeDropdown === booking.id ? null : booking.id)}
-                                                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
+                                                        className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
                                                     >
                                                         <MoreVertical className="w-5 h-5" />
                                                     </button>
                                                     
                                                     {activeDropdown === booking.id && (
-                                                        <div className="absolute right-8 top-10 z-10 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden text-left animate-in fade-in zoom-in-95">
+                                                        <div className="absolute right-8 top-10 z-10 w-48 bg-white dark:bg-slate-950 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 overflow-hidden text-left animate-in fade-in zoom-in-95">
                                                             <div className="py-1">
                                                                 {booking.status === "Pending" && (
                                                                     <button 
                                                                         onClick={() => { setEditBooking(booking); setActiveDropdown(null); }}
-                                                                        className="w-full px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 text-left"
+                                                                        className="w-full px-4 py-2 text-sm font-semibold text-slate-700 dark:text-foreground/80 hover:bg-slate-55 dark:hover:bg-white/5 text-left"
                                                                     >
                                                                         Edit Booking
                                                                     </button>
@@ -779,14 +779,14 @@ export default function BookingsPage() {
                                                                 {(booking.status === "Pending" || booking.status === "Confirmed") && (
                                                                     <button 
                                                                         onClick={() => handleCancelBooking(booking.id)}
-                                                                        className="w-full px-4 py-2 text-sm font-semibold text-amber-600 hover:bg-amber-50 text-left"
+                                                                        className="w-full px-4 py-2 text-sm font-semibold text-amber-650 hover:bg-amber-50 dark:hover:bg-amber-500/10 text-left"
                                                                     >
                                                                         Cancel Booking
                                                                     </button>
                                                                 )}
                                                                 <button 
                                                                     onClick={() => { setDeleteBooking(booking); setActiveDropdown(null); }}
-                                                                    className="w-full px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 text-left"
+                                                                    className="w-full px-4 py-2 text-sm font-semibold text-rose-650 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-left"
                                                                 >
                                                                     Delete Record
                                                                 </button>
@@ -801,8 +801,8 @@ export default function BookingsPage() {
                             </tbody>
                         </table>
                     </div>
-                    <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                        <p className="text-xs font-bold text-slate-500 items-center">
+                    <div className="px-6 py-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
+                        <p className="text-xs font-bold text-slate-500 dark:text-foreground/45 items-center">
                             {loadingBookings
                                 ? "Loading bookings..."
                                 : `Showing ${shownBookings} of ${totalBookings} bookings`}
@@ -810,13 +810,13 @@ export default function BookingsPage() {
                         <div className="flex gap-2">
                             <button
                                 disabled
-                                className="px-3 py-1 border border-slate-200 rounded-lg text-xs font-bold bg-white text-slate-400 cursor-not-allowed"
+                                className="px-3 py-1 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold bg-white dark:bg-white/5 text-slate-400 dark:text-foreground/30 cursor-not-allowed"
                             >
                                 Prev
                             </button>
                             <button
                                 disabled
-                                className="px-3 py-1 border border-slate-200 rounded-lg text-xs font-bold bg-white text-slate-400 cursor-not-allowed"
+                                className="px-3 py-1 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold bg-white dark:bg-white/5 text-slate-400 dark:text-foreground/30 cursor-not-allowed"
                             >
                                 Next
                             </button>

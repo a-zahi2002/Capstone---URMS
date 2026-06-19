@@ -4,6 +4,8 @@ import React from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { usePathname } from "next/navigation";
+import ProtectedRoute from "./ProtectedRoute";
+import DashboardLayout from "./dashboard/DashboardLayout";
 
 interface LayoutShellProps {
   children: React.ReactNode;
@@ -12,16 +14,23 @@ interface LayoutShellProps {
 /**
  * LayoutShell component that wraps the application content.
  * It provides a consistent layout with a Navbar and Footer,
- * while allowing certain pages (like login/register and dashboard) to skip them if needed.
+ * while wrapping all dashboard views in a unified sidebar navigation shell.
  */
 export default function LayoutShell({ children }: LayoutShellProps) {
   const pathname = usePathname();
   
-  // Define routes that should not show the standard Navbar and Footer
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  // Define routes that should not show the standard Navbar and Footer (Authentication pages)
+  const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password";
   
-  // Dashboard has its own sidebar navigation, so skip global Navbar/Footer
-  const isDashboardPage = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+  // Define all dashboard routes that use the Sidebar layout
+  const isDashboardPage =
+    pathname === "/dashboard" || pathname.startsWith("/dashboard/") ||
+    pathname === "/bookings" || pathname.startsWith("/bookings/") ||
+    pathname === "/resources" || pathname.startsWith("/resources/") ||
+    pathname === "/notifications" || pathname.startsWith("/notifications/") ||
+    pathname === "/maintenance" || pathname.startsWith("/maintenance/") ||
+    pathname === "/admin" || pathname.startsWith("/admin/") ||
+    pathname === "/profile" || pathname.startsWith("/profile/");
 
   const skipGlobalNav = isAuthPage || isDashboardPage;
 
@@ -29,9 +38,16 @@ export default function LayoutShell({ children }: LayoutShellProps) {
     <>
       {!skipGlobalNav && <Navbar />}
       <main className="flex-grow flex flex-col">
-        {children}
+        {isDashboardPage ? (
+          <ProtectedRoute>
+            <DashboardLayout>{children}</DashboardLayout>
+          </ProtectedRoute>
+        ) : (
+          children
+        )}
       </main>
       {!skipGlobalNav && <Footer />}
     </>
   );
 }
+
