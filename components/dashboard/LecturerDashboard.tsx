@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { motion } from "framer-motion";
 import {
@@ -30,6 +31,8 @@ const staggerContainer = {
 
 export default function LecturerDashboard() {
     const { profile, user } = useAuth();
+    const searchParams = useSearchParams();
+    const activeTab = searchParams.get("tab") || "overview";
     const [pendingBookings, setPendingBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -133,131 +136,172 @@ export default function LecturerDashboard() {
                 className="bg-gradient-to-r from-emerald-600/10 to-teal-600/5 dark:from-emerald-900/30 dark:to-teal-900/15 p-8 rounded-3xl border border-emerald-200 dark:border-emerald-500/20 relative overflow-hidden"
             >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full" />
-                <h1 className="text-3xl font-black text-foreground tracking-tight relative z-10">Teacher Portal</h1>
+                <h1 className="text-3xl font-black text-foreground tracking-tight relative z-10">
+                    {activeTab === "approvals" ? "Approval Queue" : "Teacher Portal"}
+                </h1>
                 <p className="text-emerald-700 dark:text-emerald-200 mt-2 font-medium relative z-10">
-                    Hello, Dr. {profile?.name || "Lecturer"}. You have
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                        {" "}{pendingBookings.length} pending approval{pendingBookings.length !== 1 ? "s" : ""}
-                    </span>.
+                    {activeTab === "approvals" ? (
+                        "Review and manage pending student bookings for department resources."
+                    ) : (
+                        <>
+                            Hello, Dr. {profile?.name || "Lecturer"}. You have{" "}
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                {pendingBookings.length} pending approval{pendingBookings.length !== 1 ? "s" : ""}
+                            </span>.
+                        </>
+                    )}
                 </p>
             </motion.header>
 
-            {/* ── Stat Cards ── */}
-            <motion.div variants={fadeInUp} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: "Pending Approvals", value: pendingBookings.length, icon: Clock, color: "amber" },
-                    { label: "Dept. Resources", value: "—", icon: Package, color: "emerald" },
-                    { label: "Upcoming Classes", value: "—", icon: CalendarDays, color: "blue" },
-                    { label: "Students Active", value: "—", icon: Users, color: "purple" },
-                ].map(({ label, value, icon: Icon, color }) => (
-                    <div key={label} className="bg-card border border-slate-200 dark:border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                        <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 flex items-center justify-center mb-3`}>
-                            <Icon className={`w-5 h-5 text-${color}-500`} />
-                        </div>
-                        <p className="text-[10px] font-black text-slate-500 dark:text-foreground/40 uppercase tracking-widest">{label}</p>
-                        <p className="text-3xl font-black text-foreground mt-1">{value}</p>
-                    </div>
-                ))}
-            </motion.div>
+            {activeTab === "overview" ? (
+                <>
+                    {/* ── Stat Cards ── */}
+                    <motion.div variants={fadeInUp} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[
+                            { label: "Pending Approvals", value: pendingBookings.length, icon: Clock, color: "amber", link: "/dashboard?tab=approvals" },
+                            { label: "Dept. Resources", value: "—", icon: Package, color: "emerald" },
+                            { label: "Upcoming Classes", value: "—", icon: CalendarDays, color: "blue", link: "/bookings?view=all" },
+                            { label: "Students Active", value: "—", icon: Users, color: "purple" },
+                        ].map(({ label, value, icon: Icon, color, link }) => {
+                            const card = (
+                                <div className="bg-card border border-slate-200 dark:border-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-emerald-500/30 transition-all h-full">
+                                    <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 flex items-center justify-center mb-3`}>
+                                        <Icon className={`w-5 h-5 text-${color}-500`} />
+                                    </div>
+                                    <p className="text-[10px] font-black text-slate-500 dark:text-foreground/45 uppercase tracking-widest">{label}</p>
+                                    <p className="text-3xl font-black text-foreground mt-1">{value}</p>
+                                </div>
+                            );
+                            return link ? (
+                                <Link key={label} href={link} className="block h-full">
+                                    {card}
+                                </Link>
+                            ) : (
+                                <div key={label} className="h-full">{card}</div>
+                            );
+                        })}
+                    </motion.div>
 
-            {/* ── Main Content ── */}
-            <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Approval Queue */}
-                <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm flex flex-col">
-                    <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Pending Requests
-                    </h3>
-                    <div className="flex-grow space-y-3">
-                        {loading ? (
-                            <div className="flex items-center justify-center py-8">
-                                <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-                                <span className="ml-2 text-sm text-slate-400">Loading approvals...</span>
+                    {/* ── Main Content (Overview mode) ── */}
+                    <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Summary Approval Card */}
+                        <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Pending Approvals
+                                </h3>
+                                <p className="text-sm text-slate-500 dark:text-foreground/50 mb-4">
+                                    There are currently {pendingBookings.length} booking request{pendingBookings.length !== 1 ? "s" : ""} waiting for your review.
+                                </p>
                             </div>
-                        ) : error ? (
-                            <p className="text-sm text-red-400 py-4 text-center">{error}</p>
-                        ) : pendingBookings.length === 0 ? (
-                            <div className="text-center py-8">
-                                <CheckCircle2 className="w-10 h-10 text-emerald-300 dark:text-emerald-500/30 mx-auto mb-3" />
-                                <p className="text-sm text-slate-500 dark:text-foreground/40 font-bold">All caught up!</p>
-                                <p className="text-xs text-slate-400 mt-1">No pending approval requests.</p>
-                            </div>
-                        ) : (
-                            pendingBookings.map((booking) => {
-                                const { dateStr, timeStr } = formatBookingTime(booking.start_time, booking.end_time);
-                                return (
-                                    <div
-                                        key={booking.id}
-                                        className="p-4 border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
-                                    >
-                                        <div className="space-y-1">
-                                            <p className="font-bold text-foreground text-sm">{booking.resources?.name || "Resource"}</p>
-                                            <p className="text-xs text-slate-500 dark:text-foreground/40">
-                                                Requested by{" "}
-                                                <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                                    {booking.users?.name || "Unknown Student"}
-                                                </span>
-                                            </p>
-                                            <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-1">
-                                                <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                                                <span>{dateStr}</span>
-                                                <Clock className="w-3.5 h-3.5 text-teal-400 ml-1.5" />
-                                                <span>{timeStr}</span>
-                                            </p>
+                            <Link
+                                href="/dashboard?tab=approvals"
+                                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/10"
+                            >
+                                Open Approval Queue <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+
+                        {/* Upcoming Classes */}
+                        <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm">
+                            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                                <BookOpen className="w-5 h-5 text-emerald-500" /> My Upcoming Classes
+                            </h3>
+                            <div className="space-y-3">
+                                {[
+                                    { month: "Oct", day: "12", title: "Quantum Mechanics 101", location: "Main Lecture Hall", time: "10:00 AM" },
+                                    { month: "Oct", day: "14", title: "Advanced Physics Lab", location: "Lab Block C", time: "2:00 PM" },
+                                    { month: "Oct", day: "16", title: "Seminar: Particle Theory", location: "Room 205", time: "11:00 AM" },
+                                ].map((cls, idx) => (
+                                    <div key={idx} className="flex items-center gap-4 p-3 rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03]">
+                                        <div className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold p-3 rounded-lg text-center leading-tight border border-emerald-500/20 shrink-0">
+                                            <span className="block text-xs uppercase tracking-wider">{cls.month}</span>
+                                            <span className="block text-xl">{cls.day}</span>
                                         </div>
-                                        <div className="flex gap-2 w-full sm:w-auto shrink-0">
-                                            <button
-                                                onClick={() => setRejectingBooking(booking)}
-                                                disabled={actionLoading !== null}
-                                                className="flex-1 sm:flex-none px-4 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-border rounded-lg text-xs font-bold text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-50"
-                                            >
-                                                Deny
-                                            </button>
-                                            <button
-                                                onClick={() => handleApprove(booking.id)}
-                                                disabled={actionLoading !== null}
-                                                className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-500 transition-colors disabled:opacity-50"
-                                            >
-                                                {actionLoading === booking.id ? "Approving..." : "Approve"}
-                                            </button>
+                                        <div>
+                                            <p className="font-bold text-foreground">{cls.title}</p>
+                                            <p className="text-sm text-slate-500 dark:text-foreground/40">{cls.location} • {cls.time}</p>
                                         </div>
                                     </div>
-                                );
-                            })
-                        )}
-                    </div>
-                </div>
-
-                {/* Schedule Overview */}
-                <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm">
-                    <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                        <BookOpen className="w-5 h-5 text-emerald-500" /> My Upcoming Classes
-                    </h3>
-                    <div className="space-y-3">
-                        {[
-                            { month: "Oct", day: "12", title: "Quantum Mechanics 101", location: "Main Lecture Hall", time: "10:00 AM" },
-                            { month: "Oct", day: "14", title: "Advanced Physics Lab", location: "Lab Block C", time: "2:00 PM" },
-                            { month: "Oct", day: "16", title: "Seminar: Particle Theory", location: "Room 205", time: "11:00 AM" },
-                        ].map((cls, idx) => (
-                            <div key={idx} className="flex items-center gap-4 p-3 rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03]">
-                                <div className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold p-3 rounded-lg text-center leading-tight border border-emerald-500/20 shrink-0">
-                                    <span className="block text-xs uppercase tracking-wider">{cls.month}</span>
-                                    <span className="block text-xl">{cls.day}</span>
-                                </div>
-                                <div>
-                                    <p className="font-bold text-foreground">{cls.title}</p>
-                                    <p className="text-sm text-slate-500 dark:text-foreground/40">{cls.location} • {cls.time}</p>
-                                </div>
+                                ))}
                             </div>
-                        ))}
+                            <Link
+                                href="/bookings?view=all"
+                                className="mt-5 w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03] text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors"
+                            >
+                                View Full Schedule <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        </div>
+                    </motion.div>
+                </>
+            ) : (
+                /* ── Approval Queue view (takes full width) ── */
+                <motion.div variants={fadeInUp} className="w-full">
+                    <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm flex flex-col w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Pending Requests ({pendingBookings.length})
+                        </h3>
+                        <div className="space-y-3">
+                            {loading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                                    <span className="ml-2 text-sm text-slate-400">Loading approvals...</span>
+                                </div>
+                            ) : error ? (
+                                <p className="text-sm text-red-400 py-4 text-center">{error}</p>
+                            ) : pendingBookings.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <CheckCircle2 className="w-12 h-12 text-emerald-300 dark:text-emerald-500/30 mx-auto mb-3" />
+                                    <p className="text-sm text-slate-500 dark:text-foreground/45 font-bold">All caught up!</p>
+                                    <p className="text-xs text-slate-400 mt-1">No pending approval requests.</p>
+                                </div>
+                            ) : (
+                                pendingBookings.map((booking) => {
+                                    const { dateStr, timeStr } = formatBookingTime(booking.start_time, booking.end_time);
+                                    return (
+                                        <div
+                                            key={booking.id}
+                                            className="p-4 border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-sm transition-all"
+                                        >
+                                            <div className="space-y-1">
+                                                <p className="font-bold text-foreground text-sm">{booking.resources?.name || "Resource"}</p>
+                                                <p className="text-xs text-slate-500 dark:text-foreground/40">
+                                                    Requested by{" "}
+                                                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                        {booking.users?.name || "Unknown Student"}
+                                                    </span>
+                                                </p>
+                                                <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-1">
+                                                    <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                                                    <span>{dateStr}</span>
+                                                    <Clock className="w-3.5 h-3.5 text-teal-400 ml-1.5" />
+                                                    <span>{timeStr}</span>
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-2 w-full sm:w-auto shrink-0">
+                                                <button
+                                                    onClick={() => setRejectingBooking(booking)}
+                                                    disabled={actionLoading !== null}
+                                                    className="flex-1 sm:flex-none px-4 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-border rounded-lg text-xs font-bold text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                                                >
+                                                    Deny
+                                                </button>
+                                                <button
+                                                    onClick={() => handleApprove(booking.id)}
+                                                    disabled={actionLoading !== null}
+                                                    className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-500 transition-colors disabled:opacity-50"
+                                                >
+                                                    {actionLoading === booking.id ? "Approving..." : "Approve"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
-                    <Link
-                        href="/bookings"
-                        className="mt-5 w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03] text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors"
-                    >
-                        View Full Schedule <ArrowRight className="w-4 h-4" />
-                    </Link>
-                </div>
-            </motion.div>
+                </motion.div>
+            )}
 
             {/* ── Rejection Reason Modal ── */}
             {rejectingBooking && (

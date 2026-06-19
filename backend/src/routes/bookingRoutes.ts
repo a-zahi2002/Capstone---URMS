@@ -26,6 +26,7 @@ import {
   deleteBooking,
   getPendingBookings,
   updateBookingStatus,
+  getMyBookings,
 } from "../controllers/bookingCtrl";
 
 const router = express.Router();
@@ -39,6 +40,9 @@ router.post("/", createBooking as any);
 
 // ── Admin: pending queue (must come before /:id) ────────────
 router.get("/pending", getPendingBookings as any);
+
+// ── My Bookings (must come before /:id) ─────────────────────
+router.get("/my", getMyBookings as any);
 
 // ── Single booking operations ───────────────────────────────
 router.get("/:id", getBookingById as any);

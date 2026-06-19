@@ -347,3 +347,28 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response): Prom
     res.status(500).json({ status: "error", message: error.message });
   }
 };
+
+/**
+ * GET /api/bookings/my
+ * Fetch all bookings for the currently authenticated user.
+ */
+export const getMyBookings = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user_id = req.user?.uid;
+    if (!user_id) {
+      res.status(401).json({ status: "error", message: "Unauthorized: User not authenticated" });
+      return;
+    }
+
+    const data = await BookingModel.findAll(
+      { user_id },
+      req.supabase
+    );
+
+    res.json({ status: "success", data });
+  } catch (error: any) {
+    console.error("Error fetching my bookings:", error);
+    res.status(500).json({ status: "error", message: error.message });
+  }
+};
+

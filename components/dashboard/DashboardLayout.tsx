@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import DashboardSidebar from "./DashboardSidebar";
@@ -45,12 +45,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
         <div className="flex h-screen bg-background overflow-hidden">
             {/* ── Sidebar ── */}
-            <DashboardSidebar
-                collapsed={sidebarCollapsed}
-                onToggle={handleToggleCollapsed}
-                mobileOpen={mobileOpen}
-                onMobileClose={() => setMobileOpen(false)}
-            />
+            <Suspense fallback={<div className="w-16 bg-[#0c0a14]" />}>
+                <DashboardSidebar
+                    collapsed={sidebarCollapsed}
+                    onToggle={handleToggleCollapsed}
+                    mobileOpen={mobileOpen}
+                    onMobileClose={() => setMobileOpen(false)}
+                />
+            </Suspense>
 
             {/* ── Main content area ── */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
