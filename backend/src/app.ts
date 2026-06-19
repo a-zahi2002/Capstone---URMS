@@ -64,7 +64,7 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g. server-to-server, curl)
     if (!origin) return callback(null, true);
-    
+
     // In development, allow localhost and 127.0.0.1 on any port
     if (process.env.NODE_ENV !== 'production') {
       if (origin.match(/^http:\/\/localhost(:\d+)?$/) || origin.match(/^http:\/\/127\.0\.0\.1(:\d+)?$/)) {
@@ -115,12 +115,12 @@ import { checkSupabaseConnection } from "./config/supabaseClient";
 app.get("/api/health", async (req: Request, res: Response) => {
   const isDbConnected = await checkSupabaseConnection();
   res.status(isDbConnected ? 200 : 503).json({
-    status:    isDbConnected ? "success" : "degraded",
-    message:   isDbConnected
-                 ? "URMS Backend is fully operational (Supabase)"
-                 : "URMS Backend is running but Supabase is unavailable",
-    database:  isDbConnected ? "connected" : "disconnected",
-    provider:  "supabase",
+    status: isDbConnected ? "success" : "degraded",
+    message: isDbConnected
+      ? "URMS Backend is fully operational (Supabase)"
+      : "URMS Backend is running but Supabase is unavailable",
+    database: isDbConnected ? "connected" : "disconnected",
+    provider: "supabase",
     timestamp: new Date().toISOString()
   });
 });
@@ -128,7 +128,7 @@ app.get("/api/health", async (req: Request, res: Response) => {
 // ✅ 404 Handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({
-    status:  "error",
+    status: "error",
     message: "Route not found",
   });
 });
