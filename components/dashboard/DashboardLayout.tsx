@@ -1,44 +1,53 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import DashboardSidebar from "./DashboardSidebar";
-import StudentDashboard from "./StudentDashboard";
-import LecturerDashboard from "./LecturerDashboard";
-import MaintenanceDashboard from "./MaintenanceDashboard";
-import AdminDashboard from "./AdminDashboard";
 import { Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import NotificationBell from "@/components/NotificationBell";
 
-export default function DashboardLayout() {
+interface DashboardLayoutProps {
+    children: React.ReactNode;
+}
+
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const { profile } = useAuth();
+    const pathname = usePathname();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
 
-    const role = profile?.role || "student";
-
-    /* ── Render the correct sub-dashboard ── */
-    const renderDashboard = () => {
-        switch (role) {
-            case "admin":
-                return <AdminDashboard />;
-            case "lecturer":
-                return <LecturerDashboard />;
-            case "maintenance":
-                return <MaintenanceDashboard />;
-            case "student":
-            default:
-                return <StudentDashboard />;
+    // Load sidebar collapse preference from localStorage
+    useEffect(() => {
+        setIsMounted(true);
+        const saved = localStorage.getItem("sidebarCollapsed");
+        if (saved !== null) {
+            setSidebarCollapsed(JSON.parse(saved));
         }
+    }, []);
+
+    const handleToggleCollapsed = () => {
+        const nextState = !sidebarCollapsed;
+        setSidebarCollapsed(nextState);
+        localStorage.setItem("sidebarCollapsed", JSON.stringify(nextState));
     };
+
+    // Close mobile menu on path changes
+    useEffect(() => {
+        setMobileOpen(false);
+    }, [pathname]);
+
+    // Parse breadcrumbs
+    const pathParts = pathname.split("/").filter(Boolean);
 
     return (
         <div className="flex h-screen bg-background overflow-hidden">
             {/* ── Sidebar ── */}
             <DashboardSidebar
                 collapsed={sidebarCollapsed}
-                onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+                onToggle={handleToggleCollapsed}
                 mobileOpen={mobileOpen}
                 onMobileClose={() => setMobileOpen(false)}
             />
@@ -58,8 +67,28 @@ export default function DashboardLayout() {
                         </button>
                         <div className="hidden sm:flex items-center gap-2 text-sm">
                             <span className="text-slate-400 dark:text-foreground/30 font-medium">UniLink</span>
-                            <span className="text-slate-300 dark:text-foreground/20">/</span>
-                            <span className="font-bold text-foreground">Dashboard</span>
+                            {pathParts.map((part, index) => {
+                                const isLast = index === pathParts.length - 1;
+                                const formatted = part
+                                    .split("-")
+                                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                                    .join(" ");
+
+                                return (
+                                    <React.Fragment key={part}>
+                                        <span className="text-slate-300 dark:text-foreground/20">/</span>
+                                        <span
+                                            className={
+                                                isLast
+                                                    ? "font-bold text-foreground"
+                                                    : "text-slate-400 dark:text-foreground/30 font-medium"
+                                            }
+                                        >
+                                            {formatted}
+                                        </span>
+                                    </React.Fragment>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -73,11 +102,10 @@ export default function DashboardLayout() {
 
                 {/* ── Scrollable content ── */}
                 <main className="flex-1 overflow-y-auto">
-                    <div className="max-w-7xl mx-auto p-6 lg:p-8">
-                        {renderDashboard()}
-                    </div>
+                    {children}
                 </main>
             </div>
         </div>
     );
 }
+
