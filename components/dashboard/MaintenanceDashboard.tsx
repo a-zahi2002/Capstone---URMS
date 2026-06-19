@@ -68,6 +68,8 @@ export default function MaintenanceDashboard() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [completingTask, setCompletingTask] = useState<Task | null>(null);
+    const [outcome, setOutcome] = useState<"Fixed" | "Faulty" | "Decommissioned">("Fixed");
 
     const getToken = useCallback(async () => {
         if (user && typeof user.getIdToken === "function") return user.getIdToken();
@@ -106,21 +108,33 @@ export default function MaintenanceDashboard() {
 
     useEffect(() => { fetchTasks(); }, [fetchTasks]);
 
-    const handleAdvanceStatus = async (task: Task) => {
-        if (task.rawStatus === "COMPLETED") return;
-        const next = NEXT_STATUS[task.rawStatus];
+    const updateStatus = async (ticketId: string, status: string, outcomeVal?: string) => {
         try {
             const token = await getToken();
-            const res = await fetch(`${API}/api/maintenance-tickets/${task.rawId}/status`, {
+            const body: any = { status };
+            if (outcomeVal) body.outcome = outcomeVal;
+
+            const res = await fetch(`${API}/api/maintenance-tickets/${ticketId}/status`, {
                 method: "PUT",
                 headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ status: next }),
+                body: JSON.stringify(body),
             });
             if (!res.ok) throw new Error("Status update failed");
             await fetchTasks();
         } catch {
             alert("Could not update status. Check permissions.");
         }
+    };
+
+    const handleAdvanceStatus = async (task: Task) => {
+        if (task.rawStatus === "COMPLETED") return;
+        const next = NEXT_STATUS[task.rawStatus];
+        if (next === "COMPLETED") {
+            setCompletingTask(task);
+            setOutcome("Fixed");
+            return;
+        }
+        await updateStatus(task.rawId, next);
     };
 
     const stats = useMemo(() => ({
@@ -339,6 +353,65 @@ export default function MaintenanceDashboard() {
                     )}
                 </div>
             </motion.div>
+
+            {/* Outcome Selection Modal */}
+            {completingTask && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-card border border-slate-200 dark:border-border rounded-3xl shadow-2xl w-full max-w-md overflow-hidden text-left">
+                        <div className="bg-slate-900 p-6 text-white relative font-sans">
+                            <h3 className="text-xl font-black">Select Maintenance Outcome</h3>
+                            <p className="text-slate-400 text-xs mt-1 font-medium">Specify resolution to update resource status</p>
+                        </div>
+                        <div className="p-6 space-y-4 font-sans">
+                            <div className="space-y-3">
+                                {[
+                                    { value: "Fixed", label: "Fixed (Available)", desc: "Set resource availability status to 'Available'" },
+                                    { value: "Faulty", label: "Faulty (Under Maintenance)", desc: "Keep resource status as 'Under Maintenance'" },
+                                    { value: "Decommissioned", label: "Decommissioned (Inactive)", desc: "Set resource status to 'Inactive' (retired)" }
+                                ].map(opt => (
+                                    <label key={opt.value} className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                                        outcome === opt.value 
+                                            ? "border-amber-500 bg-amber-500/5 text-foreground" 
+                                            : "border-slate-200 dark:border-border text-foreground hover:bg-slate-50 dark:hover:bg-white/[0.02]"
+                                    }`}>
+                                        <input 
+                                            type="radio" 
+                                            name="outcome" 
+                                            value={opt.value} 
+                                            checked={outcome === opt.value} 
+                                            onChange={() => setOutcome(opt.value as any)}
+                                            className="mt-1 accent-amber-500"
+                                        />
+                                        <div>
+                                            <div className="font-bold text-sm">{opt.label}</div>
+                                            <div className="text-xs text-slate-400 dark:text-foreground/45 mt-0.5 font-medium">{opt.desc}</div>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <button 
+                                    type="button" 
+                                    onClick={() => setCompletingTask(null)}
+                                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-border text-foreground font-black text-sm hover:bg-slate-50 dark:hover:bg-foreground/5 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={async () => {
+                                        await updateStatus(completingTask.rawId, "COMPLETED", outcome);
+                                        setCompletingTask(null);
+                                    }}
+                                    className="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle2 className="w-4 h-4" /> Confirm & Complete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </motion.div>
     );
 }

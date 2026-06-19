@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS resources (
 CREATE TABLE IF NOT EXISTS bookings (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     resource_id UUID NOT NULL REFERENCES resources(id) ON DELETE CASCADE,
-    user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE SET NULL, -- Reference to users table
+    user_id     TEXT REFERENCES users(id) ON DELETE SET NULL, -- Reference to users table
     start_time  TIMESTAMPTZ NOT NULL,
     end_time    TIMESTAMPTZ NOT NULL,
     status      TEXT DEFAULT 'Pending',    -- 'Pending', 'Approved', 'Completed', 'Cancelled', 'Rejected'
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS maintenance_tickets (
     description  TEXT,
     priority     TEXT DEFAULT 'Medium',    -- 'Low', 'Medium', 'High'
     status       TEXT DEFAULT 'OPEN',      -- 'OPEN', 'IN_PROGRESS', 'COMPLETED'
-    created_by   TEXT NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    created_by   TEXT REFERENCES users(id) ON DELETE SET NULL,
     assigned_to  TEXT REFERENCES users(id) ON DELETE SET NULL,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,              -- Timestamp when status becomes COMPLETED
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 -- Tracks system-generated analytics reports
 CREATE TABLE IF NOT EXISTS reports (
     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    generated_by TEXT NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+    generated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
     report_type  TEXT NOT NULL,            -- 'maintenance', 'usage', 'booking', 'overview'
     file_path    TEXT,                     -- URL to stored file
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()

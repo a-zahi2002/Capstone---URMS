@@ -1,8 +1,9 @@
 import { Response } from "express";
-import admin from "../config/firebase.config";
+import admin, { isFirebaseInitialized } from "../config/firebase.config";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { hashPassword, verifyPassword } from "../services/password.service";
 import { supabase } from "../config/supabaseClient";
+import { syncAllUsers, syncSingleUser } from "../services/userSync";
 
 export const getProfile = async (req: AuthRequest, res: Response) => {
     try {
@@ -11,6 +12,8 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
             return res.status(401).json({ message: "Unauthorized" });
         }
 
+        // Auto-sync user profile to Supabase and ensure claims are correct
+        const syncedUser = await syncSingleUser(uid);
         const userRecord = await admin.auth().getUser(uid);
         
         return res.status(200).json({
@@ -18,7 +21,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
             email: userRecord.email,
             displayName: userRecord.displayName || "",
             photoURL: userRecord.photoURL || "",
-            role: userRecord.customClaims?.role || "user",
+            role: userRecord.customClaims?.role || syncedUser?.role || "user",
             metadata: userRecord.metadata,
         });
     } catch (error: any) {
@@ -130,5 +133,238 @@ export const verifyPasswordHandler = async (req: AuthRequest, res: Response) => 
     } catch (error: any) {
         console.error("Error verifying password:", error);
         return res.status(500).json({ message: "Failed to verify password.", error: error.message });
+    }
+};
+
+/**
+ * Get all users from database (Admin only)
+ */
+export const getAllUsers = async (req: AuthRequest, res: Response) => {
+    try {
+        const users = await syncAllUsers();
+        return res.status(200).json({ status: "success", data: users });
+    } catch (error: any) {
+        console.error("Error fetching all users:", error);
+        return res.status(500).json({ message: "Failed to fetch users", error: error.message });
+    }
+};
+
+/**
+ * Create a new user (Admin only)
+ */
+export const adminCreateUser = async (req: AuthRequest, res: Response) => {
+    try {
+        const { name, email, role, department, password } = req.body;
+
+        if (!name || !email || !role || !department || !password) {
+            return res.status(400).json({ message: "All fields are required (name, email, role, department, password)." });
+        }
+
+        const validRoles = ["admin", "lecturer", "student", "maintenance"];
+        if (!validRoles.includes(role.toLowerCase())) {
+            return res.status(400).json({ message: `Invalid role. Must be one of ${validRoles.join(", ")}.` });
+        }
+
+        let uid = "";
+        let firebaseCreated = false;
+
+        if (isFirebaseInitialized) {
+            try {
+                const userRecord = await admin.auth().createUser({
+                    email: email.toLowerCase(),
+                    password: password,
+                    displayName: name,
+                    emailVerified: true
+                });
+                uid = userRecord.uid;
+                firebaseCreated = true;
+
+                // Set Firebase Custom Claims for Role
+                await admin.auth().setCustomUserClaims(uid, { role: role.toLowerCase() });
+            } catch (err: any) {
+                console.error("Error creating user in Firebase Auth:", err);
+                return res.status(500).json({ message: "Failed to create user in Firebase Auth.", error: err.message });
+            }
+        } else {
+            // Dev mode fallback
+            uid = `dev-${Date.now()}`;
+            console.warn(`Firebase Admin not initialized. Generated mock UID: ${uid}`);
+        }
+
+        // Hash password for local db check fallback
+        const passwordHash = await hashPassword(password);
+
+        // Save profile in Supabase
+        const { error: dbError } = await supabase
+            .from("users")
+            .insert({
+                id: uid,
+                name,
+                email: email.toLowerCase(),
+                role: role.toLowerCase(),
+                department,
+                password_hash: passwordHash,
+            });
+
+        if (dbError) {
+            console.error("Error inserting user in Supabase:", dbError);
+            // Rollback Firebase user if created
+            if (firebaseCreated && isFirebaseInitialized) {
+                await admin.auth().deleteUser(uid).catch(err => console.error("Failed to rollback Firebase user:", err));
+            }
+            return res.status(500).json({ message: "Failed to create user profile in database.", error: dbError.message });
+        }
+
+        return res.status(201).json({
+            status: "success",
+            message: "User created successfully.",
+            data: {
+                id: uid,
+                name,
+                email,
+                role: role.toLowerCase(),
+                department,
+            }
+        });
+    } catch (error: any) {
+        console.error("Error in adminCreateUser:", error);
+        return res.status(500).json({ message: "Failed to create user.", error: error.message });
+    }
+};
+
+/**
+ * Update user details (Admin only)
+ */
+export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
+    try {
+        const id = req.params.id as string;
+        const { name, role, department, password } = req.body;
+
+        if (!name || !role || !department) {
+            return res.status(400).json({ message: "Name, role, and department are required." });
+        }
+
+        const validRoles = ["admin", "lecturer", "student", "maintenance"];
+        if (!validRoles.includes(role.toLowerCase())) {
+            return res.status(400).json({ message: `Invalid role. Must be one of ${validRoles.join(", ")}.` });
+        }
+
+        // Check if user exists in DB first
+        const { data: existingUser, error: checkError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", id)
+            .maybeSingle();
+
+        if (checkError || !existingUser) {
+            return res.status(404).json({ message: "User not found in database." });
+        }
+
+        if (isFirebaseInitialized && !id.startsWith("dev-")) {
+            try {
+                // Update Firebase Auth details
+                await admin.auth().updateUser(id, {
+                    displayName: name,
+                    ...(password ? { password } : {})
+                });
+
+                // Update claims if role has changed
+                if (existingUser.role !== role.toLowerCase()) {
+                    await admin.auth().setCustomUserClaims(id, { role: role.toLowerCase() });
+                }
+            } catch (err: any) {
+                console.error("Error updating user in Firebase Auth:", err);
+                return res.status(500).json({ message: "Failed to update user in Firebase Auth.", error: err.message });
+            }
+        }
+
+        // Hash new password if provided
+        let passwordHash = undefined;
+        if (password) {
+            passwordHash = await hashPassword(password);
+        }
+
+        // Update profile in Supabase
+        const { error: dbError } = await supabase
+            .from("users")
+            .update({
+                name,
+                role: role.toLowerCase(),
+                department,
+                ...(passwordHash ? { password_hash: passwordHash } : {})
+            })
+            .eq("id", id);
+
+        if (dbError) {
+            console.error("Error updating user in Supabase:", dbError);
+            return res.status(500).json({ message: "Failed to update user profile in database.", error: dbError.message });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: "User updated successfully.",
+            data: {
+                id,
+                name,
+                role: role.toLowerCase(),
+                department,
+            }
+        });
+    } catch (error: any) {
+        console.error("Error in adminUpdateUser:", error);
+        return res.status(500).json({ message: "Failed to update user.", error: error.message });
+    }
+};
+
+/**
+ * Delete a user (Admin only)
+ */
+export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
+    try {
+        const id = req.params.id as string;
+
+        // Check if user exists
+        const { data: existingUser, error: checkError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", id)
+            .maybeSingle();
+
+        if (checkError || !existingUser) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Delete from Firebase Auth if initialized and not a mock/dev user
+        if (isFirebaseInitialized && !id.startsWith("dev-")) {
+            try {
+                await admin.auth().deleteUser(id);
+            } catch (err: any) {
+                if (err.code === "auth/user-not-found") {
+                    console.warn(`User ${id} not found in Firebase Auth, proceeding with DB deletion.`);
+                } else {
+                    console.error("Error deleting user from Firebase Auth:", err);
+                    return res.status(500).json({ message: "Failed to delete user from Firebase Auth.", error: err.message });
+                }
+            }
+        }
+
+        // Delete from Supabase
+        const { error: dbError } = await supabase
+            .from("users")
+            .delete()
+            .eq("id", id);
+
+        if (dbError) {
+            console.error("Error deleting user from Supabase:", dbError);
+            return res.status(500).json({ message: "Failed to delete user profile from database.", error: dbError.message });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: "User deleted successfully."
+        });
+    } catch (error: any) {
+        console.error("Error in adminDeleteUser:", error);
+        return res.status(500).json({ message: "Failed to delete user.", error: error.message });
     }
 };
