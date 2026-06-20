@@ -1,7 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState, Suspense } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import NewBookingModal from "@/components/NewBookingModal";
+import EditBookingModal from "@/components/EditBookingModal";
+import DeleteBookingModal from "@/components/DeleteBookingModal";
+import PersonalBookingDashboard from "@/components/dashboard/PersonalBookingDashboard";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
+import Pagination from "@/components/Pagination";
+import SavedSearches from "@/components/SavedSearches";
+import { exportToCSV } from "@/lib/exportCsv";
+import { DownloadCloud } from "lucide-react";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 import {
     Plus,
     Search,
@@ -9,118 +22,941 @@ import {
     Calendar,
     Clock,
     MapPin,
-    MoreVertical
+    MoreVertical,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react";
 
-export default function BookingsPage() {
-    const bookings = [
-        { title: "Advanced Robotics Lab", faculty: "Engineering", date: "Mar 12, 2026", time: "09:00 - 12:00", status: "Confirmed" },
-        { title: "Organic Chemistry Lab", faculty: "Science", date: "Mar 13, 2026", time: "14:00 - 17:00", status: "Pending" },
-        { title: "Lecture Hall A1", faculty: "Business", date: "Mar 15, 2026", time: "08:00 - 10:00", status: "Confirmed" },
-        { title: "Fluid Mechanics Lab", faculty: "Engineering", date: "Mar 18, 2026", time: "11:00 - 13:00", status: "Cancelled" },
-    ];
+type CalendarView = "week" | "month";
+type AvailabilityStatus = "Available" | "Limited" | "Booked";
+
+interface ResourceItem {
+    id: string;
+    name: string;
+    type: string;
+    location: string;
+    availability_status: string;
+}
+
+interface BookingResource {
+    id: string;
+    name: string;
+    type: string;
+    location: string;
+}
+
+interface BookingRow {
+    id: string;
+    resource_id: string;
+    start_time: string;
+    end_time: string;
+    status: string;
+    resources?: BookingResource | BookingResource[] | null;
+}
+
+interface DaySummary {
+    status: AvailabilityStatus;
+    bookingCount: number;
+    bookedResources: number;
+    totalResources: number;
+}
+
+const WORKDAY_START_HOUR = 8;
+const WORKDAY_END_HOUR = 17;
+const ALL_RESOURCES_LIMITED_THRESHOLD = 0.3;
+const ALL_RESOURCES_BOOKED_THRESHOLD = 0.7;
+const SINGLE_RESOURCE_LIMITED_THRESHOLD = 0.1;
+const SINGLE_RESOURCE_BOOKED_THRESHOLD = 0.85;
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+const startOfDay = (date: Date) =>
+    new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const toDateKey = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
+
+const addDays = (date: Date, amount: number) => {
+    const next = new Date(date);
+    next.setDate(next.getDate() + amount);
+    return next;
+};
+
+const getStartOfWeek = (date: Date) => {
+    const start = startOfDay(date);
+    const day = start.getDay();
+    const diff = (day + 6) % 7;
+    start.setDate(start.getDate() - diff);
+    return start;
+};
+
+const buildWeek = (date: Date) => {
+    const start = getStartOfWeek(date);
+    return Array.from({ length: 7 }, (_, idx) => addDays(start, idx));
+};
+
+const buildMonthGrid = (date: Date) => {
+    const firstOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+    const gridStart = getStartOfWeek(firstOfMonth);
+    return Array.from({ length: 42 }, (_, idx) => addDays(gridStart, idx));
+};
+
+const formatDateLabel = (value: string) =>
+    new Date(value).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+
+const formatTimeLabel = (value: string) =>
+    new Date(value).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    });
+
+const getBookingResource = (booking: BookingRow) => {
+    if (!booking.resources) return null;
+    return Array.isArray(booking.resources)
+        ? booking.resources[0] || null
+        : booking.resources;
+};
+
+const getOverlapMinutes = (
+    start: Date,
+    end: Date,
+    windowStart: Date,
+    windowEnd: Date
+) => {
+    const startMs = Math.max(start.getTime(), windowStart.getTime());
+    const endMs = Math.min(end.getTime(), windowEnd.getTime());
+    return Math.max(0, (endMs - startMs) / 60000);
+};
+
+const getAvailabilityClasses = (status: AvailabilityStatus) => {
+    if (status === "Available") {
+        return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20";
+    }
+    if (status === "Limited") {
+        return "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20";
+    }
+    return "bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-500/20";
+};
+
+const normalizeBookingStatus = (status: string) => {
+    if (status === "Approved") return "Confirmed";
+    if (status === "Pending") return "Pending";
+    if (status === "Cancelled") return "Cancelled";
+    if (status === "Completed") return "Completed";
+    return status;
+};
+
+const getBookingStatusClasses = (statusLabel: string) => {
+    if (statusLabel === "Confirmed") {
+        return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20";
+    }
+    if (statusLabel === "Pending") {
+        return "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20";
+    }
+    if (statusLabel === "Cancelled") {
+        return "bg-red-50 dark:bg-red-500/10 text-red-650 dark:text-red-400 border border-red-100 dark:border-red-500/20";
+    }
+    return "bg-slate-100 dark:bg-white/5 text-slate-650 dark:text-foreground/60 border border-slate-200 dark:border-white/10";
+};
+
+function BookingsPageContent() {
+    const { user, profile } = useAuth();
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    const urlPage = parseInt(searchParams.get("page") || "1", 10);
+    const urlPageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+
+    const [currentPage, setCurrentPage] = useState(urlPage);
+    const [pageSize, setPageSize] = useState(urlPageSize);
+
+    const updateUrlParams = (newPage: number, newPageSize: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", newPage.toString());
+        params.set("pageSize", newPageSize.toString());
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
+    useEffect(() => {
+        const pageVal = parseInt(searchParams.get("page") || "1", 10);
+        const pageSizeVal = parseInt(searchParams.get("pageSize") || "10", 10);
+        setCurrentPage(pageVal);
+        setPageSize(pageSizeVal);
+    }, [searchParams]);
+
+    const role = profile?.role || "student";
+    const defaultView = role === "student" ? "my" : "all";
+    const view = searchParams.get("view") || defaultView;
+    const [statusFilter, setStatusFilter] = useState("All");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editBooking, setEditBooking] = useState<BookingRow | null>(null);
+    const [deleteBooking, setDeleteBooking] = useState<BookingRow | null>(null);
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+    const [resources, setResources] = useState<ResourceItem[]>([]);
+    const [bookings, setBookings] = useState<BookingRow[]>([]);
+    const [loadingResources, setLoadingResources] = useState(true);
+    const [loadingBookings, setLoadingBookings] = useState(true);
+    const [resourceError, setResourceError] = useState<string | null>(null);
+    const [bookingError, setBookingError] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [calendarView, setCalendarView] = useState<CalendarView>("month");
+    const [activeDate, setActiveDate] = useState(() => new Date());
+    const [selectedResourceId, setSelectedResourceId] = useState("all");
+    const [refreshSignal, setRefreshSignal] = useState(0);
+
+    const calendarDays = useMemo(
+        () =>
+            calendarView === "week"
+                ? buildWeek(activeDate)
+                : buildMonthGrid(activeDate),
+        [calendarView, activeDate]
+    );
+
+    const calendarRange = useMemo(() => {
+        if (calendarDays.length === 0) return null;
+        const rangeStart = startOfDay(calendarDays[0]);
+        const rangeEnd = startOfDay(addDays(calendarDays[calendarDays.length - 1], 1));
+        return { rangeStart, rangeEnd };
+    }, [calendarDays]);
+
+    const rangeStartIso = calendarRange?.rangeStart.toISOString() ?? null;
+    const rangeEndIso = calendarRange?.rangeEnd.toISOString() ?? null;
+
+    const calendarLabel = useMemo(() => {
+        if (!calendarRange) return "";
+        if (calendarView === "month") {
+            return activeDate.toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+            });
+        }
+        const start = calendarRange.rangeStart;
+        const end = addDays(calendarRange.rangeStart, 6);
+        const startLabel = start.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+        });
+        const endLabel = end.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+        });
+        const yearLabel = end.toLocaleDateString("en-US", { year: "numeric" });
+        return `${startLabel} - ${endLabel}, ${yearLabel}`;
+    }, [calendarView, calendarRange, activeDate]);
+
+    const calendarSubLabel = useMemo(() => {
+        if (!calendarRange) return "";
+        if (calendarView === "month") return "Availability by day";
+        const start = calendarRange.rangeStart;
+        const end = addDays(calendarRange.rangeStart, 6);
+        const startLabel = start.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+        });
+        const endLabel = end.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+        });
+        return `Week of ${startLabel} - ${endLabel}`;
+    }, [calendarView, calendarRange]);
+
+    useEffect(() => {
+        let isActive = true;
+        const loadResources = async () => {
+            setLoadingResources(true);
+            setResourceError(null);
+            try {
+                const { data, error } = await supabase
+                    .from("resources")
+                    .select("id, name, type, location, availability_status")
+                    .order("name");
+                if (error) throw error;
+                if (isActive) setResources((data as ResourceItem[]) || []);
+            } catch (err: any) {
+                if (isActive) {
+                    setResourceError(err.message || "Failed to load resources.");
+                }
+            } finally {
+                if (isActive) setLoadingResources(false);
+            }
+        };
+        loadResources();
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        let isActive = true;
+        const loadBookings = async () => {
+            setLoadingBookings(true);
+            setBookingError(null);
+            try {
+                const token = user ? await user.getIdToken() : "dev-token";
+                let url = `${API}/api/bookings`;
+
+                if (view === "my" || view === "status") {
+                    url = `${API}/api/bookings/my`;
+                } else {
+                    if (!rangeStartIso || !rangeEndIso) return;
+                    url = `${API}/api/bookings?from=${rangeStartIso}&to=${rangeEndIso}`;
+                    if (selectedResourceId !== "all") {
+                        url += `&resource_id=${selectedResourceId}`;
+                    }
+                }
+
+                const res = await fetch(url, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                const result = await res.json();
+                if (!res.ok || result.status === "error") {
+                    throw new Error(result.message || "Failed to load bookings.");
+                }
+
+                if (isActive) setBookings((result.data as BookingRow[]) || []);
+            } catch (err: any) {
+                if (isActive) {
+                    setBookingError(err.message || "Failed to load bookings.");
+                }
+            } finally {
+                if (isActive) setLoadingBookings(false);
+            }
+        };
+        loadBookings();
+        return () => {
+            isActive = false;
+        };
+    }, [rangeStartIso, rangeEndIso, selectedResourceId, refreshSignal, user, view]);
+
+    const daySummaries = useMemo(() => {
+        const summaries = new Map<string, DaySummary>();
+        if (calendarDays.length === 0) return summaries;
+
+        const relevantResources =
+            selectedResourceId === "all"
+                ? resources
+                : resources.filter((resource) => resource.id === selectedResourceId);
+        const totalResources = relevantResources.length;
+
+        for (const day of calendarDays) {
+            const dayStart = startOfDay(day);
+            const dayEnd = addDays(dayStart, 1);
+            const workStart = new Date(dayStart);
+            workStart.setHours(WORKDAY_START_HOUR, 0, 0, 0);
+            const workEnd = new Date(dayStart);
+            workEnd.setHours(WORKDAY_END_HOUR, 0, 0, 0);
+
+            let bookingCount = 0;
+            let bookedMinutes = 0;
+            const bookedResources = new Set<string>();
+
+            for (const booking of bookings) {
+                if (booking.status === "Cancelled") continue;
+                if (
+                    selectedResourceId !== "all" &&
+                    booking.resource_id !== selectedResourceId
+                ) {
+                    continue;
+                }
+
+                const bookingStart = new Date(booking.start_time);
+                const bookingEnd = new Date(booking.end_time);
+
+                if (bookingStart >= dayEnd || bookingEnd <= dayStart) continue;
+
+                bookingCount += 1;
+                bookedResources.add(booking.resource_id);
+
+                if (selectedResourceId !== "all") {
+                    bookedMinutes += getOverlapMinutes(
+                        bookingStart,
+                        bookingEnd,
+                        workStart,
+                        workEnd
+                    );
+                }
+            }
+
+            let status: AvailabilityStatus = "Available";
+            if (selectedResourceId === "all") {
+                const ratio =
+                    totalResources > 0
+                        ? bookedResources.size / totalResources
+                        : 0;
+                status =
+                    ratio >= ALL_RESOURCES_BOOKED_THRESHOLD
+                        ? "Booked"
+                        : ratio >= ALL_RESOURCES_LIMITED_THRESHOLD
+                            ? "Limited"
+                            : "Available";
+            } else {
+                const workMinutes = Math.max(
+                    0,
+                    (WORKDAY_END_HOUR - WORKDAY_START_HOUR) * 60
+                );
+                status =
+                    bookedMinutes >= workMinutes * SINGLE_RESOURCE_BOOKED_THRESHOLD
+                        ? "Booked"
+                        : bookedMinutes >= workMinutes * SINGLE_RESOURCE_LIMITED_THRESHOLD
+                            ? "Limited"
+                            : "Available";
+            }
+
+            summaries.set(toDateKey(dayStart), {
+                status,
+                bookingCount,
+                bookedResources: bookedResources.size,
+                totalResources,
+            });
+        }
+
+        return summaries;
+    }, [calendarDays, bookings, resources, selectedResourceId]);
+
+    const filteredBookings = useMemo(() => {
+        let list = bookings;
+        if (view === "status" && statusFilter !== "All") {
+            const normalizedFilter = statusFilter === "Confirmed" ? "Approved" : statusFilter;
+            list = list.filter(b => b.status === normalizedFilter);
+        }
+        if (!searchQuery) return list;
+        const q = searchQuery.toLowerCase();
+        return list.filter((booking) => {
+            const resource = getBookingResource(booking);
+            const name = resource?.name || "";
+            const location = resource?.location || "";
+            const type = resource?.type || "";
+            return (
+                name.toLowerCase().includes(q) ||
+                location.toLowerCase().includes(q) ||
+                type.toLowerCase().includes(q)
+            );
+        });
+    }, [bookings, searchQuery, view, statusFilter]);
+
+    const paginatedBookings = useMemo(() => {
+        return filteredBookings.slice(
+            (currentPage - 1) * pageSize,
+            currentPage * pageSize
+        );
+    }, [filteredBookings, currentPage, pageSize]);
+
+    const totalBookings = bookings.length;
+    const shownBookings = filteredBookings.length;
+    const todayKey = toDateKey(new Date());
+    const combinedError = [resourceError, bookingError]
+        .filter(Boolean)
+        .join(" ");
+
+    const handlePrev = () => {
+        setActiveDate((current) => {
+            const next = new Date(current);
+            if (calendarView === "month") {
+                next.setMonth(next.getMonth() - 1);
+            } else {
+                next.setDate(next.getDate() - 7);
+            }
+            return next;
+        });
+    };
+
+    const handleNext = () => {
+        setActiveDate((current) => {
+            const next = new Date(current);
+            if (calendarView === "month") {
+                next.setMonth(next.getMonth() + 1);
+            } else {
+                next.setDate(next.getDate() + 7);
+            }
+            return next;
+        });
+    };
+
+    const handleToday = () => {
+        setActiveDate(new Date());
+    };
+
+    const handleBookingRefresh = () => {
+        setRefreshSignal((value) => value + 1);
+    };
+
+    const handleCancelBooking = async (bookingId: string) => {
+        try {
+            const token = user ? await user.getIdToken() : "dev-token";
+            const res = await fetch(`${API}/api/bookings/${bookingId}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: "Cancelled" })
+            });
+            const result = await res.json();
+            if (!res.ok || result.status === "error") {
+                throw new Error(result.message || "Failed to cancel booking");
+            }
+            handleBookingRefresh();
+            setActiveDropdown(null);
+        } catch (err: any) {
+            alert(err.message || "An error occurred");
+        }
+    };
 
     return (
         <ProtectedRoute>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-foreground">
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Resource Bookings</h1>
-                        <p className="text-slate-500 font-medium">Manage and monitor facility schedules across all university faculties.</p>
+                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+                            {view === "my" || view === "status" ? "My Bookings" : "Resource Bookings"}
+                        </h1>
+                        <p className="text-slate-500 dark:text-foreground/50 font-medium">
+                            {view === "my" || view === "status"
+                                ? "Manage, track, and edit your personal resource reservations."
+                                : "Manage and monitor facility schedules across all university faculties."}
+                        </p>
                     </div>
-                    <button className="inline-flex items-center justify-center gap-2 bg-brand-primary text-white font-bold px-6 py-3 rounded-2xl hover:bg-brand-secondary transition-all shadow-lg active:scale-95 whitespace-nowrap">
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="inline-flex items-center justify-center gap-2 bg-brand-primary text-white font-bold px-6 py-3 rounded-2xl hover:bg-brand-secondary transition-all shadow-lg active:scale-95 whitespace-nowrap"
+                    >
                         <Plus className="w-5 h-5" />
                         New Booking
                     </button>
                 </header>
 
-                {/* Filters & Search */}
-                <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-8 flex flex-col lg:flex-row gap-4">
-                    <div className="relative flex-1 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-brand-primary" />
-                        <input
-                            type="text"
-                            placeholder="Search by facility name or faculty..."
-                            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
-                        />
+                {combinedError && (
+                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl text-sm font-semibold">
+                        {combinedError}
                     </div>
-                    <div className="flex gap-4">
-                        <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-                            <Filter className="w-4 h-4" />
-                            Filters
-                        </button>
-                        <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-                            <Calendar className="w-4 h-4" />
-                            March 2026
-                        </button>
-                    </div>
-                </div>
+                )}
 
-                {/* Bookings Table */}
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-slate-100">
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Resource / Facility</th>
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Date & Time</th>
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Status</th>
-                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {bookings.map((booking, idx) => (
-                                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
-                                        <td className="px-6 py-5">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-2xl bg-brand-primary/5 flex items-center justify-center">
-                                                    <MapPin className="w-5 h-5 text-brand-primary" />
+                {/* Availability Calendar (Hidden in personal bookings view) */}
+                {view !== "my" && view !== "status" && (
+                    <section className="mb-8">
+                    <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm p-6">
+                        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6">
+                            <div>
+                                <h2 className="text-xl font-black text-slate-900 dark:text-white">Booking Availability</h2>
+                                <p className="text-sm font-medium text-slate-500 dark:text-foreground/40">{calendarSubLabel}</p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="flex items-center gap-2 px-2 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50 dark:bg-white/5">
+                                    <button
+                                        onClick={handlePrev}
+                                        className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-white/5 transition-colors text-slate-500 dark:text-foreground/60"
+                                        aria-label="Previous"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    <span className="text-sm font-bold text-slate-700 dark:text-foreground/80 whitespace-nowrap">{calendarLabel}</span>
+                                    <button
+                                        onClick={handleNext}
+                                        className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-white/5 transition-colors text-slate-500 dark:text-foreground/60"
+                                        aria-label="Next"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={handleToday}
+                                        className="px-2.5 py-1 text-xs font-bold text-slate-600 dark:text-foreground/80 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+                                    >
+                                        Today
+                                    </button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setCalendarView("week")}
+                                        className={`px-3 py-2 border rounded-xl text-xs font-bold transition-colors ${calendarView === "week"
+                                            ? "bg-brand-primary text-white border-brand-primary"
+                                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5"
+                                            }`}
+                                    >
+                                        Week
+                                    </button>
+                                    <button
+                                        onClick={() => setCalendarView("month")}
+                                        className={`px-3 py-2 border rounded-xl text-xs font-bold transition-colors ${calendarView === "month"
+                                            ? "bg-brand-primary text-white border-brand-primary"
+                                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5"
+                                            }`}
+                                    >
+                                        Month
+                                    </button>
+                                </div>
+                                <select
+                                    value={selectedResourceId}
+                                    onChange={(e) => setSelectedResourceId(e.target.value)}
+                                    disabled={loadingResources}
+                                    className="px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-foreground/60 bg-slate-50 dark:bg-[#0c0a14] hover:bg-white dark:hover:bg-white/5 transition-colors min-w-[180px]"
+                                >
+                                    <option value="all">
+                                        {loadingResources ? "Loading resources..." : "All resources"}
+                                    </option>
+                                    {resources.map((resource) => (
+                                        <option key={resource.id} value={resource.id}>
+                                            {resource.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {loadingBookings ? (
+                            <div className="py-12 text-center text-sm font-semibold text-slate-400">
+                                Loading availability...
+                            </div>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-7 gap-2 text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-foreground/30">
+                                    {WEEKDAYS.map((label) => (
+                                        <span key={label} className="text-center">
+                                            {label}
+                                        </span>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-7 gap-2 mt-2">
+                                    {calendarDays.map((day) => {
+                                        const dayKey = toDateKey(day);
+                                        const summary = daySummaries.get(dayKey);
+                                        const status = summary?.status || "Available";
+                                        const isOutsideMonth =
+                                            calendarView === "month" &&
+                                            day.getMonth() !== activeDate.getMonth();
+                                        const isToday = dayKey === todayKey;
+                                        const bookingCount = summary?.bookingCount || 0;
+                                        const metaText =
+                                            selectedResourceId === "all"
+                                                ? summary && summary.totalResources > 0
+                                                    ? `${summary.bookedResources}/${summary.totalResources} resources booked`
+                                                    : "No resources"
+                                                : bookingCount > 0
+                                                    ? `${bookingCount} booking${bookingCount > 1 ? "s" : ""}`
+                                                    : "Open slots";
+                                        return (
+                                            <div
+                                                key={dayKey}
+                                                className={`rounded-2xl border p-3 min-h-[110px] flex flex-col justify-between ${isOutsideMonth
+                                                    ? "bg-slate-50 dark:bg-white/[0.01] text-slate-400 dark:text-foreground/30 border-slate-100 dark:border-white/[0.04]"
+                                                    : "bg-slate-50/60 dark:bg-white/[0.03] border-slate-100 dark:border-white/[0.06]"
+                                                    } ${isToday
+                                                        ? "ring-2 ring-brand-primary/20"
+                                                        : ""
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <span
+                                                        className={`text-sm font-bold ${isOutsideMonth
+                                                            ? "text-slate-400"
+                                                            : "text-slate-800 dark:text-foreground/80"
+                                                            }`}
+                                                    >
+                                                        {day.getDate()}
+                                                    </span>
+                                                    {bookingCount > 0 && (
+                                                        <span className="text-[10px] font-bold text-slate-400 dark:text-foreground/30">
+                                                            {bookingCount} booking{bookingCount > 1 ? "s" : ""}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-bold text-slate-900">{booking.title}</p>
-                                                    <p className="text-xs font-medium text-slate-500 italic">Faculty of {booking.faculty}</p>
+                                                <div className="mt-2">
+                                                    <span
+                                                        className={`inline-flex px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getAvailabilityClasses(status)
+                                                            }`}
+                                                    >
+                                                        {status}
+                                                    </span>
+                                                </div>
+                                                <div className="mt-2 text-[11px] font-semibold text-slate-400 dark:text-foreground/45">
+                                                    {metaText}
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-5">
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                                                    <Calendar className="w-3.5 h-3.5" />
-                                                    {booking.date}
-                                                </div>
-                                                <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                                                    <Clock className="w-3.5 h-3.5" />
-                                                    {booking.time}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-5">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${booking.status === "Confirmed" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                                                    booking.status === "Pending" ? "bg-amber-50 text-amber-600 border border-amber-100" :
-                                                        "bg-red-50 text-red-600 border border-red-100"
-                                                }`}>
-                                                {booking.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-5 text-right">
-                                            <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-slate-600">
-                                                <MoreVertical className="w-5 h-5" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                        <p className="text-xs font-bold text-slate-500 items-center">Showing 4 of 28 bookings</p>
-                        <div className="flex gap-2">
-                            <button className="px-3 py-1 border border-slate-200 rounded-lg text-xs font-bold bg-white text-slate-400 cursor-not-allowed">Prev</button>
-                            <button className="px-3 py-1 border border-slate-200 rounded-lg text-xs font-bold bg-white text-slate-600 hover:bg-slate-50 transition-colors italic font-black">Next</button>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+
+                        <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-slate-500 dark:text-foreground/50">
+                            <span className="inline-flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                Available
+                            </span>
+                            <span className="inline-flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                Limited
+                            </span>
+                            <span className="inline-flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                                Booked
+                            </span>
                         </div>
                     </div>
-                </div>
+                </section>
+                )}
+
+                {view === "my" || view === "status" ? (
+                    <PersonalBookingDashboard
+                        bookings={bookings}
+                        loadingBookings={loadingBookings}
+                        onEditBooking={setEditBooking}
+                        onDeleteBooking={setDeleteBooking}
+                        onCancelBooking={handleCancelBooking}
+                        view={view}
+                    />
+                ) : (
+                    <>
+                        {/* Filters & Search */}
+                        <div className="bg-white dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm mb-4 flex flex-col lg:flex-row gap-4">
+                            <div className="relative flex-1 group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-brand-primary" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        updateUrlParams(1, pageSize);
+                                    }}
+                                    placeholder="Search by resource name, type, or location..."
+                                    className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
+                                />
+                            </div>
+                            <div className="flex gap-4">
+                                <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                    <Filter className="w-4 h-4" />
+                                    Filters
+                                </button>
+                                <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                    <Calendar className="w-4 h-4" />
+                                    {calendarLabel || "Select range"}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* ── Saved Searches & Export ── */}
+                        <div className="flex items-center justify-between gap-4 mb-6">
+                            <SavedSearches
+                                pageKey="bookings-all"
+                                currentFilters={{
+                                    searchQuery,
+                                    selectedResourceId,
+                                    statusFilter,
+                                }}
+                                onLoadFilters={(filters) => {
+                                    if (filters.searchQuery !== undefined) setSearchQuery(filters.searchQuery);
+                                    if (filters.selectedResourceId !== undefined) setSelectedResourceId(filters.selectedResourceId);
+                                    if (filters.statusFilter !== undefined) setStatusFilter(filters.statusFilter);
+                                    updateUrlParams(1, pageSize);
+                                }}
+                            />
+                            <button
+                                onClick={() => {
+                                    exportToCSV(
+                                        filteredBookings.map(b => {
+                                            const r = getBookingResource(b);
+                                            return {
+                                                resourceName: r?.name || "",
+                                                location: r?.location || "",
+                                                date: formatDateLabel(b.start_time),
+                                                time: `${formatTimeLabel(b.start_time)} - ${formatTimeLabel(b.end_time)}`,
+                                                status: normalizeBookingStatus(b.status)
+                                            };
+                                        }),
+                                        ["Resource Name", "Location", "Date", "Time", "Status"],
+                                        ["resourceName", "location", "date", "time", "status"],
+                                        "bookings"
+                                    );
+                                }}
+                                className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+                            >
+                                <DownloadCloud className="w-4 h-4 text-emerald-500" />
+                                <span>Export CSV</span>
+                            </button>
+                        </div>
+
+                        {/* Bookings Table */}
+                        <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="bg-slate-50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/[0.06]">
+                                            <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Resource / Facility</th>
+                                            <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Date & Time</th>
+                                            <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40">Status</th>
+                                            <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+                                        {loadingBookings ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={4}
+                                                    className="px-6 py-10 text-center text-sm font-semibold text-slate-400"
+                                                >
+                                                    Loading bookings...
+                                                </td>
+                                            </tr>
+                                        ) : filteredBookings.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={4}
+                                                    className="px-6 py-10 text-center text-sm font-semibold text-slate-400"
+                                                >
+                                                    No bookings found for this range.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            paginatedBookings.map((booking) => {
+                                                const statusLabel = normalizeBookingStatus(booking.status);
+                                                const resource = getBookingResource(booking);
+                                                const resourceName =
+                                                    resource?.name || "Unknown resource";
+                                                const resourceMeta = resource
+                                                    ? `${resource.type} - ${resource.location}`
+                                                    : "Resource details unavailable";
+                                                const dateLabel = formatDateLabel(booking.start_time);
+                                                const timeLabel = `${formatTimeLabel(
+                                                    booking.start_time
+                                                )} - ${formatTimeLabel(booking.end_time)}`;
+
+                                                return (
+                                                    <tr
+                                                        key={booking.id}
+                                                        className="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors group"
+                                                    >
+                                                        <td className="px-6 py-5">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-10 h-10 rounded-2xl bg-brand-primary/5 flex items-center justify-center">
+                                                                    <MapPin className="w-5 h-5 text-brand-primary" />
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-slate-900 dark:text-foreground">
+                                                                        {resourceName}
+                                                                    </p>
+                                                                    <p className="text-xs font-medium text-slate-500 dark:text-foreground/45 italic">
+                                                                        {resourceMeta}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-5">
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-foreground/80">
+                                                                    <Calendar className="w-3.5 h-3.5" />
+                                                                    {dateLabel}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-foreground/50">
+                                                                    <Clock className="w-3.5 h-3.5" />
+                                                                    {timeLabel}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-5">
+                                                            <span
+                                                                className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${getBookingStatusClasses(
+                                                                    statusLabel
+                                                                )}`}
+                                                            >
+                                                                {statusLabel}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-5 text-right relative">
+                                                            <button 
+                                                                onClick={() => setActiveDropdown(activeDropdown === booking.id ? null : booking.id)}
+                                                                className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
+                                                            >
+                                                                <MoreVertical className="w-5 h-5" />
+                                                            </button>
+                                                            
+                                                            {activeDropdown === booking.id && (
+                                                                <div className="absolute right-8 top-10 z-10 w-48 bg-white dark:bg-slate-950 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 overflow-hidden text-left animate-in fade-in zoom-in-95">
+                                                                    <div className="py-1">
+                                                                        {booking.status === "Pending" && (
+                                                                            <button 
+                                                                                onClick={() => { setEditBooking(booking); setActiveDropdown(null); }}
+                                                                                className="w-full px-4 py-2 text-sm font-semibold text-slate-700 dark:text-foreground/80 hover:bg-slate-55 dark:hover:bg-white/5 text-left"
+                                                                            >
+                                                                                Edit Booking
+                                                                            </button>
+                                                                        )}
+                                                                        {(booking.status === "Pending" || booking.status === "Confirmed") && (
+                                                                            <button 
+                                                                                onClick={() => handleCancelBooking(booking.id)}
+                                                                                className="w-full px-4 py-2 text-sm font-semibold text-amber-650 hover:bg-amber-50 dark:hover:bg-amber-500/10 text-left"
+                                                                            >
+                                                                                Cancel Booking
+                                                                            </button>
+                                                                        )}
+                                                                        <button 
+                                                                            onClick={() => { setDeleteBooking(booking); setActiveDropdown(null); }}
+                                                                            className="w-full px-4 py-2 text-sm font-semibold text-rose-650 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-left"
+                                                                        >
+                                                                            Delete Record
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <Pagination
+                                currentPage={currentPage}
+                                pageSize={pageSize}
+                                totalItems={filteredBookings.length}
+                                onPageChange={(p) => updateUrlParams(p, pageSize)}
+                                onPageSizeChange={(sz) => updateUrlParams(1, sz)}
+                            />
+                        </div>
+                    </>
+                )}
             </div>
+
+            {/* New Booking Modal */}
+            <NewBookingModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSuccess={handleBookingRefresh}
+            />
+
+            <EditBookingModal
+                isOpen={!!editBooking}
+                onClose={() => setEditBooking(null)}
+                onSuccess={handleBookingRefresh}
+                booking={editBooking}
+            />
+
+            <DeleteBookingModal
+                isOpen={!!deleteBooking}
+                onClose={() => setDeleteBooking(null)}
+                onSuccess={handleBookingRefresh}
+                booking={deleteBooking}
+            />
         </ProtectedRoute>
     );
 }
+
+export default function BookingsPage() {
+    return (
+        <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-10 text-center font-bold text-slate-500">Loading Bookings...</div>}>
+            <BookingsPageContent />
+        </Suspense>
+    );
+}
+

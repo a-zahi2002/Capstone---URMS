@@ -1,138 +1,257 @@
-import { promisePool } from '../config/db.config';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
+/**
+ * resource.model.ts
+ * ─────────────────────────────────────────────────────────────
+ * Data-access layer for the `resources` table in Supabase.
+ * Replaces all previous mysql2 / promisePool queries.
+ *
+ * Table schema (Supabase / PostgreSQL):
+ *   id                  uuid  PK default gen_random_uuid()
+ *   name                text  NOT NULL
+ *   type                text  NOT NULL  default 'Lecture Halls'
+ *   capacity            integer NOT NULL  default 0
+ *   location            text    NOT NULL
+ *   availability_status text    NOT NULL  default 'Available'
+ *   department          text
+ *   equipment           jsonb             default '[]'::jsonb
+ *   created_at          timestamptz     default now()
+ * ─────────────────────────────────────────────────────────────
+ */
+import { SupabaseClient } from '@supabase/supabase-js';
+import globalSupabase from '../config/supabaseClient';
 
 export interface Resource {
-    id?: number;
+    id?: string;           // uuid in Supabase (was number in MySQL)
     name: string;
     type: string;
-    capacity: string;
+    capacity: number;
     location: string;
     availability_status: string;
+    department?: string;   // Added for department-wise analytics
     equipment?: string[];
     created_at?: Date;
 }
 
+// ─── Fallback mock data (used when Supabase is unreachable) ───
 const MOCK_RESOURCES: Resource[] = [
-    { id: 1, name: 'Main Auditorium', type: 'Lecture Halls', capacity: '500', location: 'Block A', availability_status: 'Available' },
-    { id: 2, name: 'Mini Auditorium', type: 'Lecture Halls', capacity: '250', location: 'Block B', availability_status: 'Booked' },
-    { id: 3, name: 'Z9 Hall', type: 'Lecture Halls', capacity: '50', location: 'Block Z', availability_status: 'Available' },
-    { id: 4, name: 'Computer Lab', type: 'Labs', capacity: '50', location: 'IT Building', availability_status: 'Maintenance' },
-    { id: 5, name: 'Multimedia Projectors', type: 'Equipment', capacity: '5', location: 'IT Helpdesk', availability_status: 'Available' },
-    { id: 6, name: 'Faculty Vehicle - Van', type: 'Vehicles', capacity: '14', location: 'Transport Pool', availability_status: 'Booked' }
+    { id: '1', name: 'Main Auditorium',       type: 'Lecture Halls', capacity: 500, location: 'Block A',       availability_status: 'Available',   department: 'Faculty of Computing' },
+    { id: '2', name: 'Mini Auditorium',       type: 'Lecture Halls', capacity: 250, location: 'Block B',       availability_status: 'Booked',      department: 'Faculty of Business' },
+    { id: '3', name: 'Z9 Hall',               type: 'Lecture Halls', capacity: 50,  location: 'Block Z',       availability_status: 'Available',   department: 'Faculty of Engineering' },
+    { id: '4', name: 'Computer Lab',          type: 'Labs',          capacity: 50,  location: 'IT Building',   availability_status: 'Maintenance', department: 'Faculty of Computing' },
+    { id: '5', name: 'Multimedia Projectors', type: 'Equipment',     capacity: 5,   location: 'IT Helpdesk',   availability_status: 'Available',   department: 'Faculty of Computing' },
+    { id: '6', name: 'Faculty Vehicle - Van', type: 'Vehicles',      capacity: 14,  location: 'Transport Pool', availability_status: 'Booked',      department: 'Faculty of Engineering' }
 ];
 
-let mockIdCounter = 7;
+// ─── Helpers ──────────────────────────────────────────────────
+function parseEquipment(raw: any): string[] {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return (raw as string).split(',').map((s: string) => s.trim());
+    }
+}
 
+function toRow(resource: Partial<Resource>): Record<string, any> {
+    const row: Record<string, any> = {};
+    if (resource.name               !== undefined) row.name               = resource.name;
+    if (resource.type               !== undefined) row.type               = resource.type;
+    if (resource.capacity           !== undefined) row.capacity           = Number(resource.capacity);
+    if (resource.location           !== undefined) row.location           = resource.location;
+    if (resource.availability_status !== undefined) row.availability_status = resource.availability_status;
+    if (resource.department          !== undefined) row.department          = resource.department;
+    if (resource.equipment          !== undefined) row.equipment          = resource.equipment; // JSONB handles arrays directly
+    return row;
+}
+
+// ─── Model ────────────────────────────────────────────────────
 export class ResourceModel {
-    static async findAll(): Promise<Resource[]> {
+
+    // ── findAll ─────────────────────────────────────────────
+    static async findAll(client: SupabaseClient = globalSupabase): Promise<Resource[]> {
         try {
-            const [rows] = await promisePool.query<RowDataPacket[]>(
-                'SELECT * FROM resources ORDER BY created_at DESC'
-            );
-            return rows as Resource[];
-        } catch (error) {
-            console.warn('DB connection failed, falling back to mock data');
+            const { data, error } = await client
+                .from('resources')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('❌ Supabase query failed in ResourceModel.findAll:', error.message);
+                // Only use mock if it's a connection error, otherwise throw
+                if (error.code === 'PGRST116' || error.code === 'PGRST205' || error.message.includes('fetch')) {
+                    return MOCK_RESOURCES;
+                }
+                throw new Error(error.message);
+            }
+
+            return (data as any[]).map(row => ({
+                ...row,
+                equipment: parseEquipment(row.equipment)
+            })) as Resource[];
+        } catch (err: any) {
+            console.warn('⚠️  Supabase unreachable or error occurred:', err.message);
+            // If we already have an error from Supabase, rethrow it to avoid split-brain
+            if (err.message && !err.message.includes('fetch')) {
+                throw err;
+            }
             return MOCK_RESOURCES;
         }
     }
 
-    static async findById(id: number): Promise<Resource | null> {
+    // ── findById ────────────────────────────────────────────
+    static async findById(id: string | number, client: SupabaseClient = globalSupabase): Promise<Resource | null> {
         try {
-            const [rows] = await promisePool.query<RowDataPacket[]>(
-                'SELECT * FROM resources WHERE id = ?',
-                [id]
-            );
-            if (rows.length === 0) return null;
-            return rows[0] as Resource;
-        } catch (error) {
-            return MOCK_RESOURCES.find(r => r.id === id) || null;
-        }
-    }
+            const { data, error } = await client
+                .from('resources')
+                .select('*')
+                .eq('id', String(id))
+                .maybeSingle();
 
-    static async create(resource: Partial<Resource>): Promise<number> {
-        const { name, type, capacity, location, availability_status, equipment } = resource;
-        try {
-            const [result] = await promisePool.query<ResultSetHeader>(
-                'INSERT INTO resources (name, type, capacity, location, availability_status) VALUES (?, ?, ?, ?, ?)',
-                [name, type, capacity, location, availability_status || 'Available']
-            );
-            return result.insertId;
-        } catch (error) {
-            // Mock fallback
-            const newId = mockIdCounter++;
-            MOCK_RESOURCES.unshift({
-                id: newId,
-                name: name!,
-                type: type!,
-                capacity: capacity!,
-                location: location!,
-                availability_status: availability_status || 'Available',
-                equipment: equipment || [],
-            });
-            return newId;
-        }
-    }
-
-    static async update(id: number, data: Partial<Resource>): Promise<boolean> {
-        try {
-            const updates: string[] = [];
-            const values: any[] = [];
-
-            if (data.name !== undefined)     { updates.push('name = ?');     values.push(data.name); }
-            if (data.type !== undefined) { updates.push('type = ?'); values.push(data.type); }
-            if (data.capacity !== undefined) { updates.push('capacity = ?'); values.push(String(data.capacity)); }
-            if (data.location !== undefined) { updates.push('location = ?'); values.push(data.location); }
-            if (data.availability_status !== undefined)   { updates.push('availability_status = ?');   values.push(data.availability_status); }
-
-            if (updates.length === 0) return true;
-
-            values.push(id);
-            const query = `UPDATE resources SET ${updates.join(', ')} WHERE id = ?`;
-            const [result] = await promisePool.query<ResultSetHeader>(query, values);
-            return result.affectedRows > 0;
-        } catch (error) {
-            // Mock fallback
-            const resource = MOCK_RESOURCES.find(r => r.id === id);
-            if (resource) {
-                if (data.name !== undefined)     resource.name = data.name;
-                if (data.type !== undefined) resource.type = data.type;
-                if (data.capacity !== undefined) resource.capacity = String(data.capacity);
-                if (data.location !== undefined) resource.location = data.location;
-                if (data.availability_status !== undefined)   resource.availability_status = data.availability_status;
-                if (data.equipment !== undefined) resource.equipment = data.equipment;
-                return true;
+            if (error) {
+                console.error('❌ Supabase query failed in ResourceModel.findById:', error.message);
+                throw new Error(error.message);
             }
-            return false;
+
+            if (!data) return null;
+            return { ...data, equipment: parseEquipment(data.equipment) } as Resource;
+        } catch (err: any) {
+            return MOCK_RESOURCES.find(r => r.id === String(id)) || null;
         }
     }
 
-    static async delete(id: number): Promise<boolean> {
-        try {
-            const [result] = await promisePool.query<ResultSetHeader>(
-                'DELETE FROM resources WHERE id = ?',
-                [id]
-            );
-            return result.affectedRows > 0;
-        } catch (error) {
-            // Mock fallback
-            const index = MOCK_RESOURCES.findIndex(r => r.id === id);
-            if (index !== -1) {
-                MOCK_RESOURCES.splice(index, 1);
-                return true;
+    // ── create ──────────────────────────────────────────────
+    static async create(resource: Partial<Resource>, client: SupabaseClient = globalSupabase): Promise<string> {
+        const row = toRow({
+            ...resource,
+            availability_status: resource.availability_status || 'Available'
+        });
+
+        const { data, error } = await client
+            .from('resources')
+            .insert(row)
+            .select('id')
+            .single();
+
+        if (error) {
+            console.error('❌ Supabase insert failed:', error.message);
+            // If it's an RLS error, we MUST throw it so the user knows
+            if (error.code === '42501') {
+                throw new Error(`Permission denied: ${error.message}. Ensure you are using the SERVICE_ROLE_KEY or have RLS policies set.`);
             }
-            return false;
+            
+            // Fallback to mock only if unreachable
+            if (error.message.includes('fetch')) {
+                const newId = String(Date.now());
+                MOCK_RESOURCES.unshift({
+                    id: newId,
+                    name: resource.name!,
+                    type: resource.type!,
+                    capacity: resource.capacity!,
+                    location: resource.location!,
+                    availability_status: resource.availability_status || 'Available',
+                    equipment: resource.equipment || [],
+                });
+                return newId;
+            }
+            throw new Error(error.message);
         }
+
+        if (!data) throw new Error('Insert returned no data');
+        return (data as any).id as string;
     }
 
-    static async checkActiveBookings(id: number): Promise<boolean> {
+    // ── createMany ──────────────────────────────────────────
+    static async createMany(resources: Partial<Resource>[], client: SupabaseClient = globalSupabase): Promise<string[]> {
+        if (resources.length === 0) return [];
+        const rows = resources.map(r => toRow({
+            ...r,
+            availability_status: r.availability_status || 'Available'
+        }));
+
+        const { data, error } = await client
+            .from('resources')
+            .insert(rows)
+            .select('id');
+
+        if (error) {
+            console.error('❌ Supabase bulk insert failed in ResourceModel.createMany:', error.message);
+            if (error.code === '42501') {
+                throw new Error(`Permission denied: ${error.message}. Ensure you are using the SERVICE_ROLE_KEY or have RLS policies set.`);
+            }
+            
+            if (error.message.includes('fetch')) {
+                const insertedIds: string[] = [];
+                for (const r of resources) {
+                    const newId = String(Date.now() + Math.random());
+                    MOCK_RESOURCES.unshift({
+                        id: newId,
+                        name: r.name!,
+                        type: r.type || 'Lecture Halls',
+                        capacity: Number(r.capacity) || 0,
+                        location: r.location!,
+                        availability_status: r.availability_status || 'Available',
+                        equipment: r.equipment || [],
+                    });
+                    insertedIds.push(newId);
+                }
+                return insertedIds;
+            }
+            throw new Error(error.message);
+        }
+
+        if (!data) throw new Error('Bulk insert returned no data');
+        return (data as any[]).map(row => row.id as string);
+    }
+
+    // ── update ──────────────────────────────────────────────
+    static async update(id: string | number, data: Partial<Resource>, client: SupabaseClient = globalSupabase): Promise<boolean> {
+        const row = toRow(data);
+        if (Object.keys(row).length === 0) return true;
+
+        const { error } = await client
+            .from('resources')
+            .update(row)
+            .eq('id', String(id));
+
+        if (error) {
+            console.error('❌ Supabase update failed:', error.message);
+            if (error.code === '42501') throw new Error('Permission denied (RLS)');
+            throw new Error(error.message);
+        }
+
+        return true;
+    }
+
+    // ── delete ──────────────────────────────────────────────
+    static async delete(id: string | number, client: SupabaseClient = globalSupabase): Promise<boolean> {
+        const { error } = await client
+            .from('resources')
+            .delete()
+            .eq('id', String(id));
+
+        if (error) {
+            console.error('❌ Supabase delete failed:', error.message);
+            if (error.code === '42501') throw new Error('Permission denied (RLS)');
+            throw new Error(error.message);
+        }
+
+        return true;
+    }
+
+    // ── checkActiveBookings ─────────────────────────────────
+    static async checkActiveBookings(id: string | number, client: SupabaseClient = globalSupabase): Promise<boolean> {
         try {
-            const [rows] = await promisePool.query<RowDataPacket[]>(
-                'SELECT id FROM bookings WHERE resource_id = ? AND status = "Approved" AND end_time > NOW() LIMIT 1',
-                [id]
-            );
-            return rows.length > 0;
-        } catch (error) {
-            // If the table doesn't exist or DB fails, assume no conflict
+            const { data, error } = await client
+                .from('bookings')
+                .select('id')
+                .eq('resource_id', String(id))
+                .eq('status', 'Approved')
+                .gt('end_time', new Date().toISOString())
+                .limit(1);
+
+            if (error) return false;
+            return (data?.length ?? 0) > 0;
+        } catch {
             return false;
         }
     }
