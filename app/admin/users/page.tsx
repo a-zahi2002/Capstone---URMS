@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { BASE_URL } from "@/lib/apiClient";
 
 interface DBUser {
     id: string;
@@ -126,12 +126,19 @@ function UserManagementPageContent() {
         setError(null);
         try {
             const token = await getToken();
-            const res = await fetch(`${API}/api/users`, {
+            const res = await fetch(`${BASE_URL}/users`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            if (!res.ok) throw new Error("Failed to fetch users from server.");
-            const result = await res.json();
-            setUsers(result.data || []);
+            let result;
+            try {
+                result = await res.json();
+            } catch (jsonErr) {
+                result = null;
+            }
+            if (!res.ok) {
+                throw new Error(result?.message || "Failed to fetch users from server.");
+            }
+            setUsers(result?.data || []);
         } catch (err: any) {
             console.error(err);
             setError(err.message || "Failed to load users list.");
@@ -160,7 +167,7 @@ function UserManagementPageContent() {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API}/api/users`, {
+            const res = await fetch(`${BASE_URL}/users`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -195,7 +202,7 @@ function UserManagementPageContent() {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API}/api/users/${selectedUser.id}`, {
+            const res = await fetch(`${BASE_URL}/users/${selectedUser.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -227,7 +234,7 @@ function UserManagementPageContent() {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API}/api/users/${selectedUser.id}`, {
+            const res = await fetch(`${BASE_URL}/users/${selectedUser.id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -339,7 +346,7 @@ function UserManagementPageContent() {
                         </div>
                     )}
 
-                    // Filter controls
+                    {/* Filter controls */}
                     <div className="bg-card border border-slate-200 dark:border-border rounded-2xl p-4 shadow-sm mb-4 flex flex-col md:flex-row gap-4 items-center">
                         <div className="relative w-full md:flex-1">
                             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">

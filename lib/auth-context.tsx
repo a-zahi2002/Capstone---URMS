@@ -17,6 +17,7 @@ import {
 } from "firebase/auth";
 import { auth } from "./firebase";
 import { getUserProfile, UserProfile, setSupabaseAuthHeaders, clearSupabaseAuthHeaders } from "./supabase";
+import { BASE_URL } from "./apiClient";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,8 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // call the backend profile endpoint which will trigger auto-sync/creation.
                 if (!userProfile && token) {
                     try {
-                        const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-                        const res = await fetch(`${API_URL}/api/users/profile`, {
+                        const res = await fetch(`${BASE_URL}/users/profile`, {
                             headers: { Authorization: `Bearer ${token}` }
                         });
                         if (res.ok) {

@@ -33,6 +33,7 @@ import { useAuth } from "@/lib/auth-context";
 import { auth } from "@/lib/firebase";
 import { signOut as firebaseSignOut } from "firebase/auth";
 import { motion } from "framer-motion";
+import { BASE_URL as API_BASE } from "@/lib/apiClient";
 
 export default function LoginPage() {
   const { signIn, setMockUser } = useAuth();
@@ -78,7 +79,7 @@ export default function LoginPage() {
         const token = await auth?.currentUser?.getIdToken();
         if (token) {
           const verifyResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/users/verify-password`,
+            `${API_BASE}/users/verify-password`,
             {
               method: "POST",
               headers: {
@@ -138,7 +139,7 @@ export default function LoginPage() {
           const token = await auth.currentUser?.getIdToken();
           if (token) {
             await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/users/verify-password`,
+              `${API_BASE}/users/verify-password`,
               {
                 method: "POST",
                 headers: {

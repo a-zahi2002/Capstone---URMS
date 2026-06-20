@@ -1,6 +1,15 @@
 import { auth } from './firebase';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const getBaseUrl = () => {
+  const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const cleanUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+  if (cleanUrl.endsWith('/api')) {
+    return cleanUrl;
+  }
+  return `${cleanUrl}/api`;
+};
+
+export const BASE_URL = getBaseUrl();
 
 /**
  * Helper function to retrieve the Firebase ID token.
