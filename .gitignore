@@ -61,3 +61,6 @@ next-env.d.ts
 # generated files
 /backend/src/test.pdf
 /output/
+
+# deployment draft env files (delete after importing)
+/draft/
