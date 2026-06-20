@@ -29,21 +29,21 @@ dotenv.config({
 
 const supabaseUrl           = process.env.SUPABASE_URL;
 const supabaseAnonKey       = process.env.SUPABASE_ANON_KEY;
-const supabaseServiceKey    = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceKey    = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
 // ── Validation ──────────────────────────────────────────────
 if (!supabaseUrl || supabaseUrl.includes('your-project-ref')) {
-    console.warn('\x1b[33m%s\x1b[0m', '⚠️  SUPABASE_URL is missing in .env.local');
+    console.warn('\x1b[33m%s\x1b[0m', '⚠️  SUPABASE_URL is missing');
 }
 
 if (!supabaseAnonKey || supabaseAnonKey.includes('your-supabase-anon-key')) {
-    console.warn('\x1b[33m%s\x1b[0m', '⚠️  SUPABASE_ANON_KEY is missing in .env.local');
+    console.warn('\x1b[33m%s\x1b[0m', '⚠️  SUPABASE_ANON_KEY is missing');
 }
 
 if (!supabaseServiceKey) {
     console.warn(
         '\x1b[33m%s\x1b[0m',
-        '⚠️  SUPABASE_SERVICE_ROLE_KEY is missing. Backend write operations (INSERT/UPDATE/DELETE) will fail due to RLS.'
+        '⚠️  SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_KEY is missing. Backend write operations (INSERT/UPDATE/DELETE) will fail due to RLS.'
     );
 }
 
