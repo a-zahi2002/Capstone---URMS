@@ -35,7 +35,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { createUserProfile } from "@/lib/supabase";
-import { apiClient } from "@/lib/apiClient";
+import { apiClient, BASE_URL as API_BASE } from "@/lib/apiClient";
 import { motion } from "framer-motion";
 
 /* Password strength helper */
@@ -66,6 +66,8 @@ function PasswordStrength({ password }: { password: string }) {
     </div>
   );
 }
+
+
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -147,7 +149,7 @@ export default function RegisterPage() {
       try {
         const token = await userCredential.user.getIdToken();
         const hashResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/users/hash-password`,
+          `${API_BASE}/users/hash-password`,
           {
             method: "POST",
             headers: {
