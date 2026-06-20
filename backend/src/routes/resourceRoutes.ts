@@ -6,17 +6,20 @@ import {
   deleteResource,
   importResources,
 } from "../controllers/resourceCtrl";
-import { verifyToken } from "../middleware/auth.middleware";
+import { verifyToken, requireAdmin } from "../middleware/auth.middleware";
 import { authorizeRoles } from "../middleware/rbac.middleware";
 
 const router = express.Router();
 
-// Existing routes (you can protect these similarly)
+// Apply auth middleware to all resource routes
+router.use(verifyToken);
+
+// Protect all resource routes
 router.get("/", getResources as any);
-router.post("/", addResource as any);
-router.post("/import", importResources as any);
-router.patch("/:id", updateResource as any);
-router.delete("/:id", deleteResource as any);
+router.post("/", requireAdmin, addResource as any);
+router.post("/import", requireAdmin, importResources as any);
+router.patch("/:id", requireAdmin, updateResource as any);
+router.delete("/:id", requireAdmin, deleteResource as any);
 
 // --- RBAC Example Routes ---
 

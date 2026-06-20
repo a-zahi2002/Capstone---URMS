@@ -9,24 +9,30 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
     try {
         const uid = req.user?.uid;
         if (!uid) {
-            return res.status(401).json({ message: "Unauthorized" });
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
         }
 
         // Auto-sync user profile to Supabase and ensure claims are correct
         const syncedUser = await syncSingleUser(uid);
         const userRecord = await admin.auth().getUser(uid);
         
-        return res.status(200).json({
+        const profileData = {
             uid: userRecord.uid,
             email: userRecord.email,
             displayName: userRecord.displayName || "",
             photoURL: userRecord.photoURL || "",
             role: userRecord.customClaims?.role || syncedUser?.role || "user",
             metadata: userRecord.metadata,
+        };
+
+        return res.status(200).json({
+            status: "success",
+            ...profileData,
+            data: profileData
         });
     } catch (error: any) {
         console.error("Error fetching user profile:", error);
-        return res.status(500).json({ message: "Failed to fetch profile", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to fetch profile", error: error.message });
     }
 };
 
@@ -34,28 +40,47 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     try {
         const uid = req.user?.uid;
         if (!uid) {
-            return res.status(401).json({ message: "Unauthorized" });
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
         }
 
-        const { displayName } = req.body;
+        const { displayName, phone } = req.body;
 
-        const updatedUser = await admin.auth().updateUser(uid, {
-            displayName: displayName,
-        });
+        let updatedUser: any = { uid, displayName };
+        if (isFirebaseInitialized) {
+            updatedUser = await admin.auth().updateUser(uid, {
+                displayName: displayName,
+            });
+        }
+
+        // Update name and phone in Supabase users table
+        const { error: dbError } = await supabase
+            .from("users")
+            .update({
+                name: displayName,
+                phone: phone
+            })
+            .eq("id", uid);
+
+        if (dbError) throw dbError;
+
+        const userObj = {
+            uid: updatedUser.uid,
+            email: updatedUser.email || req.user?.email || "",
+            displayName: updatedUser.displayName,
+            photoURL: updatedUser.photoURL || "",
+            role: updatedUser.customClaims?.role || req.user?.role || "user",
+            phone: phone
+        };
 
         return res.status(200).json({
+            status: "success",
             message: "Profile updated successfully",
-            user: {
-                uid: updatedUser.uid,
-                email: updatedUser.email,
-                displayName: updatedUser.displayName,
-                photoURL: updatedUser.photoURL,
-                role: updatedUser.customClaims?.role || "user",
-            }
+            user: userObj,
+            data: { user: userObj }
         });
     } catch (error: any) {
         console.error("Error updating user profile:", error);
-        return res.status(500).json({ message: "Failed to update profile", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to update profile", error: error.message });
     }
 };
 
@@ -72,19 +97,19 @@ export const hashPasswordHandler = async (req: AuthRequest, res: Response) => {
         const { password } = req.body;
 
         if (!password || typeof password !== "string") {
-            return res.status(400).json({ message: "Password is required." });
+            return res.status(400).json({ status: "error", message: "Password is required." });
         }
 
         if (password.length < 8) {
-            return res.status(400).json({ message: "Password must be at least 8 characters long." });
+            return res.status(400).json({ status: "error", message: "Password must be at least 8 characters long." });
         }
 
         const password_hash = await hashPassword(password);
 
-        return res.status(200).json({ password_hash });
+        return res.status(200).json({ status: "success", password_hash, data: { password_hash } });
     } catch (error: any) {
         console.error("Error hashing password:", error);
-        return res.status(500).json({ message: "Failed to hash password.", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to hash password.", error: error.message });
     }
 };
 
@@ -101,7 +126,7 @@ export const verifyPasswordHandler = async (req: AuthRequest, res: Response) => 
         const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required." });
+            return res.status(400).json({ status: "error", message: "Email and password are required." });
         }
 
         // Look up the user's password_hash from Supabase
@@ -113,26 +138,26 @@ export const verifyPasswordHandler = async (req: AuthRequest, res: Response) => 
 
         if (dbError) {
             console.error("Error fetching user for password verification:", dbError);
-            return res.status(500).json({ message: "Internal server error." });
+            return res.status(500).json({ status: "error", message: "Internal server error." });
         }
 
         // If no user found, return generic invalid response (prevent user enumeration)
         if (!user) {
-            return res.status(200).json({ valid: false });
+            return res.status(200).json({ status: "success", valid: false, data: { valid: false } });
         }
 
         // If user has no stored hash (legacy/mock user), skip bcrypt check
         if (!user.password_hash) {
-            return res.status(200).json({ valid: true, skipped: true });
+            return res.status(200).json({ status: "success", valid: true, skipped: true, data: { valid: true, skipped: true } });
         }
 
         // Verify the password against the stored hash
         const isValid = await verifyPassword(password, user.password_hash);
 
-        return res.status(200).json({ valid: isValid });
+        return res.status(200).json({ status: "success", valid: isValid, data: { valid: isValid } });
     } catch (error: any) {
         console.error("Error verifying password:", error);
-        return res.status(500).json({ message: "Failed to verify password.", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to verify password.", error: error.message });
     }
 };
 
@@ -141,11 +166,25 @@ export const verifyPasswordHandler = async (req: AuthRequest, res: Response) => 
  */
 export const getAllUsers = async (req: AuthRequest, res: Response) => {
     try {
-        const users = await syncAllUsers();
-        return res.status(200).json({ status: "success", data: users });
+        // Fetch users directly from Supabase database for instantaneous loading
+        const { data: users, error: dbError } = await supabase
+            .from("users")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+        if (dbError) throw dbError;
+
+        // Trigger synchronization with Firebase in the background so it doesn't block the response
+        if (isFirebaseInitialized) {
+            syncAllUsers().catch((syncErr) => {
+                console.error("❌ Background syncAllUsers failed:", syncErr);
+            });
+        }
+
+        return res.status(200).json({ status: "success", data: users || [] });
     } catch (error: any) {
         console.error("Error fetching all users:", error);
-        return res.status(500).json({ message: "Failed to fetch users", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to fetch users", error: error.message });
     }
 };
 
@@ -154,15 +193,15 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
  */
 export const adminCreateUser = async (req: AuthRequest, res: Response) => {
     try {
-        const { name, email, role, department, password } = req.body;
+        const { name, email, role, department, password, phone } = req.body;
 
         if (!name || !email || !role || !department || !password) {
-            return res.status(400).json({ message: "All fields are required (name, email, role, department, password)." });
+            return res.status(400).json({ status: "error", message: "All fields are required (name, email, role, department, password)." });
         }
 
         const validRoles = ["admin", "lecturer", "student", "maintenance"];
         if (!validRoles.includes(role.toLowerCase())) {
-            return res.status(400).json({ message: `Invalid role. Must be one of ${validRoles.join(", ")}.` });
+            return res.status(400).json({ status: "error", message: `Invalid role. Must be one of ${validRoles.join(", ")}.` });
         }
 
         let uid = "";
@@ -183,7 +222,7 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
                 await admin.auth().setCustomUserClaims(uid, { role: role.toLowerCase() });
             } catch (err: any) {
                 console.error("Error creating user in Firebase Auth:", err);
-                return res.status(500).json({ message: "Failed to create user in Firebase Auth.", error: err.message });
+                return res.status(500).json({ status: "error", message: "Failed to create user in Firebase Auth.", error: err.message });
             }
         } else {
             // Dev mode fallback
@@ -204,6 +243,7 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
                 role: role.toLowerCase(),
                 department,
                 password_hash: passwordHash,
+                phone: phone || null,
             });
 
         if (dbError) {
@@ -212,7 +252,7 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
             if (firebaseCreated && isFirebaseInitialized) {
                 await admin.auth().deleteUser(uid).catch(err => console.error("Failed to rollback Firebase user:", err));
             }
-            return res.status(500).json({ message: "Failed to create user profile in database.", error: dbError.message });
+            return res.status(500).json({ status: "error", message: "Failed to create user profile in database.", error: dbError.message });
         }
 
         return res.status(201).json({
@@ -224,11 +264,12 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
                 email,
                 role: role.toLowerCase(),
                 department,
+                phone: phone || null,
             }
         });
     } catch (error: any) {
         console.error("Error in adminCreateUser:", error);
-        return res.status(500).json({ message: "Failed to create user.", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to create user.", error: error.message });
     }
 };
 
@@ -238,15 +279,15 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
 export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
     try {
         const id = req.params.id as string;
-        const { name, role, department, password } = req.body;
+        const { name, role, department, password, phone } = req.body;
 
         if (!name || !role || !department) {
-            return res.status(400).json({ message: "Name, role, and department are required." });
+            return res.status(400).json({ status: "error", message: "Name, role, and department are required." });
         }
 
         const validRoles = ["admin", "lecturer", "student", "maintenance"];
         if (!validRoles.includes(role.toLowerCase())) {
-            return res.status(400).json({ message: `Invalid role. Must be one of ${validRoles.join(", ")}.` });
+            return res.status(400).json({ status: "error", message: `Invalid role. Must be one of ${validRoles.join(", ")}.` });
         }
 
         // Check if user exists in DB first
@@ -257,7 +298,7 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
             .maybeSingle();
 
         if (checkError || !existingUser) {
-            return res.status(404).json({ message: "User not found in database." });
+            return res.status(404).json({ status: "error", message: "User not found in database." });
         }
 
         if (isFirebaseInitialized && !id.startsWith("dev-")) {
@@ -274,7 +315,7 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
                 }
             } catch (err: any) {
                 console.error("Error updating user in Firebase Auth:", err);
-                return res.status(500).json({ message: "Failed to update user in Firebase Auth.", error: err.message });
+                return res.status(500).json({ status: "error", message: "Failed to update user in Firebase Auth.", error: err.message });
             }
         }
 
@@ -291,13 +332,14 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
                 name,
                 role: role.toLowerCase(),
                 department,
+                phone: phone !== undefined ? phone : undefined,
                 ...(passwordHash ? { password_hash: passwordHash } : {})
             })
             .eq("id", id);
 
         if (dbError) {
             console.error("Error updating user in Supabase:", dbError);
-            return res.status(500).json({ message: "Failed to update user profile in database.", error: dbError.message });
+            return res.status(500).json({ status: "error", message: "Failed to update user profile in database.", error: dbError.message });
         }
 
         return res.status(200).json({
@@ -308,11 +350,12 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
                 name,
                 role: role.toLowerCase(),
                 department,
+                phone,
             }
         });
     } catch (error: any) {
         console.error("Error in adminUpdateUser:", error);
-        return res.status(500).json({ message: "Failed to update user.", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to update user.", error: error.message });
     }
 };
 
@@ -331,7 +374,7 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
             .maybeSingle();
 
         if (checkError || !existingUser) {
-            return res.status(404).json({ message: "User not found." });
+            return res.status(404).json({ status: "error", message: "User not found." });
         }
 
         // Delete from Firebase Auth if initialized and not a mock/dev user
@@ -343,7 +386,7 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
                     console.warn(`User ${id} not found in Firebase Auth, proceeding with DB deletion.`);
                 } else {
                     console.error("Error deleting user from Firebase Auth:", err);
-                    return res.status(500).json({ message: "Failed to delete user from Firebase Auth.", error: err.message });
+                    return res.status(500).json({ status: "error", message: "Failed to delete user from Firebase Auth.", error: err.message });
                 }
             }
         }
@@ -356,7 +399,7 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
 
         if (dbError) {
             console.error("Error deleting user from Supabase:", dbError);
-            return res.status(500).json({ message: "Failed to delete user profile from database.", error: dbError.message });
+            return res.status(500).json({ status: "error", message: "Failed to delete user profile from database.", error: dbError.message });
         }
 
         return res.status(200).json({
@@ -365,6 +408,6 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
         });
     } catch (error: any) {
         console.error("Error in adminDeleteUser:", error);
-        return res.status(500).json({ message: "Failed to delete user.", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to delete user.", error: error.message });
     }
 };

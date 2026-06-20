@@ -160,6 +160,49 @@ export class ResourceModel {
         return (data as any).id as string;
     }
 
+    // ── createMany ──────────────────────────────────────────
+    static async createMany(resources: Partial<Resource>[], client: SupabaseClient = globalSupabase): Promise<string[]> {
+        if (resources.length === 0) return [];
+        const rows = resources.map(r => toRow({
+            ...r,
+            availability_status: r.availability_status || 'Available'
+        }));
+
+        const { data, error } = await client
+            .from('resources')
+            .insert(rows)
+            .select('id');
+
+        if (error) {
+            console.error('❌ Supabase bulk insert failed in ResourceModel.createMany:', error.message);
+            if (error.code === '42501') {
+                throw new Error(`Permission denied: ${error.message}. Ensure you are using the SERVICE_ROLE_KEY or have RLS policies set.`);
+            }
+            
+            if (error.message.includes('fetch')) {
+                const insertedIds: string[] = [];
+                for (const r of resources) {
+                    const newId = String(Date.now() + Math.random());
+                    MOCK_RESOURCES.unshift({
+                        id: newId,
+                        name: r.name!,
+                        type: r.type || 'Lecture Halls',
+                        capacity: Number(r.capacity) || 0,
+                        location: r.location!,
+                        availability_status: r.availability_status || 'Available',
+                        equipment: r.equipment || [],
+                    });
+                    insertedIds.push(newId);
+                }
+                return insertedIds;
+            }
+            throw new Error(error.message);
+        }
+
+        if (!data) throw new Error('Bulk insert returned no data');
+        return (data as any[]).map(row => row.id as string);
+    }
+
     // ── update ──────────────────────────────────────────────
     static async update(id: string | number, data: Partial<Resource>, client: SupabaseClient = globalSupabase): Promise<boolean> {
         const row = toRow(data);

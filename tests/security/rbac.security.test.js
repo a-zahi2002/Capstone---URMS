@@ -1,6 +1,6 @@
 const request = require('supertest');
 // Replace this with the actual path to your exported Express app instance
-const app = require('../../src/app'); 
+const app = require('../../backend/dist/app').default; 
 const { generateMockToken, generateExpiredToken } = require('../utils/mockAuth');
 
 describe('Security: Role-Based Access Control (RBAC)', () => {

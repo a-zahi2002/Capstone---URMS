@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../src/app');
+const app = require('../../backend/dist/app').default;
 const { generateMockToken } = require('../utils/mockAuth');
 
 describe('Security: Input Validation & Injection Prevention', () => {

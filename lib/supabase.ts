@@ -33,6 +33,7 @@ export interface UserProfile {
   role: UserRole;
   department?: string;
   password_hash?: string;
+  phone?: string;
   created_at: string;
 }
 

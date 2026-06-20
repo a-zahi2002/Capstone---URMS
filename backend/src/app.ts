@@ -73,12 +73,15 @@ app.use(
 // ✅ CORS
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000'];
+  : [process.env.FRONTEND_URL || 'http://localhost:3000'];
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g. server-to-server, curl)
     if (!origin) return callback(null, true);
+
+    // Allow all Vercel deployment URLs
+    if (/\.vercel\.app$/.test(origin)) return callback(null, true);
 
     // In development, allow localhost and 127.0.0.1 on any port
     if (process.env.NODE_ENV !== 'production') {
@@ -125,15 +128,17 @@ import reportScheduleRoutes from "./routes/reportScheduleRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import bookingRoutes from "./routes/bookingRoutes";
 import searchRoutes from "./routes/searchRoutes";
+import savedSearchRoutes from "./routes/savedSearchRoutes";
 
 app.use("/api/resources", resourceRoutes);
 app.use("/api/maintenance-tickets", maintenanceTicketRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admin/analytics", analyticsRoutes);
-app.use("/api/admin/reports", reportScheduleRoutes);
+app.use("/api/admin/reports/schedules", reportScheduleRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/saved-searches", savedSearchRoutes);
 
 import { checkSupabaseConnection } from "./config/supabaseClient";
 

@@ -44,11 +44,12 @@ export default function GlobalSearch() {
         if (hasFetched) return;
         setLoading(true);
         try {
-            // const token = user ? await user.getIdToken() : 'dev-token';
-            const res = await fetch("http://localhost:5000/api/resources", {
-                // headers: {
-                //     'Authorization': `Bearer ${token}`
-                // }
+            const token = (user && typeof user.getIdToken === 'function') ? await user.getIdToken() : 'dev-token';
+            const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${API}/api/resources`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
             if (res.ok) {
                 const json = await res.json();

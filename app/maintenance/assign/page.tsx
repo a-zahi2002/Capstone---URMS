@@ -1,6 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { Loader2 } from "lucide-react";
+
+interface DBUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+}
+
+interface MaintenanceTicket {
+  id: string;
+  resourceId: string;
+  resourceName?: string;
+  title: string;
+  description: string;
+  priority: "High" | "Medium" | "Low";
+  status: string;
+  createdBy: string;
+  assignedTo?: string | null;
+}
 
 /**
  * AssignMaintenancePage Component
@@ -10,6 +32,7 @@ import React, { useState } from "react";
  * Aligns with the proposal requirement: "Technician assignment workflow".
  */
 export default function AssignMaintenancePage() {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     requestId: "",
     staffId: "",
@@ -22,18 +45,71 @@ export default function AssignMaintenancePage() {
   });
 
   const [isSuccess, setIsSuccess] = useState(false);
+  const [requests, setRequests] = useState<MaintenanceTicket[]>([]);
+  const [staff, setStaff] = useState<DBUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Helper to retrieve priority levels for dummy data.
-   * In a real system, this would be fetched based on the selected request.
-   */
+  const getToken = useCallback(async () => {
+    if (user && typeof user.getIdToken === "function") return user.getIdToken();
+    return "dev-token";
+  }, [user]);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+      // 1. Fetch OPEN maintenance tickets
+      const ticketsRes = await fetch(`${API}/api/maintenance-tickets?status=OPEN`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!ticketsRes.ok) throw new Error("Failed to load maintenance requests");
+      const resJson = await ticketsRes.json();
+      const ticketsData: MaintenanceTicket[] = Array.isArray(resJson) ? resJson : (resJson.data || []);
+
+      // 2. Fetch users and filter by role === 'maintenance'
+      const usersRes = await fetch(`${API}/api/users`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!usersRes.ok) throw new Error("Failed to load user directory");
+      const usersData = await usersRes.json();
+      const maintenanceUsers = (usersData.data || []).filter(
+        (u: any) => u.role === "maintenance"
+      );
+
+      setRequests(ticketsData || []);
+      setStaff(maintenanceUsers);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "An error occurred while fetching directories");
+    } finally {
+      setLoading(false);
+    }
+  }, [getToken]);
+
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user, loadData]);
+
   const getPriorityInfo = (id: string) => {
-    const data: Record<string, { label: string; color: string }> = {
-      "1": { label: "High", color: "text-brand-danger bg-red-50 border-brand-danger/20" },
-      "2": { label: "Medium", color: "text-brand-warning bg-amber-50 border-brand-warning/20" },
-      "3": { label: "Low", color: "text-brand-success bg-emerald-50 border-brand-success/20" },
+    const selectedReq = requests.find(r => r.id === id);
+    if (!selectedReq) return null;
+    const priority = selectedReq.priority || "Medium";
+    const colors: Record<string, string> = {
+      High: "text-brand-danger bg-red-50 border-brand-danger/20",
+      Medium: "text-brand-warning bg-amber-50 border-brand-warning/20",
+      Low: "text-brand-success bg-emerald-50 border-brand-success/20",
     };
-    return data[id] || null;
+    return {
+      label: priority,
+      color: colors[priority] || "text-slate-500 bg-slate-50 border-slate-200"
+    };
   };
 
   const handleChange = (
@@ -48,7 +124,7 @@ export default function AssignMaintenancePage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validation
@@ -63,24 +139,60 @@ export default function AssignMaintenancePage() {
       return;
     }
 
-    // Console log for verification (Requirement)
-    console.log("Assignment Submitted:", {
-      request: formData.requestId === "1" ? "Projector not working - Lab 1" : 
-               formData.requestId === "2" ? "Air conditioning issue - Lecture Hall A" : 
-               "Broken chair - Room 204",
-      staff: formData.staffId === "t1" ? "Technician 1 - Electrical" : 
-             formData.staffId === "t2" ? "Technician 2 - IT Support" : 
-             "Technician 3 - Facilities",
-      notes: formData.notes
-    });
+    setSubmitting(true);
+    setError(null);
 
-    setIsSuccess(true);
+    try {
+      const token = await getToken();
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-    // Reset flow
-    setTimeout(() => {
-      setIsSuccess(false);
-      setFormData({ requestId: "", staffId: "", notes: "" });
-    }, 4000);
+      const selectedTicket = requests.find((r) => r.id === formData.requestId);
+      const existingDesc = selectedTicket ? selectedTicket.description : "";
+      const updatedDesc = formData.notes
+        ? `${existingDesc}\n\n[Assignment Notes]: ${formData.notes}`
+        : existingDesc;
+
+      const res = await fetch(`${API}/api/maintenance-tickets/${formData.requestId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          assignedTo: formData.staffId,
+          status: "IN_PROGRESS",
+          description: updatedDesc,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to update maintenance request assignment");
+      }
+
+      // Console log for verification (Requirement)
+      console.log("Assignment Submitted:", {
+        request: selectedTicket ? `${selectedTicket.title} - ${selectedTicket.resourceName || selectedTicket.resourceId}` : formData.requestId,
+        staff: staff.find((s) => s.id === formData.staffId)?.name || formData.staffId,
+        notes: formData.notes,
+      });
+
+      setIsSuccess(true);
+
+      // Refresh list to exclude now in-progress ticket
+      await loadData();
+
+      // Reset flow
+      setTimeout(() => {
+        setIsSuccess(false);
+        setFormData({ requestId: "", staffId: "", notes: "" });
+      }, 4000);
+    } catch (err: any) {
+      console.error("Assignment error:", err);
+      setError(err.message || "Failed to assign task. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const currentPriority = getPriorityInfo(formData.requestId);
@@ -130,35 +242,54 @@ export default function AssignMaintenancePage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-7">
+              {error && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-655 dark:text-red-400 text-sm font-semibold rounded-2xl flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                  {error}
+                </div>
+              )}
+
               {/* Request Selection */}
               <div className="space-y-2 group">
                 <label htmlFor="requestId" className="block text-sm font-bold text-slate-700 transition-colors group-focus-within:text-brand-primary">
                   Select Maintenance Request <span className="text-brand-danger">*</span>
                 </label>
                 <div className="relative">
-                  <select
-                    id="requestId"
-                    name="requestId"
-                    value={formData.requestId}
-                    onChange={handleChange}
-                    className={`w-full appearance-none px-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
-                      errors.requestId ? "border-brand-danger bg-red-50" : "border-slate-200"
-                    }`}
-                  >
-                    <option value="" disabled>Choose a pending request...</option>
-                    <option value="1">Projector not working - Lab 1</option>
-                    <option value="2">Air conditioning issue - Lecture Hall A</option>
-                    <option value="3">Broken chair - Room 204</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+                  {loading ? (
+                    <div className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-primary" />
+                      <span className="text-sm font-bold text-slate-400">Loading pending requests...</span>
+                    </div>
+                  ) : (
+                    <select
+                      id="requestId"
+                      name="requestId"
+                      value={formData.requestId}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full appearance-none px-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
+                        errors.requestId ? "border-brand-danger bg-red-50" : "border-slate-200"
+                      }`}
+                    >
+                      <option value="" disabled>Choose a pending request...</option>
+                      {requests.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.title} - {r.resourceName || r.resourceId}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {!loading && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
                 {errors.requestId && (
                   <p className="text-xs font-semibold text-brand-danger flex items-center gap-1 mt-1">
-                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a0 0 000-2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                     A request must be selected
                   </p>
                 )}
@@ -180,29 +311,41 @@ export default function AssignMaintenancePage() {
                   Assign to Staff <span className="text-brand-danger">*</span>
                 </label>
                 <div className="relative">
-                  <select
-                    id="staffId"
-                    name="staffId"
-                    value={formData.staffId}
-                    onChange={handleChange}
-                    className={`w-full appearance-none px-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
-                      errors.staffId ? "border-brand-danger bg-red-50" : "border-slate-200"
-                    }`}
-                  >
-                    <option value="" disabled>Choose a technician...</option>
-                    <option value="t1">Technician 1 - Electrical</option>
-                    <option value="t2">Technician 2 - IT Support</option>
-                    <option value="t3">Technician 3 - Facilities</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+                  {loading ? (
+                    <div className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-primary" />
+                      <span className="text-sm font-bold text-slate-400">Loading technicians...</span>
+                    </div>
+                  ) : (
+                    <select
+                      id="staffId"
+                      name="staffId"
+                      value={formData.staffId}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full appearance-none px-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
+                        errors.staffId ? "border-brand-danger bg-red-50" : "border-slate-200"
+                      }`}
+                    >
+                      <option value="" disabled>Choose a technician...</option>
+                      {staff.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} - {s.department || "General"}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {!loading && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
                 {errors.staffId && (
                   <p className="text-xs font-semibold text-brand-danger flex items-center gap-1 mt-1">
-                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a0 0 000-2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                     Selection is required for distribution
                   </p>
                 )}
@@ -220,6 +363,7 @@ export default function AssignMaintenancePage() {
                   placeholder="Provide instructions, location details, or urgency context..."
                   value={formData.notes}
                   onChange={handleChange}
+                  disabled={submitting}
                   className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all resize-none placeholder:text-slate-400"
                 ></textarea>
               </div>
@@ -228,12 +372,19 @@ export default function AssignMaintenancePage() {
               <div className="pt-4">
                 <button
                   type="submit"
-                  className="w-full bg-brand-primary hover:bg-brand-secondary active:scale-[0.98] text-white font-bold py-4.5 px-6 rounded-xl shadow-lg shadow-brand-primary/20 transition-all duration-200 flex items-center justify-center gap-2"
+                  disabled={submitting || loading}
+                  className="w-full bg-brand-primary hover:bg-brand-secondary active:scale-[0.98] text-white font-bold py-4.5 px-6 rounded-xl shadow-lg shadow-brand-primary/20 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                  </svg>
-                  Assign Task
+                  {submitting ? (
+                    <><Loader2 className="w-5 h-5 animate-spin" /> Assigning Task...</>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                      </svg>
+                      Assign Task
+                    </>
+                  )}
                 </button>
               </div>
             </form>
