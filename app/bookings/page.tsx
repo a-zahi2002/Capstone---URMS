@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import NewBookingModal from "@/components/NewBookingModal";
 import EditBookingModal from "@/components/EditBookingModal";
@@ -9,6 +9,10 @@ import DeleteBookingModal from "@/components/DeleteBookingModal";
 import PersonalBookingDashboard from "@/components/dashboard/PersonalBookingDashboard";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
+import Pagination from "@/components/Pagination";
+import SavedSearches from "@/components/SavedSearches";
+import { exportToCSV } from "@/lib/exportCsv";
+import { DownloadCloud } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 import {
@@ -166,6 +170,29 @@ const getBookingStatusClasses = (statusLabel: string) => {
 function BookingsPageContent() {
     const { user, profile } = useAuth();
     const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    const urlPage = parseInt(searchParams.get("page") || "1", 10);
+    const urlPageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+
+    const [currentPage, setCurrentPage] = useState(urlPage);
+    const [pageSize, setPageSize] = useState(urlPageSize);
+
+    const updateUrlParams = (newPage: number, newPageSize: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", newPage.toString());
+        params.set("pageSize", newPageSize.toString());
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
+    useEffect(() => {
+        const pageVal = parseInt(searchParams.get("page") || "1", 10);
+        const pageSizeVal = parseInt(searchParams.get("pageSize") || "10", 10);
+        setCurrentPage(pageVal);
+        setPageSize(pageSizeVal);
+    }, [searchParams]);
+
     const role = profile?.role || "student";
     const defaultView = role === "student" ? "my" : "all";
     const view = searchParams.get("view") || defaultView;
@@ -418,6 +445,13 @@ function BookingsPageContent() {
             );
         });
     }, [bookings, searchQuery, view, statusFilter]);
+
+    const paginatedBookings = useMemo(() => {
+        return filteredBookings.slice(
+            (currentPage - 1) * pageSize,
+            currentPage * pageSize
+        );
+    }, [filteredBookings, currentPage, pageSize]);
 
     const totalBookings = bookings.length;
     const shownBookings = filteredBookings.length;
@@ -685,15 +719,18 @@ function BookingsPageContent() {
                 ) : (
                     <>
                         {/* Filters & Search */}
-                        <div className="bg-white dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm mb-8 flex flex-col lg:flex-row gap-4">
+                        <div className="bg-white dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm mb-4 flex flex-col lg:flex-row gap-4">
                             <div className="relative flex-1 group">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-brand-primary" />
                                 <input
                                     type="text"
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        updateUrlParams(1, pageSize);
+                                    }}
                                     placeholder="Search by resource name, type, or location..."
-                                    className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#0c0a14] border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
+                                    className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
                                 />
                             </div>
                             <div className="flex gap-4">
@@ -706,6 +743,47 @@ function BookingsPageContent() {
                                     {calendarLabel || "Select range"}
                                 </button>
                             </div>
+                        </div>
+
+                        {/* ── Saved Searches & Export ── */}
+                        <div className="flex items-center justify-between gap-4 mb-6">
+                            <SavedSearches
+                                pageKey="bookings-all"
+                                currentFilters={{
+                                    searchQuery,
+                                    selectedResourceId,
+                                    statusFilter,
+                                }}
+                                onLoadFilters={(filters) => {
+                                    if (filters.searchQuery !== undefined) setSearchQuery(filters.searchQuery);
+                                    if (filters.selectedResourceId !== undefined) setSelectedResourceId(filters.selectedResourceId);
+                                    if (filters.statusFilter !== undefined) setStatusFilter(filters.statusFilter);
+                                    updateUrlParams(1, pageSize);
+                                }}
+                            />
+                            <button
+                                onClick={() => {
+                                    exportToCSV(
+                                        filteredBookings.map(b => {
+                                            const r = getBookingResource(b);
+                                            return {
+                                                resourceName: r?.name || "",
+                                                location: r?.location || "",
+                                                date: formatDateLabel(b.start_time),
+                                                time: `${formatTimeLabel(b.start_time)} - ${formatTimeLabel(b.end_time)}`,
+                                                status: normalizeBookingStatus(b.status)
+                                            };
+                                        }),
+                                        ["Resource Name", "Location", "Date", "Time", "Status"],
+                                        ["resourceName", "location", "date", "time", "status"],
+                                        "bookings"
+                                    );
+                                }}
+                                className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+                            >
+                                <DownloadCloud className="w-4 h-4 text-emerald-500" />
+                                <span>Export CSV</span>
+                            </button>
                         </div>
 
                         {/* Bookings Table */}
@@ -740,7 +818,7 @@ function BookingsPageContent() {
                                                 </td>
                                             </tr>
                                         ) : (
-                                            filteredBookings.map((booking) => {
+                                            paginatedBookings.map((booking) => {
                                                 const statusLabel = normalizeBookingStatus(booking.status);
                                                 const resource = getBookingResource(booking);
                                                 const resourceName =
@@ -838,27 +916,13 @@ function BookingsPageContent() {
                                     </tbody>
                                 </table>
                             </div>
-                            <div className="px-6 py-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
-                                <p className="text-xs font-bold text-slate-500 dark:text-foreground/45 items-center">
-                                    {loadingBookings
-                                        ? "Loading bookings..."
-                                        : `Showing ${shownBookings} of ${totalBookings} bookings`}
-                                </p>
-                                <div className="flex gap-2">
-                                    <button
-                                        disabled
-                                        className="px-3 py-1 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold bg-white dark:bg-white/5 text-slate-400 dark:text-foreground/30 cursor-not-allowed"
-                                    >
-                                        Prev
-                                    </button>
-                                    <button
-                                        disabled
-                                        className="px-3 py-1 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold bg-white dark:bg-white/5 text-slate-400 dark:text-foreground/30 cursor-not-allowed"
-                                    >
-                                        Next
-                                    </button>
-                                </div>
-                            </div>
+                            <Pagination
+                                currentPage={currentPage}
+                                pageSize={pageSize}
+                                totalItems={filteredBookings.length}
+                                onPageChange={(p) => updateUrlParams(p, pageSize)}
+                                onPageSizeChange={(sz) => updateUrlParams(1, sz)}
+                            />
                         </div>
                     </>
                 )}

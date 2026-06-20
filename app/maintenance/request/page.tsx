@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { Loader2 } from "lucide-react";
 
 /**
  * MaintenanceRequestPage Component
@@ -9,6 +11,7 @@ import React, { useState } from "react";
  * Aligns with the Maintenance Management Module requirement: "Log repair and maintenance requests".
  */
 export default function MaintenanceRequestPage() {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     resource: "",
     description: "",
@@ -22,6 +25,38 @@ export default function MaintenanceRequestPage() {
   });
 
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [resources, setResources] = useState<any[]>([]);
+  const [loadingResources, setLoadingResources] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const getToken = useCallback(async () => {
+    if (user && typeof user.getIdToken === "function") return user.getIdToken();
+    return "dev-token";
+  }, [user]);
+
+  useEffect(() => {
+    const loadResources = async () => {
+      try {
+        const token = await getToken();
+        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const res = await fetch(`${API}/api/resources`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const json = await res.json();
+          setResources(json.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to load resources:", err);
+      } finally {
+        setLoadingResources(false);
+      }
+    };
+    if (user) {
+      loadResources();
+    }
+  }, [user, getToken]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLSelectElement | HTMLTextAreaElement | HTMLInputElement>
@@ -35,7 +70,7 @@ export default function MaintenanceRequestPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Basic validation: Resource and Description are required
@@ -51,22 +86,52 @@ export default function MaintenanceRequestPage() {
       return;
     }
 
-    // Logic for submission (console.log as per requirements)
-    console.log("Maintenance Request Form Data:", formData);
-    
-    // Show success state
-    setIsSubmitted(true);
-    
-    // Reset form after a short delay
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({
-        resource: "",
-        description: "",
-        date: "",
-        priority: "Medium",
+    setSubmitting(true);
+    setSubmissionError(null);
+
+    try {
+      const token = await getToken();
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      
+      const body = {
+        resourceId: formData.resource,
+        title: formData.description.slice(0, 50) || "Maintenance Request",
+        description: formData.description,
+        priority: formData.priority,
+      };
+
+      const res = await fetch(`${API}/api/maintenance-tickets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
       });
-    }, 3000);
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to submit maintenance request");
+      }
+
+      // Show success state
+      setIsSubmitted(true);
+      
+      // Reset form after a short delay
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setFormData({
+          resource: "",
+          description: "",
+          date: "",
+          priority: "Medium",
+        });
+      }, 3000);
+    } catch (err: any) {
+      setSubmissionError(err.message || "Failed to submit maintenance request. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -106,32 +171,50 @@ export default function MaintenanceRequestPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {submissionError && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-655 dark:text-red-400 text-sm font-semibold rounded-2xl flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                  {submissionError}
+                </div>
+              )}
+
               {/* Resource Selection */}
               <div className="space-y-2 group">
                 <label htmlFor="resource" className="block text-sm font-bold text-slate-700 transition-colors group-focus-within:text-brand-primary">
                   Select Resource <span className="text-brand-danger">*</span>
                 </label>
                 <div className="relative">
-                  <select
-                    id="resource"
-                    name="resource"
-                    value={formData.resource}
-                    onChange={handleChange}
-                    className={`w-full appearance-none px-4 py-3 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
-                      errors.resource ? "border-brand-danger bg-red-50" : "border-slate-200"
-                    }`}
-                  >
-                    <option value="" disabled>Choose a resource...</option>
-                    <option value="Lab 1">Lab 1 (Computer Engineering)</option>
-                    <option value="Lecture Hall A">Lecture Hall A (Main Building)</option>
-                    <option value="Projector 02">Projector 02 (Auditorium)</option>
-                    <option value="AC Unit 05">AC Unit 05 (Staff Room)</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+                  {loadingResources ? (
+                    <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-primary" />
+                      <span className="text-sm font-bold text-slate-400">Loading resources...</span>
+                    </div>
+                  ) : (
+                    <select
+                      id="resource"
+                      name="resource"
+                      value={formData.resource}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full appearance-none px-4 py-3 bg-slate-55 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
+                        errors.resource ? "border-brand-danger bg-red-50" : "border-slate-200"
+                      }`}
+                    >
+                      <option value="" disabled>Choose a resource...</option>
+                      {resources.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.name} ({r.location}) - {r.availability_status}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {!loadingResources && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
                 {errors.resource && (
                   <p className="text-xs font-medium text-brand-danger flex items-center gap-1">
@@ -155,6 +238,7 @@ export default function MaintenanceRequestPage() {
                   placeholder="Tell us what's wrong (e.g., screen flickering, wifi not connecting...)"
                   value={formData.description}
                   onChange={handleChange}
+                  disabled={submitting}
                   className={`w-full px-4 py-3 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all resize-none placeholder:text-slate-400 ${
                     errors.description ? "border-brand-danger bg-red-50" : "border-slate-200"
                   }`}
@@ -181,6 +265,7 @@ export default function MaintenanceRequestPage() {
                     type="date"
                     value={formData.date}
                     onChange={handleChange}
+                    disabled={submitting}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all"
                   />
                 </div>
@@ -196,6 +281,7 @@ export default function MaintenanceRequestPage() {
                       name="priority"
                       value={formData.priority}
                       onChange={handleChange}
+                      disabled={submitting}
                       className="w-full appearance-none px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer"
                     >
                       <option value="Low">Low - Improvement / Minor</option>
@@ -215,12 +301,19 @@ export default function MaintenanceRequestPage() {
               <div className="pt-6">
                 <button
                   type="submit"
-                  className="w-full bg-brand-primary hover:bg-brand-secondary active:scale-[0.98] text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-brand-primary/20 transition-all duration-200 flex items-center justify-center gap-2 group"
+                  disabled={submitting}
+                  className="w-full bg-brand-primary hover:bg-brand-secondary active:scale-[0.98] text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-brand-primary/20 transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-60"
                 >
-                  <span>Submit Request</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
+                  {submitting ? (
+                    <><Loader2 className="w-5 h-5 animate-spin" /> Submitting Request…</>
+                  ) : (
+                    <>
+                      <span>Submit Request</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

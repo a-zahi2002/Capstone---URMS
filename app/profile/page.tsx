@@ -80,6 +80,7 @@ export default function ProfilePage() {
     /* ── Profile Editing States ── */
     const [isEditing,   setIsEditing]   = useState(false);
     const [displayName, setDisplayName] = useState("");
+    const [phone,       setPhone]       = useState("");
     const [saveLoading, setSaveLoading] = useState(false);
     const [error,       setError]       = useState<string | null>(null);
     const [success,     setSuccess]     = useState<string | null>(null);
@@ -100,6 +101,8 @@ export default function ProfilePage() {
         if (profile?.name)          setDisplayName(profile.name);
         else if (user?.displayName) setDisplayName(user.displayName);
         else if (user?.email)       setDisplayName(user.email.split("@")[0]);
+        
+        if (profile?.phone)         setPhone(profile.phone);
     }, [profile, user]);
 
     // Load Notification Preferences from Supabase (or fallback to LocalStorage)
@@ -168,10 +171,11 @@ export default function ProfilePage() {
         setError(null); setSuccess(null); setSaveLoading(true);
         try {
             const token = (user && typeof user.getIdToken === 'function') ? await user.getIdToken() : "dev-token";
-            const res = await fetch("http://localhost:5000/api/users/profile", {
+            const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+            const res = await fetch(`${API}/api/users/profile`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ displayName: displayName.trim() }),
+                body: JSON.stringify({ displayName: displayName.trim(), phone: phone.trim() }),
             });
             if (!res.ok) throw new Error();
             setLocalName(displayName.trim());
@@ -431,6 +435,26 @@ export default function ProfilePage() {
                                                             disabled={saveLoading}
                                                             required
                                                             placeholder="Your full name"
+                                                            className="block w-full pl-11 pr-4 py-3.5 bg-slate-55 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all disabled:opacity-50"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label htmlFor="phone" className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                                                        Phone Number (for Critical SMS Alerts)
+                                                    </label>
+                                                    <div className="relative">
+                                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                            <Smartphone className="h-4 w-4 text-slate-400" />
+                                                        </div>
+                                                        <input
+                                                            id="phone"
+                                                            type="text"
+                                                            value={phone}
+                                                            onChange={(e) => setPhone(e.target.value)}
+                                                            disabled={saveLoading}
+                                                            placeholder="+947XXXXXXXX or 07XXXXXXXX"
                                                             className="block w-full pl-11 pr-4 py-3.5 bg-slate-55 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all disabled:opacity-50"
                                                         />
                                                     </div>

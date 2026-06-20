@@ -9,7 +9,9 @@
     "build": "tsc",
     "seed": "ts-node src/db/seed.ts",
     "db:setup": "ts-node src/db/setupSupabase.ts",
-    "db:check": "ts-node src/db/setupSupabase.ts"
+    "db:check": "ts-node src/db/setupSupabase.ts",
+    "db:migrate": "ts-node src/db/migrate.ts",
+    "db:migrate:rollback": "ts-node src/db/migrate.ts --rollback"
   },
   "keywords": [],
   "author": "",
@@ -30,6 +32,7 @@
     "mysql2": "^3.22.2",
     "nodemailer": "^8.0.7",
     "pdfkit": "^0.18.0",
+    "pg": "^8.22.0",
     "socket.io": "^4.8.3",
     "xlsx": "^0.18.5",
     "zod": "^4.4.3"
@@ -41,6 +44,7 @@
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.3.3",
     "@types/nodemailer": "^8.0.0",
+    "@types/pg": "^8.20.0",
     "@types/socket.io": "^3.0.1",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",

@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { motion, AnimatePresence } from "framer-motion";
+import Pagination from "@/components/Pagination";
+import SavedSearches from "@/components/SavedSearches";
+import { exportToCSV } from "@/lib/exportCsv";
 import {
     Users,
     UserPlus,
@@ -23,8 +26,10 @@ import {
     AlertCircle,
     KeyRound,
     Eye,
-    EyeOff
+    EyeOff,
+    DownloadCloud
 } from "lucide-react";
+
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -34,6 +39,7 @@ interface DBUser {
     email: string;
     role: "admin" | "student" | "lecturer" | "maintenance";
     department: string;
+    phone?: string;
     created_at: string;
 }
 
@@ -53,9 +59,14 @@ const departments = [
     "Faculty of Medicine"
 ];
 
-export default function UserManagementPage() {
+function UserManagementPageContent() {
     const { user, profile } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+
+    const urlPage = parseInt(searchParams.get("page") || "1", 10);
+    const urlPageSize = parseInt(searchParams.get("pageSize") || "10", 10);
 
     const [users, setUsers] = useState<DBUser[]>([]);
     const [loading, setLoading] = useState(true);
@@ -66,6 +77,23 @@ export default function UserManagementPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("");
     const [deptFilter, setDeptFilter] = useState("");
+
+    const [currentPage, setCurrentPage] = useState(urlPage);
+    const [pageSize, setPageSize] = useState(urlPageSize);
+
+    const updateUrlParams = (newPage: number, newPageSize: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", newPage.toString());
+        params.set("pageSize", newPageSize.toString());
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
+    useEffect(() => {
+        const pageVal = parseInt(searchParams.get("page") || "1", 10);
+        const pageSizeVal = parseInt(searchParams.get("pageSize") || "10", 10);
+        setCurrentPage(pageVal);
+        setPageSize(pageSizeVal);
+    }, [searchParams]);
 
     // Modal states
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -81,7 +109,8 @@ export default function UserManagementPage() {
         email: "",
         role: "student",
         department: "",
-        password: ""
+        password: "",
+        phone: ""
     });
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
@@ -121,7 +150,7 @@ export default function UserManagementPage() {
         setFormError(null);
         setFormLoading(true);
 
-        const { name, email, role, department, password } = formData;
+        const { name, email, role, department, password, phone } = formData;
 
         if (!name || !email || !role || !department || !password) {
             setFormError("All fields are required.");
@@ -137,7 +166,7 @@ export default function UserManagementPage() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, email, role, department, password })
+                body: JSON.stringify({ name, email, role, department, password, phone })
             });
 
             const result = await res.json();
@@ -145,7 +174,7 @@ export default function UserManagementPage() {
 
             setSuccess("User created successfully!");
             setCreateModalOpen(false);
-            setFormData({ name: "", email: "", role: "student", department: "", password: "" });
+            setFormData({ name: "", email: "", role: "student", department: "", password: "", phone: "" });
             fetchUsers();
             setTimeout(() => setSuccess(null), 3000);
         } catch (err: any) {
@@ -162,7 +191,7 @@ export default function UserManagementPage() {
         setFormError(null);
         setFormLoading(true);
 
-        const { name, role, department, password } = formData;
+        const { name, role, department, password, phone } = formData;
 
         try {
             const token = await getToken();
@@ -172,7 +201,7 @@ export default function UserManagementPage() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, role, department, ...(password ? { password } : {}) })
+                body: JSON.stringify({ name, role, department, phone, ...(password ? { password } : {}) })
             });
 
             const result = await res.json();
@@ -227,7 +256,8 @@ export default function UserManagementPage() {
             email: userToEdit.email,
             role: userToEdit.role,
             department: userToEdit.department || "",
-            password: "" // Keep empty unless updating
+            password: "", // Keep empty unless updating
+            phone: userToEdit.phone || ""
         });
         setFormError(null);
         setShowFormPassword(false);
@@ -250,6 +280,11 @@ export default function UserManagementPage() {
         return matchesSearch && matchesRole && matchesDept;
     });
 
+    const paginatedUsers = filteredUsers.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
+
     return (
         <ProtectedRoute allowedRoles={["admin"]}>
             <div className="min-h-screen bg-slate-50 dark:bg-background/20 overflow-x-hidden pb-16">
@@ -271,7 +306,7 @@ export default function UserManagementPage() {
 
                         <button
                             onClick={() => {
-                                setFormData({ name: "", email: "", role: "student", department: "", password: "" });
+                                setFormData({ name: "", email: "", role: "student", department: "", password: "", phone: "" });
                                 setFormError(null);
                                 setShowFormPassword(false);
                                 setCreateModalOpen(true);
@@ -304,8 +339,8 @@ export default function UserManagementPage() {
                         </div>
                     )}
 
-                    {/* Filter controls */}
-                    <div className="bg-card border border-slate-200 dark:border-border rounded-2xl p-4 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
+                    // Filter controls
+                    <div className="bg-card border border-slate-200 dark:border-border rounded-2xl p-4 shadow-sm mb-4 flex flex-col md:flex-row gap-4 items-center">
                         <div className="relative w-full md:flex-1">
                             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                 <Search className="w-4 h-4 text-slate-400" />
@@ -314,7 +349,10 @@ export default function UserManagementPage() {
                                 type="text"
                                 placeholder="Search by name or email..."
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                    updateUrlParams(1, pageSize);
+                                }}
                                 className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
                             />
                         </div>
@@ -322,7 +360,10 @@ export default function UserManagementPage() {
                         <div className="flex gap-4 w-full md:w-auto flex-wrap">
                             <select
                                 value={roleFilter}
-                                onChange={(e) => setRoleFilter(e.target.value)}
+                                onChange={(e) => {
+                                    setRoleFilter(e.target.value);
+                                    updateUrlParams(1, pageSize);
+                                }}
                                 className="px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-foreground/70 focus:outline-none cursor-pointer"
                             >
                                 <option value="">All Roles</option>
@@ -334,7 +375,10 @@ export default function UserManagementPage() {
 
                             <select
                                 value={deptFilter}
-                                onChange={(e) => setDeptFilter(e.target.value)}
+                                onChange={(e) => {
+                                    setDeptFilter(e.target.value);
+                                    updateUrlParams(1, pageSize);
+                                }}
                                 className="px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-foreground/70 focus:outline-none cursor-pointer max-w-[200px]"
                             >
                                 <option value="">All Departments</option>
@@ -343,6 +387,38 @@ export default function UserManagementPage() {
                                 ))}
                             </select>
                         </div>
+                    </div>
+
+                    {/* Saved Searches & CSV Export */}
+                    <div className="flex items-center justify-between gap-4 mb-6">
+                        <SavedSearches
+                            pageKey="users"
+                            currentFilters={{
+                                searchTerm,
+                                roleFilter,
+                                deptFilter,
+                            }}
+                            onLoadFilters={(filters) => {
+                                if (filters.searchTerm !== undefined) setSearchTerm(filters.searchTerm);
+                                if (filters.roleFilter !== undefined) setRoleFilter(filters.roleFilter);
+                                if (filters.deptFilter !== undefined) setDeptFilter(filters.deptFilter);
+                                updateUrlParams(1, pageSize);
+                            }}
+                        />
+                        <button
+                            onClick={() => {
+                                exportToCSV(
+                                    filteredUsers,
+                                    ["Name", "Email Address", "Role", "Faculty / Department", "Phone Number", "Joined Date"],
+                                    ["name", "email", "role", "department", "phone", "created_at"],
+                                    "users"
+                                );
+                            }}
+                            className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+                        >
+                            <DownloadCloud className="w-4 h-4 text-emerald-500" />
+                            <span>Export CSV</span>
+                        </button>
                     </div>
 
                     {/* Users Directory List */}
@@ -367,12 +443,13 @@ export default function UserManagementPage() {
                                             <th className="py-4 px-6">Email Address</th>
                                             <th className="py-4 px-6">Role</th>
                                             <th className="py-4 px-6">Faculty / Department</th>
+                                            <th className="py-4 px-6">Phone</th>
                                             <th className="py-4 px-6">Joined Date</th>
                                             <th className="py-4 px-6 text-right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-150 dark:divide-border/40">
-                                        {filteredUsers.map((item) => (
+                                        {paginatedUsers.map((item) => (
                                             <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-foreground/[0.01] transition-colors">
                                                 <td className="py-4.5 px-6">
                                                     <div className="flex items-center gap-3">
@@ -392,6 +469,9 @@ export default function UserManagementPage() {
                                                 </td>
                                                 <td className="py-4.5 px-6 text-xs font-bold text-slate-500 dark:text-foreground/50">
                                                     {item.department || "—"}
+                                                </td>
+                                                <td className="py-4.5 px-6 text-xs font-bold text-slate-500 dark:text-foreground/50">
+                                                    {item.phone || "—"}
                                                 </td>
                                                 <td className="py-4.5 px-6 text-xs font-bold text-slate-500 dark:text-foreground/50">
                                                     {new Date(item.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
@@ -418,6 +498,14 @@ export default function UserManagementPage() {
                                         ))}
                                     </tbody>
                                 </table>
+
+                                <Pagination
+                                    currentPage={currentPage}
+                                    pageSize={pageSize}
+                                    totalItems={filteredUsers.length}
+                                    onPageChange={(p) => updateUrlParams(p, pageSize)}
+                                    onPageSizeChange={(sz) => updateUrlParams(1, sz)}
+                                />
                             </div>
                         )}
                     </div>
@@ -521,6 +609,18 @@ export default function UserManagementPage() {
                                                 <option key={d} value={d}>{d}</option>
                                             ))}
                                         </select>
+                                    </div>
+
+                                    {/* Phone Number */}
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">Phone Number</label>
+                                        <input
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                            placeholder="+1234567890"
+                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                                        />
                                     </div>
 
                                     {/* Password */}
@@ -631,5 +731,20 @@ export default function UserManagementPage() {
                 </AnimatePresence>
             </div>
         </ProtectedRoute>
+    );
+}
+
+export default function UserManagementPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-slate-50 dark:bg-background/20 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
+                    <p className="text-slate-400 font-semibold text-sm">Loading User Directory…</p>
+                </div>
+            </div>
+        }>
+            <UserManagementPageContent />
+        </Suspense>
     );
 }

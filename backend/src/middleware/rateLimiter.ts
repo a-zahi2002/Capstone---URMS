@@ -24,7 +24,7 @@ import rateLimit from 'express-rate-limit';
  */
 export const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,  // 15 minutes
-    limit: 100,                 // max 100 requests per window per IP
+    limit: (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test') ? 100 : 10000, // relaxed limit for local development
     standardHeaders: 'draft-8', // Send RateLimit-* headers (modern standard)
     legacyHeaders: false,       // Disable deprecated X-RateLimit-* headers
 
@@ -43,7 +43,7 @@ export const globalLimiter = rateLimit({
  */
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,  // 15 minutes
-    limit: 5,                   // max 5 requests per window per IP
+    limit: (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test') ? 5 : 10000, // relaxed limit for local development
     standardHeaders: 'draft-8',
     legacyHeaders: false,
 

@@ -125,8 +125,8 @@ export default function BulkImport({ isOpen, onClose, onSuccess }: BulkImportPro
 
     try {
       const token = (user && typeof user.getIdToken === 'function') ? await user.getIdToken() : "dev-token";
-      
-      const response = await fetch("http://localhost:5000/api/resources/import", {
+      const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const response = await fetch(`${API}/api/resources/import`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
