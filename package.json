@@ -47,7 +47,6 @@
   },
   "devDependencies": {
     "@next/swc-wasm-nodejs": "^16.2.6",
-    "@next/swc-win32-x64-msvc": "16.0.1",
     "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4.2.4",
     "@testing-library/jest-dom": "^6.9.1",
