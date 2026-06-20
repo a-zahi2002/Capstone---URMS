@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { BASE_URL } from "@/lib/apiClient";
 
 interface DBUser {
     id: string;
@@ -126,7 +126,7 @@ function UserManagementPageContent() {
         setError(null);
         try {
             const token = await getToken();
-            const res = await fetch(`${API}/api/users`, {
+            const res = await fetch(`${BASE_URL}/users`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (!res.ok) throw new Error("Failed to fetch users from server.");
@@ -160,7 +160,7 @@ function UserManagementPageContent() {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API}/api/users`, {
+            const res = await fetch(`${BASE_URL}/users`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -195,7 +195,7 @@ function UserManagementPageContent() {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API}/api/users/${selectedUser.id}`, {
+            const res = await fetch(`${BASE_URL}/users/${selectedUser.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -227,7 +227,7 @@ function UserManagementPageContent() {
 
         try {
             const token = await getToken();
-            const res = await fetch(`${API}/api/users/${selectedUser.id}`, {
+            const res = await fetch(`${BASE_URL}/users/${selectedUser.id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` }
             });

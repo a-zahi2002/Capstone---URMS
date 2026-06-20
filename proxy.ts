@@ -2,18 +2,18 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Next.js Edge Middleware
+ * Next.js Edge Proxy (formerly Middleware)
  * ─────────────────────────────────────────────────────────────
  * Protects routes by checking for an authentication session.
  * 
  * Note: Since Firebase Auth primarily uses IndexedDB on the client,
- * this middleware checks for a 'session' or 'firebaseToken' cookie.
+ * this proxy checks for a 'session' or 'firebaseToken' cookie.
  * To make this fully functional with Firebase, ensure that your
  * client-side login logic (e.g., inside auth-context.tsx) sets
  * an HttpOnly cookie containing the token.
  * ─────────────────────────────────────────────────────────────
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Define protected routes (add or remove paths as needed)
