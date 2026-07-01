@@ -35,6 +35,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { createUserProfile } from "@/lib/supabase";
+import { apiClient, BASE_URL as API_BASE } from "@/lib/apiClient";
 import { motion } from "framer-motion";
 
 /* Password strength helper */
@@ -65,6 +66,8 @@ function PasswordStrength({ password }: { password: string }) {
     </div>
   );
 }
+
+
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -141,12 +144,39 @@ export default function RegisterPage() {
         await updateProfile(userCredential.user, { displayName: fullName.trim() });
       }
 
+      // Hash the password using bcrypt via the backend API
+      let passwordHash: string | undefined;
+      try {
+        const token = await userCredential.user.getIdToken();
+        const hashResponse = await fetch(
+          `${API_BASE}/users/hash-password`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ password }),
+          }
+        );
+        if (hashResponse.ok) {
+          const hashData = await hashResponse.json();
+          passwordHash = hashData.password_hash;
+        } else {
+          console.warn("Password hashing endpoint returned non-OK status. Continuing without hash.");
+        }
+      } catch (hashErr) {
+        // If hashing fails, we still continue with registration (graceful degradation)
+        console.warn("Failed to hash password via backend. Registration will continue without bcrypt hash.", hashErr);
+      }
+
       await createUserProfile({
         id: uid,
         name: fullName.trim(),
         email: email.toLowerCase(),
         role: role.toLowerCase() as any,
-        department: department
+        department: department,
+        ...(passwordHash ? { password_hash: passwordHash } : {}),
       });
 
       setSuccess("Account created! Redirecting to sign in…");

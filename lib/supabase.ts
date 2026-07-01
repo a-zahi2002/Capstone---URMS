@@ -32,6 +32,8 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   department?: string;
+  password_hash?: string;
+  phone?: string;
   created_at: string;
 }
 
@@ -53,7 +55,13 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
 }
 
 export async function createUserProfile(profile: Omit<UserProfile, "created_at">) {
-  const { error } = await supabase.from("users").upsert(profile);
+  // Build the profile data, only including password_hash if it's provided
+  const profileData: Record<string, unknown> = { ...profile };
+  if (!profileData.password_hash) {
+    delete profileData.password_hash;
+  }
+
+  const { error } = await supabase.from("users").upsert(profileData);
   if (error) {
     console.error("Error creating user profile:", JSON.stringify(error, null, 2));
     throw new Error(`Failed to create user profile: ${error.message || JSON.stringify(error)}`);

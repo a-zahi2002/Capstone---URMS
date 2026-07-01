@@ -30,7 +30,10 @@ import {
   Clock
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { auth } from "@/lib/firebase";
+import { signOut as firebaseSignOut } from "firebase/auth";
 import { motion } from "framer-motion";
+import { BASE_URL as API_BASE } from "@/lib/apiClient";
 
 export default function LoginPage() {
   const { signIn, setMockUser } = useAuth();
@@ -70,6 +73,39 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signIn(email, password);
+
+      // Secondary bcrypt verification against stored hash
+      try {
+        const token = await auth?.currentUser?.getIdToken();
+        if (token) {
+          const verifyResponse = await fetch(
+            `${API_BASE}/users/verify-password`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ email, password }),
+            }
+          );
+          if (verifyResponse.ok) {
+            const verifyData = await verifyResponse.json();
+            if (verifyData.valid === false) {
+              // Bcrypt hash mismatch — sign out and block login
+              if (auth) await firebaseSignOut(auth);
+              setError("Password verification failed. Please reset your password.");
+              setLoading(false);
+              return;
+            }
+          }
+          // If verify endpoint is unreachable, we allow login (graceful degradation)
+        }
+      } catch (verifyErr) {
+        // If bcrypt verification call fails, allow login but log a warning
+        console.warn("Bcrypt verification endpoint unreachable. Proceeding with Firebase auth only.", verifyErr);
+      }
+
       router.push("/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -90,9 +126,47 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoClick = (role: "admin" | "maintenance" | "lecturer" | "student") => {
-    setMockUser(role);
-    router.push("/dashboard");
+  const handleDemoClick = async (role: "admin" | "maintenance" | "lecturer" | "student") => {
+    setError(null);
+    setLoading(true);
+    try {
+      const email = `${role}@demo.lk`;
+      const password = "Password123";
+      
+      if (auth) {
+        await signIn(email, password);
+        try {
+          const token = await auth.currentUser?.getIdToken();
+          if (token) {
+            await fetch(
+              `${API_BASE}/users/verify-password`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ email, password }),
+              }
+            );
+          }
+        } catch (verifyErr) {
+          console.warn("Bcrypt verification failed:", verifyErr);
+        }
+      } else {
+        // Fallback to mock user if Firebase is not initialized
+        setMockUser(role);
+      }
+      router.push("/dashboard");
+    } catch (err: any) {
+      if (role !== "admin" && (err.message.includes("user-not-found") || err.message.includes("invalid-credential"))) {
+        setError(`Demo ${role} user does not exist. Please log in as Admin (admin@demo.lk / Password123) and create this user via the User Management panel.`);
+      } else {
+        setError(`Demo login failed: ${err.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

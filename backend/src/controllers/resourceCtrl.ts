@@ -15,7 +15,7 @@ import { AuthRequest } from "../middleware/auth.middleware";
 export const getResources = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const resources = await ResourceModel.findAll(req.supabase);
-    res.json({ data: resources });
+    res.json({ status: "success", data: resources });
   } catch (error: any) {
     console.error("Error fetching resources:", error);
     res.status(500).json({ status: "error", message: error.message });
@@ -37,7 +37,7 @@ export const addResource = async (req: AuthRequest, res: Response): Promise<void
       department: department || null
     }, req.supabase);
 
-    res.json({ message: "Resource added", id: newId });
+    res.json({ status: "success", message: "Resource added", id: newId, data: { id: newId } });
   } catch (error: any) {
     console.error("Error adding resource:", error);
     res.status(500).json({ status: "error", message: error.message });
@@ -65,7 +65,7 @@ export const updateResource = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    res.json({ message: "Updated" });
+    res.json({ status: "success", message: "Updated" });
   } catch (error: any) {
     console.error("Error updating resource:", error);
     res.status(500).json({ status: "error", message: error.message });
@@ -84,7 +84,7 @@ export const deleteResource = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    res.json({ message: "Deleted" });
+    res.json({ status: "success", message: "Deleted" });
   } catch (error: any) {
     console.error("Error deleting resource:", error);
     res.status(500).json({ status: "error", message: error.message });
@@ -101,20 +101,19 @@ export const importResources = async (req: AuthRequest, res: Response): Promise<
       return;
     }
 
-    // Insert each resource via the model (maintains validation + mock fallback)
-    const insertedIds: string[] = [];
-    for (const r of resources) {
-      const id = await ResourceModel.create({
-        name:                r.name,
-        type:                r.type               || "Lecture Halls",
-        capacity:            r.capacity           || "0",
-        location:            r.location,
-        availability_status: r.availability_status || "Available",
-        equipment:           r.equipment          || [],
-        department:          r.department         || null
-      }, req.supabase);
-      insertedIds.push(id);
-    }
+    // Format all resource records for bulk insert
+    const resourcePayloads = resources.map((r: any) => ({
+      name:                r.name,
+      type:                r.type               || "Lecture Halls",
+      capacity:            r.capacity           || 0,
+      location:            r.location,
+      availability_status: r.availability_status || "Available",
+      equipment:           r.equipment          || [],
+      department:          r.department         || null
+    }));
+
+    // Insert all resources concurrently in a single database call
+    const insertedIds = await ResourceModel.createMany(resourcePayloads, req.supabase);
 
     res.json({
       status:  "success",

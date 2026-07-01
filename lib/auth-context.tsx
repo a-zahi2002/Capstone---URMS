@@ -17,6 +17,7 @@ import {
 } from "firebase/auth";
 import { auth } from "./firebase";
 import { getUserProfile, UserProfile, setSupabaseAuthHeaders, clearSupabaseAuthHeaders } from "./supabase";
+import { BASE_URL } from "./apiClient";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,7 +52,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser);
             if (firebaseUser) {
-                const userProfile = await getUserProfile(firebaseUser.uid);
+                // Set temporary headers with UID so that Supabase RLS allows the user to query their own profile
+                setSupabaseAuthHeaders(firebaseUser.uid, "student");
+                
+                let token = "";
+                try {
+                    token = await firebaseUser.getIdToken();
+                    // Set cookie for middleware validation
+                    document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Lax; Secure`;
+                } catch (tokenErr) {
+                    console.error("Failed to retrieve Firebase ID token:", tokenErr);
+                }
+
+                let userProfile = await getUserProfile(firebaseUser.uid);
+                
+                // If user exists in Firebase but has no profile in Supabase yet,
+                // call the backend profile endpoint which will trigger auto-sync/creation.
+                if (!userProfile && token) {
+                    try {
+                        const res = await fetch(`${BASE_URL}/users/profile`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        if (res.ok) {
+                            // Fetch again from Supabase now that the backend has auto-synced the user
+                            userProfile = await getUserProfile(firebaseUser.uid);
+                        }
+                    } catch (err) {
+                        console.error("Failed to auto-sync profile with backend:", err);
+                    }
+                }
+
                 setProfile(userProfile);
                 if (userProfile) {
                     setSupabaseAuthHeaders(userProfile.id, userProfile.role);
@@ -59,6 +89,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } else {
                 setProfile(null);
                 clearSupabaseAuthHeaders();
+                // Clear cookie for middleware validation
+                document.cookie = "firebaseToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
             }
             setLoading(false);
         });
@@ -76,11 +108,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const signOut = async () => {
-        if (!auth) return;
-        await firebaseSignOut(auth);
+        if (auth) {
+            await firebaseSignOut(auth);
+        }
         setProfile(null);
         setUser(null);
         clearSupabaseAuthHeaders();
+        document.cookie = "firebaseToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     };
 
     const setMockUser = (role: UserProfile["role"]) => {
@@ -94,11 +128,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         setProfile(mockProfile);
         setSupabaseAuthHeaders(mockProfile.id, mockProfile.role);
+
+        const mockToken = `mock-token:${mockProfile.id}:${mockProfile.role}`;
+        document.cookie = `firebaseToken=${mockToken}; path=/; max-age=3600; SameSite=Lax; Secure`;
+
         // We set a fake user object to pass ProtectedRoute checks
         setUser({ 
             uid: mockProfile.id, 
             email: mockProfile.email,
-            getIdToken: async () => "mock-id-token"
+            getIdToken: async () => mockToken
         } as unknown as User);
     };
 

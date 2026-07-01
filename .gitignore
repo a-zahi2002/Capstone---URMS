@@ -30,8 +30,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — ignore real secrets, allow .env.example
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
 serviceAccountKey.json
 
 # logs
@@ -44,3 +49,18 @@ error.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scratch / dev investigation scripts (not project code)
+/scratch/
+/backend/src/scratch/
+
+# playwright output (generated, not source)
+/playwright-report/
+/test-results/
+
+# generated files
+/backend/src/test.pdf
+/output/
+
+# deployment draft env files (delete after importing)
+/draft/

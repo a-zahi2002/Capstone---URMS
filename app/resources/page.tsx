@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AddResourceModal from "@/components/AddResourceModal";
 import EditResourceModal, { Resource } from "@/components/EditResourceModal";
 import BulkImport from "@/components/BulkImport";
 import { supabase } from "@/lib/supabase";
+import Pagination from "@/components/Pagination";
+import SavedSearches from "@/components/SavedSearches";
+import { exportToCSV } from "@/lib/exportCsv";
 import {
     Search,
     Plus,
@@ -22,6 +26,7 @@ import {
     DoorOpen,
     Package,
     UploadCloud,
+    DownloadCloud,
 } from "lucide-react";
 
 type SortField = "name" | "type" | "capacity" | "availability_status";
@@ -50,7 +55,14 @@ const getNextStatus = (current: string) => {
     return STATUS_SEQUENCE[(index + 1) % STATUS_SEQUENCE.length];
 };
 
-export default function ResourcesPage() {
+function ResourcesPageContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+
+    const urlPage = parseInt(searchParams.get("page") || "1", 10);
+    const urlPageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -59,6 +71,23 @@ export default function ResourcesPage() {
     const [selectedStatus, setSelectedStatus] = useState("All");
     const [sortField, setSortField] = useState<SortField>("name");
     const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+    const [currentPage, setCurrentPage] = useState(urlPage);
+    const [pageSize, setPageSize] = useState(urlPageSize);
+
+    const updateUrlParams = (newPage: number, newPageSize: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", newPage.toString());
+        params.set("pageSize", newPageSize.toString());
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
+    useEffect(() => {
+        const pageVal = parseInt(searchParams.get("page") || "1", 10);
+        const pageSizeVal = parseInt(searchParams.get("pageSize") || "10", 10);
+        setCurrentPage(pageVal);
+        setPageSize(pageSizeVal);
+    }, [searchParams]);
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
@@ -158,10 +187,10 @@ export default function ResourcesPage() {
 
     const getCategoryColor = (category: string) => {
         switch (category) {
-            case "Labs": return "bg-purple-50 text-purple-700 border-purple-100";
-            case "Lecture Halls": return "bg-blue-50 text-blue-700 border-blue-100";
-            case "Rooms": return "bg-teal-50 text-teal-700 border-teal-100";
-            default: return "bg-slate-50 text-slate-600 border-slate-200";
+            case "Labs": return "bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-500/20";
+            case "Lecture Halls": return "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20";
+            case "Rooms": return "bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-100 dark:border-teal-500/20";
+            default: return "bg-slate-55 dark:bg-white/5 text-slate-600 dark:text-foreground/60 border border-slate-200 dark:border-white/10";
         }
     };
 
@@ -182,6 +211,11 @@ export default function ResourcesPage() {
             return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
         });
 
+    const paginatedResources = filteredResources.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
+
     const totalResources = resources.length;
     const available = resources.filter((r) => r.availability_status === "Available").length;
     const booked = resources.filter((r) => r.availability_status === "Booked").length;
@@ -196,20 +230,20 @@ export default function ResourcesPage() {
     return (
         <ProtectedRoute>
             {/* Dashboard wrapper */}
-            <div className="min-h-screen bg-[#F0F4FF]">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950/40 text-foreground">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
 
                     {/* ── Page Header ── */}
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                         <div>
-                            <h1 className="text-3xl font-bold text-[#1E3A8A] tracking-tight">Resources</h1>
-                            <p className="text-slate-500 mt-1 text-sm">Manage university resources, labs, and halls</p>
+                            <h1 className="text-3xl font-bold text-[#1E3A8A] dark:text-blue-400 tracking-tight">Resources</h1>
+                            <p className="text-slate-500 dark:text-foreground/50 mt-1 text-sm">Manage university resources, labs, and halls</p>
                         </div>
                         {isAdmin && (
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => setIsBulkImportOpen(true)}
-                                    className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 active:scale-95 text-slate-700 font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-all duration-200"
+                                    className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-all duration-200"
                                 >
                                     <UploadCloud className="w-4 h-4" />
                                     Bulk Import
@@ -217,7 +251,7 @@ export default function ResourcesPage() {
                                 <button
                                     id="add-resource-btn"
                                     onClick={() => setIsAddModalOpen(true)}
-                                    className="inline-flex items-center gap-2 bg-[#1E3A8A] hover:bg-[#1e40af] active:scale-95 text-white font-semibold px-5 py-2.5 rounded-xl shadow-md shadow-blue-900/20 transition-all duration-200"
+                                    className="inline-flex items-center gap-2 bg-[#1E3A8A] dark:bg-blue-600 hover:bg-[#1e40af] dark:hover:bg-blue-500 active:scale-95 text-white font-semibold px-5 py-2.5 rounded-xl shadow-md shadow-blue-900/20 dark:shadow-blue-500/10 transition-all duration-200"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Add Resource
@@ -229,39 +263,39 @@ export default function ResourcesPage() {
                     {/* ── Stats Cards ── */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
                         {/* Total */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex items-center gap-5">
-                            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                                <Database className="w-6 h-6 text-[#1E3A8A]" />
+                        <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] p-6 flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+                                <Database className="w-6 h-6 text-[#1E3A8A] dark:text-blue-400" />
                             </div>
                             <div>
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Resources</p>
-                                <p className="text-3xl font-bold text-slate-900 mt-0.5">
+                                <p className="text-xs font-semibold text-slate-500 dark:text-foreground/45 uppercase tracking-wider">Total Resources</p>
+                                <p className="text-3xl font-bold text-slate-900 dark:text-foreground mt-0.5">
                                     {loading ? <span className="text-xl text-slate-300">—</span> : totalResources}
                                 </p>
                             </div>
                         </div>
 
                         {/* Available */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex items-center gap-5">
-                            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                        <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] p-6 flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
+                                <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-450" />
                             </div>
                             <div>
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Available</p>
-                                <p className="text-3xl font-bold text-emerald-600 mt-0.5">
+                                <p className="text-xs font-semibold text-slate-500 dark:text-foreground/45 uppercase tracking-wider">Available</p>
+                                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
                                     {loading ? <span className="text-xl text-slate-300">—</span> : available}
                                 </p>
                             </div>
                         </div>
 
                         {/* Booked */}
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex items-center gap-5">
-                            <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                <XCircle className="w-6 h-6 text-red-500" />
+                        <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] p-6 flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center shrink-0">
+                                <XCircle className="w-6 h-6 text-red-500 dark:text-red-400" />
                             </div>
                             <div>
-                                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Booked</p>
-                                <p className="text-3xl font-bold text-red-500 mt-0.5">
+                                <p className="text-xs font-semibold text-slate-500 dark:text-foreground/45 uppercase tracking-wider">Booked</p>
+                                <p className="text-3xl font-bold text-red-500 dark:text-red-400 mt-0.5">
                                     {loading ? <span className="text-xl text-slate-300">—</span> : booked}
                                 </p>
                             </div>
@@ -269,21 +303,27 @@ export default function ResourcesPage() {
                     </div>
 
                     {/* ── Search & Filters ── */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-6 flex flex-col sm:flex-row gap-3">
+                    <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] p-4 mb-4 flex flex-col sm:flex-row gap-3">
                         <div className="relative flex-1">
                             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <input
                                 type="text"
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    updateUrlParams(1, pageSize);
+                                }}
                                 placeholder="Search resources…"
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             />
                         </div>
                         <select
                             value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
+                            onChange={(e) => {
+                                setSelectedCategory(e.target.value);
+                                updateUrlParams(1, pageSize);
+                            }}
+                            className="px-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-700 dark:text-foreground/75 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                         >
                             <option value="All">All Categories</option>
                             <option value="Lecture Halls">Lecture Halls</option>
@@ -294,8 +334,11 @@ export default function ResourcesPage() {
                         </select>
                         <select
                             value={selectedStatus}
-                            onChange={(e) => setSelectedStatus(e.target.value)}
-                            className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
+                            onChange={(e) => {
+                                setSelectedStatus(e.target.value);
+                                updateUrlParams(1, pageSize);
+                            }}
+                            className="px-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-700 dark:text-foreground/75 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                         >
                             <option value="All">All Statuses</option>
                             <option value="Available">Available</option>
@@ -304,33 +347,65 @@ export default function ResourcesPage() {
                         </select>
                     </div>
 
+                    {/* ── Saved Searches & Export ── */}
+                    <div className="flex items-center justify-between gap-4 mb-6">
+                        <SavedSearches
+                            pageKey="resources"
+                            currentFilters={{
+                                searchQuery,
+                                selectedCategory,
+                                selectedStatus,
+                            }}
+                            onLoadFilters={(filters) => {
+                                if (filters.searchQuery !== undefined) setSearchQuery(filters.searchQuery);
+                                if (filters.selectedCategory !== undefined) setSelectedCategory(filters.selectedCategory);
+                                if (filters.selectedStatus !== undefined) setSelectedStatus(filters.selectedStatus);
+                                updateUrlParams(1, pageSize);
+                            }}
+                        />
+                        <button
+                            onClick={() => {
+                                exportToCSV(
+                                    filteredResources,
+                                    ["Name", "Type", "Capacity", "Location", "Status"],
+                                    ["name", "type", "capacity", "location", "availability_status"],
+                                    "resources"
+                                );
+                            }}
+                            className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+                        >
+                            <DownloadCloud className="w-4 h-4 text-emerald-500" />
+                            <span>Export CSV</span>
+                        </button>
+                    </div>
+
                     {/* ── Error Banner ── */}
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-medium flex items-center gap-2">
+                        <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium flex items-center gap-2">
                             <XCircle className="w-4 h-4 shrink-0" />
                             {error}
                         </div>
                     )}
 
                     {/* ── Table ── */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] overflow-hidden">
                         {loading ? (
                             <div className="flex items-center justify-center py-24">
-                                <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-slate-200 border-t-[#1E3A8A]" />
+                                <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-slate-200 border-t-[#1E3A8A] dark:border-t-blue-500" />
                             </div>
                         ) : filteredResources.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-24 text-center px-6">
-                                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-                                    <Search className="w-7 h-7 text-blue-300" />
+                                <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-4">
+                                    <Search className="w-7 h-7 text-blue-300 dark:text-blue-400" />
                                 </div>
-                                <h3 className="text-lg font-bold text-slate-800 mb-1">No resources found</h3>
-                                <p className="text-sm text-slate-500">Try adjusting your search or filters.</p>
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-foreground mb-1">No resources found</h3>
+                                <p className="text-sm text-slate-500 dark:text-foreground/45">Try adjusting your search or filters.</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
-                                        <tr className="border-b border-slate-100 bg-slate-50/60">
+                                        <tr className="border-b border-slate-100 dark:border-white/[0.06] bg-slate-50/60 dark:bg-white/[0.02]">
                                             {(
                                                 [
                                                     { label: "Name", field: "name" },
@@ -341,7 +416,7 @@ export default function ResourcesPage() {
                                             ).map(({ label, field }) => (
                                                 <th
                                                     key={field}
-                                                    className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-[#1E3A8A] transition-colors"
+                                                    className="px-6 py-4 text-left text-xs font-semibold text-slate-505 dark:text-foreground/40 uppercase tracking-wider cursor-pointer select-none hover:text-[#1E3A8A] dark:hover:text-blue-450 transition-colors"
                                                     onClick={() => handleSort(field)}
                                                 >
                                                     <span className="inline-flex items-center gap-1.5">
@@ -351,23 +426,23 @@ export default function ResourcesPage() {
                                                 </th>
                                             ))}
                                             {isAdmin && (
-                                                <th className="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                                <th className="px-6 py-4 text-right text-xs font-semibold text-slate-505 dark:text-foreground/40 uppercase tracking-wider">
                                                     Actions
                                                 </th>
                                             )}
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {filteredResources.map((resource) => (
+                                    <tbody className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+                                        {paginatedResources.map((resource) => (
                                             <tr
                                                 key={resource.id}
-                                                className="hover:bg-blue-50/40 transition-colors duration-150 group"
+                                                className="hover:bg-blue-50/40 dark:hover:bg-white/[0.01] transition-colors duration-150 group"
                                             >
                                                 {/* Name */}
                                                 <td className="px-6 py-4">
-                                                    <span className="font-semibold text-slate-800">{resource.name}</span>
+                                                    <span className="font-semibold text-slate-800 dark:text-foreground">{resource.name}</span>
                                                     {resource.location && (
-                                                        <p className="text-xs text-slate-400 mt-0.5">{resource.location}</p>
+                                                        <p className="text-xs text-slate-400 dark:text-foreground/30 mt-0.5">{resource.location}</p>
                                                     )}
                                                 </td>
 
@@ -380,7 +455,7 @@ export default function ResourcesPage() {
                                                 </td>
 
                                                 {/* Capacity */}
-                                                <td className="px-6 py-4 text-slate-700 font-medium">
+                                                <td className="px-6 py-4 text-slate-700 dark:text-foreground/80 font-medium">
                                                     {resource.capacity}
                                                 </td>
 
@@ -391,11 +466,11 @@ export default function ResourcesPage() {
                                                         onClick={() => handleToggleStatus(resource)}
                                                         disabled={updatingStatusId === resource.id}
                                                         title="Click to toggle status"
-                                                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-colors ${resource.availability_status === "Available"
-                                                            ? "bg-emerald-100 text-emerald-700"
+                                                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-colors border ${resource.availability_status === "Available"
+                                                            ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-450 border-emerald-250 dark:border-emerald-500/20"
                                                             : resource.availability_status === "Booked"
-                                                                ? "bg-red-100 text-red-600"
-                                                                : "bg-amber-100 text-amber-700"
+                                                                ? "bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-250 dark:border-red-500/20"
+                                                                : "bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-450 border-amber-250 dark:border-amber-500/20"
                                                             } ${updatingStatusId === resource.id
                                                                 ? "opacity-60 cursor-wait"
                                                                 : "hover:opacity-90"
@@ -420,7 +495,7 @@ export default function ResourcesPage() {
                                                             <button
                                                                 onClick={() => setEditingResource(resource)}
                                                                 title="Edit"
-                                                                className="p-2 rounded-lg text-slate-400 hover:text-[#1E3A8A] hover:bg-blue-50 transition-all duration-150"
+                                                                className="p-2 rounded-lg text-slate-400 hover:text-[#1E3A8A] dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-white/5 transition-all duration-150"
                                                             >
                                                                 <Edit3 className="w-4 h-4" />
                                                             </button>
@@ -428,7 +503,7 @@ export default function ResourcesPage() {
                                                                 onClick={() => handleDelete(resource.id)}
                                                                 title="Delete"
                                                                 disabled={deletingId === resource.id}
-                                                                className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all duration-150 disabled:opacity-40"
+                                                                className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-white/5 transition-all duration-150 disabled:opacity-40"
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
@@ -440,13 +515,13 @@ export default function ResourcesPage() {
                                     </tbody>
                                 </table>
 
-                                {/* Table footer */}
-                                <div className="border-t border-slate-100 px-6 py-3 flex items-center justify-between bg-slate-50/40">
-                                    <p className="text-xs text-slate-400">
-                                        Showing <span className="font-semibold text-slate-600">{filteredResources.length}</span> of{" "}
-                                        <span className="font-semibold text-slate-600">{totalResources}</span> resources
-                                    </p>
-                                </div>
+                                <Pagination
+                                    currentPage={currentPage}
+                                    pageSize={pageSize}
+                                    totalItems={filteredResources.length}
+                                    onPageChange={(p) => updateUrlParams(p, pageSize)}
+                                    onPageSizeChange={(sz) => updateUrlParams(1, sz)}
+                                />
                             </div>
                         )}
                     </div>
@@ -471,5 +546,13 @@ export default function ResourcesPage() {
                 onSuccess={fetchResources}
             />
         </ProtectedRoute>
+    );
+}
+
+export default function ResourcesPage() {
+    return (
+        <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-10 text-center font-bold text-slate-500">Loading Resources...</div>}>
+            <ResourcesPageContent />
+        </Suspense>
     );
 }
