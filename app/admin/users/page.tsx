@@ -40,6 +40,7 @@ interface DBUser {
     role: "admin" | "student" | "lecturer" | "maintenance";
     department: string;
     phone?: string;
+    approval_status?: "Pending" | "Approved" | "Rejected";
     created_at: string;
 }
 
@@ -48,6 +49,12 @@ const roleBadges: Record<string, string> = {
     lecturer: "bg-emerald-500/10 border-emerald-500/20 text-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-400",
     student: "bg-blue-500/10 border-blue-500/20 text-blue-500 dark:bg-blue-500/20 dark:text-blue-400",
     maintenance: "bg-amber-500/10 border-amber-500/20 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400",
+};
+
+const approvalStatusBadges: Record<string, string> = {
+    Approved: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
+    Pending: "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:bg-amber-500/20 dark:text-amber-450",
+    Rejected: "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400",
 };
 
 const departments = [
@@ -77,6 +84,7 @@ function UserManagementPageContent() {
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("");
     const [deptFilter, setDeptFilter] = useState("");
+    const [approvalFilter, setApprovalFilter] = useState("");
 
     const [currentPage, setCurrentPage] = useState(urlPage);
     const [pageSize, setPageSize] = useState(urlPageSize);
@@ -110,7 +118,8 @@ function UserManagementPageContent() {
         role: "student",
         department: "",
         password: "",
-        phone: ""
+        phone: "",
+        approval_status: "Approved"
     });
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
@@ -181,7 +190,7 @@ function UserManagementPageContent() {
 
             setSuccess("User created successfully!");
             setCreateModalOpen(false);
-            setFormData({ name: "", email: "", role: "student", department: "", password: "", phone: "" });
+            setFormData({ name: "", email: "", role: "student", department: "", password: "", phone: "", approval_status: "Approved" });
             fetchUsers();
             setTimeout(() => setSuccess(null), 3000);
         } catch (err: any) {
@@ -198,7 +207,7 @@ function UserManagementPageContent() {
         setFormError(null);
         setFormLoading(true);
 
-        const { name, role, department, password, phone } = formData;
+        const { name, role, department, password, phone, approval_status } = formData;
 
         try {
             const token = await getToken();
@@ -208,7 +217,7 @@ function UserManagementPageContent() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, role, department, phone, ...(password ? { password } : {}) })
+                body: JSON.stringify({ name, role, department, phone, approval_status, ...(password ? { password } : {}) })
             });
 
             const result = await res.json();
@@ -255,6 +264,39 @@ function UserManagementPageContent() {
         }
     };
 
+    const handleSetApprovalStatus = async (userToUpdate: DBUser, status: "Approved" | "Rejected") => {
+        setLoading(true);
+        setError(null);
+        try {
+            const token = await getToken();
+            const res = await fetch(`${BASE_URL}/users/${userToUpdate.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: userToUpdate.name,
+                    role: userToUpdate.role,
+                    department: userToUpdate.department,
+                    phone: userToUpdate.phone,
+                    approval_status: status
+                })
+            });
+
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.message || `Failed to update status to ${status}.`);
+
+            setSuccess(`User registration ${status.toLowerCase()} successfully!`);
+            fetchUsers();
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err: any) {
+            setError(err.message || "Failed to update user status.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Open Edit Modal and fill values
     const openEditModal = (userToEdit: DBUser) => {
         setSelectedUser(userToEdit);
@@ -264,7 +306,8 @@ function UserManagementPageContent() {
             role: userToEdit.role,
             department: userToEdit.department || "",
             password: "", // Keep empty unless updating
-            phone: userToEdit.phone || ""
+            phone: userToEdit.phone || "",
+            approval_status: userToEdit.approval_status || "Approved"
         });
         setFormError(null);
         setShowFormPassword(false);
@@ -284,7 +327,8 @@ function UserManagementPageContent() {
             u.email.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = roleFilter ? u.role === roleFilter : true;
         const matchesDept = deptFilter ? u.department === deptFilter : true;
-        return matchesSearch && matchesRole && matchesDept;
+        const matchesApproval = approvalFilter ? (u.approval_status || "Approved") === approvalFilter : true;
+        return matchesSearch && matchesRole && matchesDept && matchesApproval;
     });
 
     const paginatedUsers = filteredUsers.slice(
@@ -313,7 +357,7 @@ function UserManagementPageContent() {
 
                         <button
                             onClick={() => {
-                                setFormData({ name: "", email: "", role: "student", department: "", password: "", phone: "" });
+                                setFormData({ name: "", email: "", role: "student", department: "", password: "", phone: "", approval_status: "Approved" });
                                 setFormError(null);
                                 setShowFormPassword(false);
                                 setCreateModalOpen(true);
@@ -393,6 +437,20 @@ function UserManagementPageContent() {
                                     <option key={d} value={d}>{d}</option>
                                 ))}
                             </select>
+
+                            <select
+                                value={approvalFilter}
+                                onChange={(e) => {
+                                    setApprovalFilter(e.target.value);
+                                    updateUrlParams(1, pageSize);
+                                }}
+                                className="px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-foreground/70 focus:outline-none cursor-pointer"
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
                         </div>
                     </div>
 
@@ -404,11 +462,13 @@ function UserManagementPageContent() {
                                 searchTerm,
                                 roleFilter,
                                 deptFilter,
+                                approvalFilter,
                             }}
                             onLoadFilters={(filters) => {
                                 if (filters.searchTerm !== undefined) setSearchTerm(filters.searchTerm);
                                 if (filters.roleFilter !== undefined) setRoleFilter(filters.roleFilter);
                                 if (filters.deptFilter !== undefined) setDeptFilter(filters.deptFilter);
+                                if (filters.approvalFilter !== undefined) setApprovalFilter(filters.approvalFilter);
                                 updateUrlParams(1, pageSize);
                             }}
                         />
@@ -451,6 +511,7 @@ function UserManagementPageContent() {
                                             <th className="py-4 px-6">Role</th>
                                             <th className="py-4 px-6">Faculty / Department</th>
                                             <th className="py-4 px-6">Phone</th>
+                                            <th className="py-4 px-6">Status</th>
                                             <th className="py-4 px-6">Joined Date</th>
                                             <th className="py-4 px-6 text-right">Actions</th>
                                         </tr>
@@ -480,11 +541,34 @@ function UserManagementPageContent() {
                                                 <td className="py-4.5 px-6 text-xs font-bold text-slate-500 dark:text-foreground/50">
                                                     {item.phone || "—"}
                                                 </td>
+                                                <td className="py-4.5 px-6">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${approvalStatusBadges[item.approval_status || "Approved"]}`}>
+                                                        {item.approval_status || "Approved"}
+                                                    </span>
+                                                </td>
                                                 <td className="py-4.5 px-6 text-xs font-bold text-slate-500 dark:text-foreground/50">
                                                     {new Date(item.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
                                                 </td>
                                                 <td className="py-4.5 px-6 text-right">
                                                     <div className="flex items-center justify-end gap-2">
+                                                        {item.approval_status !== "Approved" && (
+                                                            <button
+                                                                onClick={() => handleSetApprovalStatus(item, "Approved")}
+                                                                className="p-2 bg-emerald-100 dark:bg-emerald-500/10 rounded-lg text-emerald-600 hover:bg-emerald-200 dark:text-emerald-450 dark:hover:bg-emerald-550/20 transition-colors"
+                                                                title="Approve Member"
+                                                            >
+                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
+                                                        {item.approval_status !== "Rejected" && (
+                                                            <button
+                                                                onClick={() => handleSetApprovalStatus(item, "Rejected")}
+                                                                className="p-2 bg-rose-100 dark:bg-rose-500/10 rounded-lg text-rose-600 hover:bg-rose-200 dark:text-rose-400 dark:hover:bg-rose-550/20 transition-colors"
+                                                                title="Reject Member"
+                                                            >
+                                                                <X className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
                                                         <button
                                                             onClick={() => openEditModal(item)}
                                                             className="p-2 bg-slate-100 dark:bg-foreground/5 rounded-lg text-slate-600 hover:text-brand-primary dark:text-slate-400 dark:hover:text-white transition-colors"
@@ -601,6 +685,22 @@ function UserManagementPageContent() {
                                             <option value="admin">Admin</option>
                                         </select>
                                     </div>
+
+                                    {/* Approval Status (Edit mode only) */}
+                                    {editModalOpen && (
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">Approval Status</label>
+                                            <select
+                                                value={formData.approval_status}
+                                                onChange={(e) => setFormData({ ...formData, approval_status: e.target.value as any })}
+                                                className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none cursor-pointer"
+                                            >
+                                                <option value="Approved">Approved</option>
+                                                <option value="Pending">Pending</option>
+                                                <option value="Rejected">Rejected</option>
+                                            </select>
+                                        </div>
+                                    )}
 
                                     {/* Faculty / Dept */}
                                     <div>

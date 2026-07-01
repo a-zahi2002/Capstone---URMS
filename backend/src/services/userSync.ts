@@ -7,6 +7,7 @@ export interface SyncedUser {
     email: string;
     role: 'admin' | 'student' | 'lecturer' | 'maintenance';
     department?: string;
+    approval_status?: 'Pending' | 'Approved' | 'Rejected';
     created_at?: string;
 }
 
@@ -83,6 +84,7 @@ export async function syncSingleUser(uid: string): Promise<SyncedUser | null> {
                 email: emailLower,
                 role,
                 department,
+                approval_status: 'Pending',
                 created_at: createdAt
             };
 
@@ -94,6 +96,7 @@ export async function syncSingleUser(uid: string): Promise<SyncedUser | null> {
                     email: newUser.email,
                     role: newUser.role,
                     department: newUser.department,
+                    approval_status: newUser.approval_status,
                     created_at: newUser.created_at
                 });
 
@@ -188,6 +191,7 @@ export async function syncAllUsers(): Promise<SyncedUser[]> {
                     email: emailLower,
                     role,
                     department,
+                    approval_status: 'Pending',
                     created_at: createdAt
                 };
 
@@ -199,6 +203,7 @@ export async function syncAllUsers(): Promise<SyncedUser[]> {
                         email: newUser.email,
                         role: newUser.role,
                         department: newUser.department,
+                        approval_status: newUser.approval_status,
                         created_at: newUser.created_at
                     });
 
