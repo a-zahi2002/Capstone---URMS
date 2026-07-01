@@ -13,9 +13,9 @@ const router = Router();
 router.use(verifyToken);
 router.use(requireAdmin);
 
-router.get("/schedules", getSchedules);
-router.post("/schedules", createSchedule);
-router.patch("/schedules/:id", updateSchedule);
-router.delete("/schedules/:id", deleteSchedule);
+router.get("/", getSchedules);
+router.post("/", createSchedule);
+router.patch("/:id", updateSchedule);
+router.delete("/:id", deleteSchedule);
 
 export default router;

@@ -1,16 +1,21 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   AlertTriangle, CheckCircle2, Clock, ListTodo,
   CalendarDays, Wrench, Activity, ShieldAlert,
-  Search, X, Plus, RefreshCcw, ChevronRight
+  Search, X, Plus, RefreshCcw, ChevronRight, DownloadCloud
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import Pagination from "@/components/Pagination";
+import SavedSearches from "@/components/SavedSearches";
+import { exportToCSV } from "@/lib/exportCsv";
 
 interface MaintenanceTicket {
   id: string;
   resourceId: string;
+  resourceName?: string;
   title: string;
   description: string;
   status: "OPEN" | "IN_PROGRESS" | "COMPLETED";
@@ -20,7 +25,6 @@ interface MaintenanceTicket {
   created_at: string;
   completed_at?: string;
   outcome?: string;
-  resourceName?: string;
 }
 
 interface MaintenanceTask {
@@ -44,8 +48,15 @@ const NEXT_STATUS: Record<string, "IN_PROGRESS" | "COMPLETED"> = {
 };
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-export default function AdminMaintenanceDashboard() {
+function AdminMaintenanceDashboardContent() {
   const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
+  const urlPage = parseInt(searchParams.get("page") || "1", 10);
+  const urlPageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+
   const [filter, setFilter] = useState<"All" | "Pending" | "Completed" | "Overdue">("All");
   const [search, setSearch] = useState("");
   const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
@@ -54,6 +65,25 @@ export default function AdminMaintenanceDashboard() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [form, setForm] = useState({ resourceId: "", title: "", description: "", priority: "Medium" });
+  const [completingTask, setCompletingTask] = useState<MaintenanceTask | null>(null);
+  const [outcome, setOutcome] = useState<"Fixed" | "Faulty" | "Decommissioned">("Fixed");
+
+  const [currentPage, setCurrentPage] = useState(urlPage);
+  const [pageSize, setPageSize] = useState(urlPageSize);
+
+  const updateUrlParams = (newPage: number, newPageSize: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", newPage.toString());
+    params.set("pageSize", newPageSize.toString());
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  useEffect(() => {
+    const pageVal = parseInt(searchParams.get("page") || "1", 10);
+    const pageSizeVal = parseInt(searchParams.get("pageSize") || "10", 10);
+    setCurrentPage(pageVal);
+    setPageSize(pageSizeVal);
+  }, [searchParams]);
 
   const getToken = useCallback(async () => {
     if (user && typeof user.getIdToken === "function") return user.getIdToken();
@@ -68,11 +98,8 @@ export default function AdminMaintenanceDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      const data: MaintenanceTicket[] = await res.json();
-      
-      if (!Array.isArray(data)) {
-        throw new Error("Invalid response format: expected an array of tickets");
-      }
+      const resJson = await res.json();
+      const data: MaintenanceTicket[] = Array.isArray(resJson) ? resJson : (resJson.data || []);
 
       setTasks(data.map(t => ({
         id: `REQ-${String(t.id).slice(0, 8).toUpperCase()}`,
@@ -117,21 +144,33 @@ export default function AdminMaintenanceDashboard() {
     }
   };
 
-  const handleAdvanceStatus = async (task: MaintenanceTask) => {
-    if (task.rawStatus === "COMPLETED") return;
-    const next = NEXT_STATUS[task.rawStatus];
+  const updateStatus = async (ticketId: string, status: string, outcomeVal?: string) => {
     try {
       const token = await getToken();
-      const res = await fetch(`${API}/api/maintenance-tickets/${task.rawId}/status`, {
+      const body: any = { status };
+      if (outcomeVal) body.outcome = outcomeVal;
+
+      const res = await fetch(`${API}/api/maintenance-tickets/${ticketId}/status`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ status: next })
+        body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error("Status update failed");
       await fetchTasks();
     } catch (e) {
       alert("Could not update status. Check permissions.");
     }
+  };
+
+  const handleAdvanceStatus = async (task: MaintenanceTask) => {
+    if (task.rawStatus === "COMPLETED") return;
+    const next = NEXT_STATUS[task.rawStatus];
+    if (next === "COMPLETED") {
+      setCompletingTask(task);
+      setOutcome("Fixed");
+      return;
+    }
+    await updateStatus(task.rawId, next);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -181,6 +220,13 @@ export default function AdminMaintenanceDashboard() {
     }
     return list;
   }, [filter, tasks, search]);
+
+  const paginatedTasks = useMemo(() => {
+    return filteredTasks.slice(
+      (currentPage - 1) * pageSize,
+      currentPage * pageSize
+    );
+  }, [filteredTasks, currentPage, pageSize]);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8 font-sans">
@@ -242,7 +288,10 @@ export default function AdminMaintenanceDashboard() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   value={search}
-                  onChange={e => setSearch(e.target.value)}
+                  onChange={e => {
+                    setSearch(e.target.value);
+                    updateUrlParams(1, pageSize);
+                  }}
                   placeholder="Search tasks..."
                   className="pl-9 pr-4 py-2 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 w-52"
                 />
@@ -250,7 +299,10 @@ export default function AdminMaintenanceDashboard() {
               {/* Filter tabs */}
               <div className="flex bg-slate-100 dark:bg-foreground/5 p-1 rounded-xl border border-slate-200 dark:border-border">
                 {["All", "Pending", "Completed"].map(f => (
-                  <button key={f} onClick={() => setFilter(f as any)}
+                  <button key={f} onClick={() => {
+                    setFilter(f as any);
+                    updateUrlParams(1, pageSize);
+                  }}
                     className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all ${filter === f ? "bg-card text-foreground shadow-sm" : "text-slate-500 dark:text-foreground/40"}`}>
                     {f}
                   </button>
@@ -260,6 +312,45 @@ export default function AdminMaintenanceDashboard() {
                 <RefreshCcw className="w-4 h-4 text-slate-500" />
               </button>
             </div>
+          </div>
+
+          {/* ── Saved Searches & Export ── */}
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-border flex items-center justify-between gap-4 bg-slate-50/50 dark:bg-white/[0.01]">
+            <SavedSearches
+              pageKey="maintenance"
+              currentFilters={{
+                search,
+                filter,
+              }}
+              onLoadFilters={(filters) => {
+                if (filters.search !== undefined) setSearch(filters.search);
+                if (filters.filter !== undefined) setFilter(filters.filter);
+                updateUrlParams(1, pageSize);
+              }}
+            />
+            <button
+              onClick={() => {
+                exportToCSV(
+                  filteredTasks.map(t => ({
+                    id: t.id,
+                    resourceName: t.resourceName,
+                    title: t.title,
+                    description: t.description,
+                    requestedDate: t.requestedDate,
+                    status: t.status,
+                    priority: t.priority,
+                    assignedTo: t.assignedTo || ""
+                  })),
+                  ["Task ID", "Resource", "Title", "Description", "Requested Date", "Status", "Priority", "Assigned To"],
+                  ["id", "resourceName", "title", "description", "requestedDate", "status", "priority", "assignedTo"],
+                  "maintenance_tasks"
+                );
+              }}
+              className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+            >
+              <DownloadCloud className="w-4 h-4 text-emerald-500" />
+              <span>Export CSV</span>
+            </button>
           </div>
 
           <div className="overflow-x-auto">
@@ -291,7 +382,7 @@ export default function AdminMaintenanceDashboard() {
                       </div>
                     </td>
                   </tr>
-                ) : filteredTasks.map(task => (
+                ) : paginatedTasks.map(task => (
                   <tr key={task.rawId} className="hover:bg-foreground/[0.02] transition-colors group">
                     <td className="px-6 py-5">
                       <div className="font-black text-foreground text-sm">{task.id}</div>
@@ -326,6 +417,13 @@ export default function AdminMaintenanceDashboard() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            pageSize={pageSize}
+            totalItems={filteredTasks.length}
+            onPageChange={(p) => updateUrlParams(p, pageSize)}
+            onPageSizeChange={(sz) => updateUrlParams(1, sz)}
+          />
         </div>
       </div>
 
@@ -382,6 +480,65 @@ export default function AdminMaintenanceDashboard() {
           </div>
         </div>
       )}
+
+      {/* Outcome Selection Modal */}
+      {completingTask && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-slate-200 dark:border-border rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-slate-900 p-6 text-white relative">
+              <h3 className="text-xl font-black">Select Maintenance Outcome</h3>
+              <p className="text-slate-400 text-xs mt-1">Specify resolution to update resource status</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-3">
+                {[
+                  { value: "Fixed", label: "Fixed (Available)", desc: "Set resource availability status to 'Available'" },
+                  { value: "Faulty", label: "Faulty (Under Maintenance)", desc: "Keep resource status as 'Under Maintenance'" },
+                  { value: "Decommissioned", label: "Decommissioned (Inactive)", desc: "Set resource status to 'Inactive' (retired)" }
+                ].map(opt => (
+                  <label key={opt.value} className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                    outcome === opt.value 
+                      ? "border-brand-primary bg-blue-500/5 text-foreground animate-pulse-subtle" 
+                      : "border-slate-200 dark:border-border text-foreground hover:bg-slate-50 dark:hover:bg-white/[0.02]"
+                  }`}>
+                    <input 
+                      type="radio" 
+                      name="outcome" 
+                      value={opt.value} 
+                      checked={outcome === opt.value} 
+                      onChange={() => setOutcome(opt.value as any)}
+                      className="mt-1 accent-brand-primary"
+                    />
+                    <div>
+                      <div className="font-bold text-sm">{opt.label}</div>
+                      <div className="text-xs text-slate-400 dark:text-foreground/45 mt-0.5">{opt.desc}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setCompletingTask(null)}
+                  className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-border text-foreground font-black text-sm hover:bg-slate-50 dark:hover:bg-foreground/5 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  onClick={async () => {
+                    await updateStatus(completingTask.rawId, "COMPLETED", outcome);
+                    setCompletingTask(null);
+                  }}
+                  className="flex-1 px-4 py-3 rounded-xl bg-brand-primary text-white font-black text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Confirm & Complete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -429,4 +586,12 @@ function PriorityBadge({ priority }: { priority: string }) {
     Low: "text-slate-600 bg-slate-100 border border-slate-200",
   };
   return <span className={`inline-flex px-3 py-1 rounded-lg text-xs font-bold ${map[priority] || ""}`}>{priority}</span>;
+}
+
+export default function AdminMaintenanceDashboard() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-10 text-center font-bold text-slate-500">Loading Maintenance...</div>}>
+      <AdminMaintenanceDashboardContent />
+    </Suspense>
+  );
 }

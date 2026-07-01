@@ -45,6 +45,15 @@ export interface SendEmailOptions {
 // ─── Base sender ─────────────────────────────────────────────
 export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
     try {
+        const host = process.env.SMTP_HOST;
+        const user = process.env.SMTP_USER;
+        const pass = process.env.SMTP_PASS;
+
+        if (!host || !user || !pass || user === 'your_email@gmail.com') {
+            // Quietly skip without throwing connection error logs when SMTP is intentionally unconfigured/disabled in development
+            return false;
+        }
+
         const transport = getTransporter();
         const from = process.env.EMAIL_FROM || 'URMS UniLink <no-reply@urms.edu>';
 
@@ -323,6 +332,140 @@ export async function sendSystemAlertEmail(
     return sendEmail({
         to,
         subject: `[URMS ${s.label}] ${alertTitle}`,
+        html: emailLayout(content),
+    });
+}
+
+// ─── Template: Booking Created ───────────────────────────────
+export async function sendBookingCreatedEmail(
+    to: string,
+    userName: string,
+    resourceName: string,
+    bookingDate: string,
+    bookingTime: string
+): Promise<boolean> {
+    const content = `
+        <h2 style="margin:0 0 8px;color:#1e293b;font-size:22px;font-weight:700;">
+            Booking Request Received 📅
+        </h2>
+        <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.7;">
+            Hi ${userName}, your request to reserve the following resource has been submitted.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;overflow:hidden;margin-bottom:24px;border:1px solid #e2e8f0;">
+            <tr><td style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+                <p style="margin:0;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Resource</p>
+                <p style="margin:4px 0 0;color:#1e293b;font-size:16px;font-weight:700;">${resourceName}</p>
+            </td></tr>
+            <tr><td style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+                <p style="margin:0;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Date</p>
+                <p style="margin:4px 0 0;color:#1e293b;font-size:16px;font-weight:700;">${bookingDate}</p>
+            </td></tr>
+            <tr><td style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+                <p style="margin:0;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Time Slot</p>
+                <p style="margin:4px 0 0;color:#1e293b;font-size:16px;font-weight:700;">${bookingTime}</p>
+            </td></tr>
+            <tr><td style="padding:20px 24px;background:#fffbeb;">
+                <p style="margin:0;color:#b45309;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Next Steps</p>
+                <p style="margin:4px 0 0;color:#b45309;font-size:14px;line-height:1.6;">Your booking is currently <strong>Pending Approval</strong>. You will receive another notification once a lecturer or system administrator reviews your request.</p>
+            </td></tr>
+        </table>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/bookings?view=my"
+           style="display:inline-block;padding:12px 28px;background:#4f46e5;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:10px;">
+            View My Bookings
+        </a>`;
+
+    return sendEmail({
+        to,
+        subject: `Booking Request Received: ${resourceName} on ${bookingDate}`,
+        html: emailLayout(content),
+    });
+}
+
+// ─── Template: Booking Cancelled ─────────────────────────────
+export async function sendBookingCancelledEmail(
+    to: string,
+    userName: string,
+    resourceName: string,
+    bookingDate: string,
+    bookingTime: string
+): Promise<boolean> {
+    const content = `
+        <h2 style="margin:0 0 8px;color:#ef4444;font-size:22px;font-weight:700;">
+            Booking Cancelled 🚫
+        </h2>
+        <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.7;">
+            Hi ${userName}, your resource reservation has been cancelled.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;overflow:hidden;margin-bottom:24px;border:1px solid #e2e8f0;">
+            <tr><td style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+                <p style="margin:0;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Resource</p>
+                <p style="margin:4px 0 0;color:#1e293b;font-size:16px;font-weight:700;">${resourceName}</p>
+            </td></tr>
+            <tr><td style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+                <p style="margin:0;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Date</p>
+                <p style="margin:4px 0 0;color:#1e293b;font-size:16px;font-weight:700;">${bookingDate}</p>
+            </td></tr>
+            <tr><td style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+                <p style="margin:0;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Time Slot</p>
+                <p style="margin:4px 0 0;color:#1e293b;font-size:16px;font-weight:700;">${bookingTime}</p>
+            </td></tr>
+            <tr><td style="padding:20px 24px;background:#fef2f2;">
+                <p style="margin:0;color:#991b1b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Status</p>
+                <p style="margin:4px 0 0;color:#991b1b;font-size:14px;line-height:1.6;">This booking has been cancelled and the slot has been made available for other users.</p>
+            </td></tr>
+        </table>`;
+
+    return sendEmail({
+        to,
+        subject: `Booking Cancelled: ${resourceName} on ${bookingDate}`,
+        html: emailLayout(content),
+    });
+}
+
+// ─── Template: Booking Modified ──────────────────────────────
+export async function sendBookingModifiedEmail(
+    to: string,
+    userName: string,
+    oldDetails: { resourceName: string; bookingDate: string; bookingTime: string },
+    newDetails: { resourceName: string; bookingDate: string; bookingTime: string }
+): Promise<boolean> {
+    const content = `
+        <h2 style="margin:0 0 8px;color:#2563eb;font-size:22px;font-weight:700;">
+            Booking Modified ✏️
+        </h2>
+        <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.7;">
+            Hi ${userName}, your resource booking has been updated with new schedule details.
+        </p>
+        <div style="margin-bottom:24px;">
+            <h3 style="color:#64748b;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Previous Reservation</h3>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
+                <tr><td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;font-size:14px;color:#475569;">
+                    <strong>Resource:</strong> ${oldDetails.resourceName}
+                </td></tr>
+                <tr><td style="padding:14px 20px;font-size:14px;color:#475569;">
+                    <strong>Schedule:</strong> ${oldDetails.bookingDate} (${oldDetails.bookingTime})
+                </td></tr>
+            </table>
+        </div>
+        <div style="margin-bottom:24px;">
+            <h3 style="color:#2563eb;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">New Reservation Details</h3>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#eff6ff;border-radius:12px;overflow:hidden;border:1px solid #bfdbfe;">
+                <tr><td style="padding:16px 20px;border-bottom:1px solid #bfdbfe;font-size:15px;color:#1e3a8a;font-weight:600;">
+                    <strong>Resource:</strong> ${newDetails.resourceName}
+                </td></tr>
+                <tr><td style="padding:16px 20px;font-size:15px;color:#1e3a8a;font-weight:600;">
+                    <strong>Schedule:</strong> ${newDetails.bookingDate} (${newDetails.bookingTime})
+                </td></tr>
+            </table>
+        </div>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/bookings?view=my"
+           style="display:inline-block;padding:12px 28px;background:#4f46e5;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:10px;">
+            View My Bookings
+        </a>`;
+
+    return sendEmail({
+        to,
+        subject: `Booking Modified: ${newDetails.resourceName} on ${newDetails.bookingDate}`,
         html: emailLayout(content),
     });
 }

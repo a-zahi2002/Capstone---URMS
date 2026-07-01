@@ -32,10 +32,12 @@ import {
 import {
   createUserWithEmailAndPassword,
   updateProfile,
+  signOut,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { createUserProfile } from "@/lib/supabase";
+import { apiClient, BASE_URL as API_BASE } from "@/lib/apiClient";
 import { motion } from "framer-motion";
+import { useAuth } from "@/lib/auth-context";
 
 /* Password strength helper */
 function PasswordStrength({ password }: { password: string }) {
@@ -66,8 +68,11 @@ function PasswordStrength({ password }: { password: string }) {
   );
 }
 
+
+
 export default function RegisterPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -101,6 +106,11 @@ export default function RegisterPage() {
       clearInterval(clockInterval);
     };
   }, []);
+
+  // NOTE: We intentionally do NOT redirect already-logged-in users here.
+  // Redirecting during the registration flow causes a race condition where
+  // the auth state fires before the Supabase profile is written, leading to
+  // userSync auto-creating a record with the wrong role ('student' default).
 
   const validateForm = () => {
     if (!fullName || !email || !role || !department || !password || !confirmPassword) {
@@ -141,16 +151,43 @@ export default function RegisterPage() {
         await updateProfile(userCredential.user, { displayName: fullName.trim() });
       }
 
-      await createUserProfile({
-        id: uid,
-        name: fullName.trim(),
-        email: email.toLowerCase(),
-        role: role.toLowerCase() as any,
-        department: department
+      // Get the Firebase ID token to authenticate the self-registration call
+      const idToken = await userCredential.user.getIdToken();
+
+      // Call the backend self-registration endpoint.
+      // The backend verifies the token, writes the profile via the service role
+      // Supabase client (bypasses RLS), hashes the password, and sets
+      // approval_status = 'Pending'.
+      const registerRes = await fetch(`${API_BASE}/users/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          name: fullName.trim(),
+          email: email.toLowerCase(),
+          role: role.toLowerCase(),
+          department,
+          password,
+        }),
       });
 
-      setSuccess("Account created! Redirecting to sign in…");
-      setTimeout(() => router.push("/login"), 1500);
+      if (!registerRes.ok) {
+        const errData = await registerRes.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to save registration. Please try again.");
+      }
+
+      // Sign out of Firebase immediately so we don't trigger auth context redirects
+      // or the userSync race condition (which would overwrite the role with 'student').
+      // The user must log in again after admin approval.
+      if (auth) {
+        await signOut(auth);
+      }
+
+      setSuccess("Account created! Your registration is pending admin approval.");
+      setTimeout(() => router.push("/login"), 2500);
+
     } catch (err: unknown) {
       if (err instanceof Error) {
         const code = (err as { code?: string }).code ?? "";

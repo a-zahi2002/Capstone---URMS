@@ -30,10 +30,13 @@ import {
   Clock
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { auth } from "@/lib/firebase";
+import { signOut as firebaseSignOut } from "firebase/auth";
 import { motion } from "framer-motion";
+import { BASE_URL as API_BASE } from "@/lib/apiClient";
 
 export default function LoginPage() {
-  const { signIn, setMockUser } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -64,12 +67,52 @@ export default function LoginPage() {
     };
   }, []);
 
+  // Redirect immediately if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, authLoading, router]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
       await signIn(email, password);
+
+      // Secondary bcrypt verification against stored hash
+      try {
+        const token = await auth?.currentUser?.getIdToken();
+        if (token) {
+          const verifyResponse = await fetch(
+            `${API_BASE}/users/verify-password`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ email, password }),
+            }
+          );
+          if (verifyResponse.ok) {
+            const verifyData = await verifyResponse.json();
+            if (verifyData.valid === false) {
+              // Bcrypt hash mismatch — sign out and block login
+              if (auth) await firebaseSignOut(auth);
+              setError("Password verification failed. Please reset your password.");
+              setLoading(false);
+              return;
+            }
+          }
+          // If verify endpoint is unreachable, we allow login (graceful degradation)
+        }
+      } catch (verifyErr) {
+        // If bcrypt verification call fails, allow login but log a warning
+        console.warn("Bcrypt verification endpoint unreachable. Proceeding with Firebase auth only.", verifyErr);
+      }
+
       router.push("/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -90,10 +133,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoClick = (role: "admin" | "maintenance" | "lecturer" | "student") => {
-    setMockUser(role);
-    router.push("/dashboard");
-  };
+
 
   return (
     <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden relative flex items-center justify-center">
@@ -381,37 +421,7 @@ export default function LoginPage() {
           </Link>
         </p>
 
-        {/* Quick Demo Access Badges */}
-        <div className="pt-5 border-t border-slate-200/60 dark:border-border/40 space-y-4">
-          <p className="text-center text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-foreground/45">
-            Quick Operator Access
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {(["admin", "maintenance", "lecturer", "student"] as const).map((role) => (
-              <button
-                key={role}
-                onClick={() => handleDemoClick(role)}
-                className={`flex items-center justify-between px-3.5 py-2.5 border rounded-xl transition-all hover:scale-[1.02] shadow-sm text-left group cursor-pointer ${
-                  role === "admin" ? "bg-gradient-to-r from-purple-500/10 to-indigo-500/5 border-purple-500/20 text-purple-650 dark:text-purple-300 hover:border-purple-500/40" :
-                  role === "maintenance" ? "bg-gradient-to-r from-amber-500/10 to-orange-500/5 border-amber-500/20 text-amber-650 dark:text-amber-300 hover:border-amber-500/40" :
-                  role === "lecturer" ? "bg-gradient-to-r from-emerald-500/10 to-teal-500/5 border-emerald-500/20 text-emerald-655 dark:text-emerald-300 hover:border-emerald-500/40" :
-                  "bg-gradient-to-r from-blue-500/10 to-sky-500/5 border-blue-500/20 text-blue-650 dark:text-blue-300 hover:border-blue-500/40"
-                }`}
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <div className="shrink-0 text-slate-500 dark:text-foreground/45 group-hover:text-current transition-colors">
-                    {role === "admin" ? <Shield className="w-3.5 h-3.5" /> :
-                     role === "maintenance" ? <Wrench className="w-3.5 h-3.5" /> :
-                     role === "lecturer" ? <Activity className="w-3.5 h-3.5" /> :
-                     <Users className="w-3.5 h-3.5" />}
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-wider capitalize truncate">{role}</span>
-                </div>
-                <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1 text-slate-400 group-hover:text-current" />
-              </button>
-            ))}
-          </div>
-        </div>
+
 
       </motion.div>
     </div>
