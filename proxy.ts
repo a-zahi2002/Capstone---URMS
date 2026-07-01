@@ -2,45 +2,25 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Next.js Edge Proxy (Middleware)
- * ─────────────────────────────────────────────────────────────
- * Protects routes by checking for an authentication session.
- * ─────────────────────────────────────────────────────────────
+ * Next.js Edge Middleware
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Auth is now tab-isolated via inMemoryPersistence + sessionStorage.
+ * Session tokens are NOT stored in shared cookies — they live in each tab's
+ * JavaScript memory and sessionStorage, so the middleware cannot inspect them.
+ *
+ * Route protection is handled entirely by the client-side <ProtectedRoute>
+ * component (which reads from the in-memory AuthContext). The middleware acts
+ * as a lightweight pass-through for all routes.
+ *
+ * Static assets, API routes, and Next.js internals are excluded via the
+ * matcher config below.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 export function proxy(request: NextRequest) {
-    const { pathname } = request.nextUrl;
-
-    // Define protected routes (add or remove paths as needed)
-    const protectedPaths = [
-        '/dashboard',
-        '/admin',
-        '/profile',
-        '/bookings',
-        '/resources',
-        '/maintenance',
-        '/notifications'
-    ];
-
-    const isProtectedRoute = protectedPaths.some((path) => pathname.startsWith(path));
-
-    if (isProtectedRoute) {
-        // Check for a session cookie (adjust the cookie name to match your setup)
-        const sessionCookie = request.cookies.get('session') || request.cookies.get('firebaseToken');
-
-        if (!sessionCookie) {
-            // User is not authenticated, redirect to login
-            const loginUrl = new URL('/login', request.url);
-            // Optionally, save the return URL so they can be redirected back after login
-            loginUrl.searchParams.set('callbackUrl', pathname);
-            
-            return NextResponse.redirect(loginUrl);
-        }
-    }
-
+    // Pass all requests through — client-side ProtectedRoute handles auth.
     return NextResponse.next();
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
     matcher: [
         /*

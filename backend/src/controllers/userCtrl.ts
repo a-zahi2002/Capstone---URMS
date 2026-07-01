@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import admin, { isFirebaseInitialized } from "../config/firebase.config";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { hashPassword, verifyPassword } from "../services/password.service";
@@ -110,6 +110,112 @@ export const hashPasswordHandler = async (req: AuthRequest, res: Response) => {
     } catch (error: any) {
         console.error("Error hashing password:", error);
         return res.status(500).json({ status: "error", message: "Failed to hash password.", error: error.message });
+    }
+};
+
+/**
+ * Self-registration endpoint — publicly accessible (no auth middleware applied here).
+ * The caller must supply a valid Firebase ID token in the Authorization header so we
+ * can verify their identity server-side before writing to Supabase using the service
+ * role key (which bypasses RLS).
+ *
+ * POST /api/users/register
+ * Headers: Authorization: Bearer <firebase-id-token>
+ * Body:    { name, email, role, department, password? }
+ * Returns: 201 + { message }
+ */
+export const selfRegister = async (req: Request, res: Response) => {
+    const authHeader = req.headers.authorization as string | undefined;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Unauthorized: No token provided" });
+    }
+
+    const idToken = authHeader.split(" ")[1];
+
+    try {
+        // Verify the Firebase ID token to confirm the caller's identity
+        let decodedToken: admin.auth.DecodedIdToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+        } catch {
+            return res.status(401).json({ message: "Unauthorized: Invalid or expired token" });
+        }
+
+        const uid = decodedToken.uid;
+        const { name, email, role, department, password } = req.body;
+
+        // Basic validation
+        if (!name || !email || !role || !department) {
+            return res.status(400).json({ message: "name, email, role, and department are all required." });
+        }
+
+        const allowedRoles = ["admin", "student", "lecturer", "maintenance"];
+        const normalizedRole = (role as string).toLowerCase();
+        if (!allowedRoles.includes(normalizedRole)) {
+            return res.status(400).json({ message: `Invalid role. Must be one of: ${allowedRoles.join(", ")}` });
+        }
+
+        // Hash the password if provided
+        let password_hash: string | undefined;
+        if (password && typeof password === "string" && password.length >= 8) {
+            try {
+                password_hash = await hashPassword(password);
+            } catch {
+                // Non-fatal — continue without a hash
+            }
+        }
+
+        // Check for an existing profile (e.g. created by userSync race)
+        const { data: existing } = await supabase
+            .from("users")
+            .select("id")
+            .eq("id", uid)
+            .maybeSingle();
+
+        const profileData: Record<string, unknown> = {
+            id: uid,
+            name: name.trim(),
+            email: email.toLowerCase(),
+            role: normalizedRole,
+            department,
+            approval_status: "Pending",
+            ...(password_hash ? { password_hash } : {}),
+        };
+
+        let dbError: any;
+        if (existing) {
+            // Row already exists (auto-created by userSync) — update it with the correct values
+            const { error } = await supabase
+                .from("users")
+                .update(profileData)
+                .eq("id", uid);
+            dbError = error;
+        } else {
+            const { error } = await supabase
+                .from("users")
+                .insert(profileData);
+            dbError = error;
+        }
+
+        if (dbError) {
+            console.error("selfRegister: Supabase error:", dbError);
+            return res.status(500).json({ message: "Failed to create user profile.", error: dbError.message });
+        }
+
+        // Set the Firebase custom claim for this user so future token refreshes carry the role
+        try {
+            await admin.auth().setCustomUserClaims(uid, { role: normalizedRole });
+        } catch (claimErr) {
+            console.warn("selfRegister: Could not set custom claim:", claimErr);
+        }
+
+        return res.status(201).json({
+            status: "success",
+            message: "Registration submitted. Your account is pending admin approval.",
+        });
+    } catch (error: any) {
+        console.error("selfRegister error:", error);
+        return res.status(500).json({ message: "Registration failed.", error: error.message });
     }
 };
 
