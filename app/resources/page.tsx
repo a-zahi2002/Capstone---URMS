@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AddResourceModal from "@/components/AddResourceModal";
 import EditResourceModal, { Resource } from "@/components/EditResourceModal";
 import BulkImport from "@/components/BulkImport";
 import { supabase } from "@/lib/supabase";
+import Pagination from "@/components/Pagination";
+import SavedSearches from "@/components/SavedSearches";
+import { exportToCSV } from "@/lib/exportCsv";
 import {
     Search,
     Plus,
@@ -22,6 +26,7 @@ import {
     DoorOpen,
     Package,
     UploadCloud,
+    DownloadCloud,
 } from "lucide-react";
 
 type SortField = "name" | "type" | "capacity" | "availability_status";
@@ -50,7 +55,14 @@ const getNextStatus = (current: string) => {
     return STATUS_SEQUENCE[(index + 1) % STATUS_SEQUENCE.length];
 };
 
-export default function ResourcesPage() {
+function ResourcesPageContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+
+    const urlPage = parseInt(searchParams.get("page") || "1", 10);
+    const urlPageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -59,6 +71,23 @@ export default function ResourcesPage() {
     const [selectedStatus, setSelectedStatus] = useState("All");
     const [sortField, setSortField] = useState<SortField>("name");
     const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+    const [currentPage, setCurrentPage] = useState(urlPage);
+    const [pageSize, setPageSize] = useState(urlPageSize);
+
+    const updateUrlParams = (newPage: number, newPageSize: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", newPage.toString());
+        params.set("pageSize", newPageSize.toString());
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
+    useEffect(() => {
+        const pageVal = parseInt(searchParams.get("page") || "1", 10);
+        const pageSizeVal = parseInt(searchParams.get("pageSize") || "10", 10);
+        setCurrentPage(pageVal);
+        setPageSize(pageSizeVal);
+    }, [searchParams]);
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
@@ -182,6 +211,11 @@ export default function ResourcesPage() {
             return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
         });
 
+    const paginatedResources = filteredResources.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
+
     const totalResources = resources.length;
     const available = resources.filter((r) => r.availability_status === "Available").length;
     const booked = resources.filter((r) => r.availability_status === "Booked").length;
@@ -269,21 +303,27 @@ export default function ResourcesPage() {
                     </div>
 
                     {/* ── Search & Filters ── */}
-                    <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] p-4 mb-6 flex flex-col sm:flex-row gap-3">
+                    <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] p-4 mb-4 flex flex-col sm:flex-row gap-3">
                         <div className="relative flex-1">
                             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <input
                                 type="text"
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    updateUrlParams(1, pageSize);
+                                }}
                                 placeholder="Search resources…"
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-[#0c0a14] border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-850 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             />
                         </div>
                         <select
                             value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                            className="px-4 py-2.5 bg-slate-50 dark:bg-[#0c0a14] border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-700 dark:text-foreground/75 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
+                            onChange={(e) => {
+                                setSelectedCategory(e.target.value);
+                                updateUrlParams(1, pageSize);
+                            }}
+                            className="px-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-700 dark:text-foreground/75 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                         >
                             <option value="All">All Categories</option>
                             <option value="Lecture Halls">Lecture Halls</option>
@@ -294,14 +334,49 @@ export default function ResourcesPage() {
                         </select>
                         <select
                             value={selectedStatus}
-                            onChange={(e) => setSelectedStatus(e.target.value)}
-                            className="px-4 py-2.5 bg-slate-50 dark:bg-[#0c0a14] border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-700 dark:text-foreground/75 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none"
+                            onChange={(e) => {
+                                setSelectedStatus(e.target.value);
+                                updateUrlParams(1, pageSize);
+                            }}
+                            className="px-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-700 dark:text-foreground/75 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                         >
                             <option value="All">All Statuses</option>
                             <option value="Available">Available</option>
                             <option value="Booked">Booked</option>
                             <option value="Maintenance">Maintenance</option>
                         </select>
+                    </div>
+
+                    {/* ── Saved Searches & Export ── */}
+                    <div className="flex items-center justify-between gap-4 mb-6">
+                        <SavedSearches
+                            pageKey="resources"
+                            currentFilters={{
+                                searchQuery,
+                                selectedCategory,
+                                selectedStatus,
+                            }}
+                            onLoadFilters={(filters) => {
+                                if (filters.searchQuery !== undefined) setSearchQuery(filters.searchQuery);
+                                if (filters.selectedCategory !== undefined) setSelectedCategory(filters.selectedCategory);
+                                if (filters.selectedStatus !== undefined) setSelectedStatus(filters.selectedStatus);
+                                updateUrlParams(1, pageSize);
+                            }}
+                        />
+                        <button
+                            onClick={() => {
+                                exportToCSV(
+                                    filteredResources,
+                                    ["Name", "Type", "Capacity", "Location", "Status"],
+                                    ["name", "type", "capacity", "location", "availability_status"],
+                                    "resources"
+                                );
+                            }}
+                            className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+                        >
+                            <DownloadCloud className="w-4 h-4 text-emerald-500" />
+                            <span>Export CSV</span>
+                        </button>
                     </div>
 
                     {/* ── Error Banner ── */}
@@ -358,7 +433,7 @@ export default function ResourcesPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50 dark:divide-white/[0.04]">
-                                        {filteredResources.map((resource) => (
+                                        {paginatedResources.map((resource) => (
                                             <tr
                                                 key={resource.id}
                                                 className="hover:bg-blue-50/40 dark:hover:bg-white/[0.01] transition-colors duration-150 group"
@@ -440,13 +515,13 @@ export default function ResourcesPage() {
                                     </tbody>
                                 </table>
 
-                                {/* Table footer */}
-                                <div className="border-t border-slate-100 dark:border-white/[0.06] px-6 py-3 flex items-center justify-between bg-slate-50/40 dark:bg-white/[0.02]">
-                                    <p className="text-xs text-slate-400 dark:text-foreground/30">
-                                        Showing <span className="font-semibold text-slate-650 dark:text-foreground/60">{filteredResources.length}</span> of{" "}
-                                        <span className="font-semibold text-slate-650 dark:text-foreground/60">{totalResources}</span> resources
-                                    </p>
-                                </div>
+                                <Pagination
+                                    currentPage={currentPage}
+                                    pageSize={pageSize}
+                                    totalItems={filteredResources.length}
+                                    onPageChange={(p) => updateUrlParams(p, pageSize)}
+                                    onPageSizeChange={(sz) => updateUrlParams(1, sz)}
+                                />
                             </div>
                         )}
                     </div>
@@ -471,5 +546,13 @@ export default function ResourcesPage() {
                 onSuccess={fetchResources}
             />
         </ProtectedRoute>
+    );
+}
+
+export default function ResourcesPage() {
+    return (
+        <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-10 text-center font-bold text-slate-500">Loading Resources...</div>}>
+            <ResourcesPageContent />
+        </Suspense>
     );
 }

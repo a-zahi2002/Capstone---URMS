@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../src/app');
+const app = require('../../backend/dist/app').default;
 
 describe('Security: Infrastructure & Headers', () => {
   

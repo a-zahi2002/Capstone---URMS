@@ -1,6 +1,10 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import SavedSearches from "@/components/SavedSearches";
+import { exportToCSV } from "@/lib/exportCsv";
+import Pagination from "@/components/Pagination";
 import {
     Search,
     Filter,
@@ -18,7 +22,8 @@ import {
     Info,
     ArrowUpDown,
     HelpCircle,
-    CalendarDays
+    CalendarDays,
+    DownloadCloud
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -135,18 +140,39 @@ export default function PersonalBookingDashboard({
     onCancelBooking,
     view
 }: PersonalBookingDashboardProps) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+
+    const urlPage = parseInt(searchParams.get("page") || "1", 10);
+    const urlPageSize = parseInt(searchParams.get("pageSize") || "5", 10);
+
     const [searchQuery, setSearchQuery] = useState("");
     const [resourceTypeFilter, setResourceTypeFilter] = useState("All");
     const [statusFilter, setStatusFilter] = useState("All");
     const [sortOption, setSortOption] = useState("date-desc");
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(urlPage);
+    const [pageSize, setPageSize] = useState(urlPageSize);
     const [selectedBooking, setSelectedBooking] = useState<BookingRow | null>(null);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-    const pageSize = 5;
+
+    const updateUrlParams = (newPage: number, newPageSize: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", newPage.toString());
+        params.set("pageSize", newPageSize.toString());
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
+    useEffect(() => {
+        const pageVal = parseInt(searchParams.get("page") || "1", 10);
+        const pageSizeVal = parseInt(searchParams.get("pageSize") || "5", 10);
+        setCurrentPage(pageVal);
+        setPageSize(pageSizeVal);
+    }, [searchParams]);
 
     // Reset page when filters change
     useEffect(() => {
-        setCurrentPage(1);
+        updateUrlParams(1, pageSize);
     }, [searchQuery, resourceTypeFilter, statusFilter, sortOption]);
 
     // Close dropdowns on click outside
@@ -379,6 +405,50 @@ export default function PersonalBookingDashboard({
                 </div>
             </div>
 
+            {/* ── Saved Searches & Export ── */}
+            <div className="flex items-center justify-between gap-4 mb-6">
+                <SavedSearches
+                    pageKey={`bookings-personal-${view}`}
+                    currentFilters={{
+                        searchQuery,
+                        resourceTypeFilter,
+                        statusFilter,
+                        sortOption,
+                    }}
+                    onLoadFilters={(filters) => {
+                        if (filters.searchQuery !== undefined) setSearchQuery(filters.searchQuery);
+                        if (filters.resourceTypeFilter !== undefined) setResourceTypeFilter(filters.resourceTypeFilter);
+                        if (filters.statusFilter !== undefined) setStatusFilter(filters.statusFilter);
+                        if (filters.sortOption !== undefined) setSortOption(filters.sortOption);
+                        updateUrlParams(1, pageSize);
+                    }}
+                />
+                <button
+                    onClick={() => {
+                        exportToCSV(
+                            sortedBookings.map(b => {
+                                const r = getBookingResource(b);
+                                return {
+                                    resourceName: r?.name || "",
+                                    location: r?.location || "",
+                                    date: formatDateLabel(b.start_time),
+                                    time: `${formatTimeLabel(b.start_time)} - ${formatTimeLabel(b.end_time)}`,
+                                    duration: getDuration(b.start_time, b.end_time),
+                                    status: normalizeBookingStatus(b.status)
+                                };
+                            }),
+                            ["Resource Name", "Location", "Date", "Time", "Duration", "Status"],
+                            ["resourceName", "location", "date", "time", "duration", "status"],
+                            "my_bookings"
+                        );
+                    }}
+                    className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+                >
+                    <DownloadCloud className="w-4 h-4 text-emerald-500" />
+                    <span>Export CSV</span>
+                </button>
+            </div>
+
             {/* ── Bookings Grid / Table List ── */}
             <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
@@ -552,47 +622,13 @@ export default function PersonalBookingDashboard({
                 </div>
 
                 {/* Pagination footer */}
-                {sortedBookings.length > 0 && (
-                    <div className="px-6 py-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between">
-                        <p className="text-xs font-bold text-slate-500 dark:text-foreground/45">
-                            {loadingBookings
-                                ? "Loading bookings..."
-                                : `Showing ${Math.min(sortedBookings.length, (currentPage - 1) * pageSize + 1)}-${Math.min(
-                                      sortedBookings.length,
-                                      currentPage * pageSize
-                                  )} of ${sortedBookings.length} bookings`}
-                        </p>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setCurrentPage((c) => Math.max(1, c - 1))}
-                                disabled={currentPage === 1 || loadingBookings}
-                                className={`px-3 py-1.5 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold transition-all ${
-                                    currentPage === 1 || loadingBookings
-                                        ? "bg-white/5 text-slate-400 dark:text-foreground/20 cursor-not-allowed"
-                                        : "bg-white dark:bg-white/5 text-slate-650 dark:text-foreground/80 hover:bg-slate-50 dark:hover:bg-white/10"
-                                }`}
-                            >
-                                <ChevronLeft className="w-3.5 h-3.5 inline mr-1" />
-                                Prev
-                            </button>
-                            <span className="px-3 py-1.5 text-xs font-bold text-slate-500 dark:text-foreground/40 self-center">
-                                Page {currentPage} of {totalPages}
-                            </span>
-                            <button
-                                onClick={() => setCurrentPage((c) => Math.min(totalPages, c + 1))}
-                                disabled={currentPage === totalPages || loadingBookings}
-                                className={`px-3 py-1.5 border border-slate-200 dark:border-white/10 rounded-lg text-xs font-bold transition-all ${
-                                    currentPage === totalPages || loadingBookings
-                                        ? "bg-white/5 text-slate-400 dark:text-foreground/20 cursor-not-allowed"
-                                        : "bg-white dark:bg-white/5 text-slate-650 dark:text-foreground/80 hover:bg-slate-50 dark:hover:bg-white/10"
-                                }`}
-                            >
-                                Next
-                                <ChevronRight className="w-3.5 h-3.5 inline ml-1" />
-                            </button>
-                        </div>
-                    </div>
-                )}
+                <Pagination
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    totalItems={sortedBookings.length}
+                    onPageChange={(p) => updateUrlParams(p, pageSize)}
+                    onPageSizeChange={(sz) => updateUrlParams(1, sz)}
+                />
             </div>
 
             {/* ── Detail Modal ── */}

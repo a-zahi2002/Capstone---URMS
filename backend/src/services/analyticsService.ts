@@ -65,14 +65,12 @@ export const getOverviewData = async (
 
     let resQuery = supabase.from('resources').select('*', { count: 'exact', head: true });
     resQuery = applyDeptFilter(resQuery, department);
-    const { count: totalResources } = await resQuery;
 
     let maintQuery = supabase
         .from('resources')
         .select('*', { count: 'exact', head: true })
         .eq('availability_status', 'Maintenance');
     maintQuery = applyDeptFilter(maintQuery, department);
-    const { count: resourcesUnderMaintenance } = await maintQuery;
 
     let activeBookingsQuery = supabase
         .from('bookings')
@@ -81,7 +79,6 @@ export const getOverviewData = async (
         .gt('end_time', now);
     activeBookingsQuery = applyDeptFilter(activeBookingsQuery, department, 'resources');
     activeBookingsQuery = applyDateRangeFilter(activeBookingsQuery, startDate, endDate);
-    const { count: activeBookings } = await activeBookingsQuery;
 
     let completedBookingsQuery = supabase
         .from('bookings')
@@ -89,14 +86,12 @@ export const getOverviewData = async (
         .eq('status', 'Completed');
     completedBookingsQuery = applyDeptFilter(completedBookingsQuery, department, 'resources');
     completedBookingsQuery = applyDateRangeFilter(completedBookingsQuery, startDate, endDate);
-    const { count: completedBookings } = await completedBookingsQuery;
 
     let totalMaintQuery = supabase
         .from('maintenance_tickets')
         .select('*, resources!inner(department)', { count: 'exact', head: true });
     totalMaintQuery = applyDeptFilter(totalMaintQuery, department, 'resources');
     totalMaintQuery = applyDateRangeFilter(totalMaintQuery, startDate, endDate);
-    const { count: totalMaintenanceTickets } = await totalMaintQuery;
 
     let pendingMaintQuery = supabase
         .from('maintenance_tickets')
@@ -104,13 +99,37 @@ export const getOverviewData = async (
         .in('status', ['OPEN', 'IN_PROGRESS']);
     pendingMaintQuery = applyDeptFilter(pendingMaintQuery, department, 'resources');
     pendingMaintQuery = applyDateRangeFilter(pendingMaintQuery, startDate, endDate);
-    const { count: pendingMaintenanceTasks } = await pendingMaintQuery;
 
     // Most booked resource — single batch query
     let mbQuery = supabase.from('bookings').select('resource_id, resources!inner(department)');
     mbQuery = applyDeptFilter(mbQuery, department, 'resources');
     mbQuery = applyDateRangeFilter(mbQuery, startDate, endDate);
-    const { data: bookingData } = await mbQuery;
+
+    const [
+        resRes,
+        maintRes,
+        activeRes,
+        completedRes,
+        totalMaintRes,
+        pendingMaintRes,
+        mbRes
+    ] = await Promise.all([
+        resQuery,
+        maintQuery,
+        activeBookingsQuery,
+        completedBookingsQuery,
+        totalMaintQuery,
+        pendingMaintQuery,
+        mbQuery
+    ]);
+
+    const totalResources = resRes.count;
+    const resourcesUnderMaintenance = maintRes.count;
+    const activeBookings = activeRes.count;
+    const completedBookings = completedRes.count;
+    const totalMaintenanceTickets = totalMaintRes.count;
+    const pendingMaintenanceTasks = pendingMaintRes.count;
+    const bookingData = mbRes.data;
 
     let mostBookedResource = "N/A";
     if (bookingData && bookingData.length > 0) {
@@ -146,13 +165,35 @@ export const getBookingData = async (
 ) => {
     const { department, startDate, endDate } = params;
 
+    // Trend calculation dates
+    let start = new Date();
+    if (startDate) {
+        start = new Date(startDate);
+    } else {
+        start.setDate(start.getDate() - 7);
+    }
+
+    let end = new Date();
+    if (endDate) {
+        end = new Date(endDate);
+    }
+
     // Status distribution — consistent set of statuses
     let statusQuery = supabase
         .from('bookings')
         .select('status, resources!inner(department)');
     statusQuery = applyDeptFilter(statusQuery, department, 'resources');
     statusQuery = applyDateRangeFilter(statusQuery, startDate, endDate);
-    const { data: statusData } = await statusQuery;
+
+    let trendQuery = supabase
+        .from('bookings')
+        .select('created_at, resources!inner(department)');
+    trendQuery = applyDeptFilter(trendQuery, department, 'resources');
+    trendQuery = applyDateRangeFilter(trendQuery, startDate || start.toISOString(), endDate);
+
+    const [statusRes, trendRes] = await Promise.all([statusQuery, trendQuery]);
+    const statusData = statusRes.data;
+    const trendData = trendRes.data;
 
     const statusDistribution: Record<string, number> = {
         'Pending': 0,
@@ -166,28 +207,6 @@ export const getBookingData = async (
             statusDistribution[b.status]++;
         }
     });
-
-    // Trend calculation — use the shared date range filter
-    let start = new Date();
-    if (startDate) {
-        start = new Date(startDate);
-    } else {
-        start.setDate(start.getDate() - 7);
-    }
-
-    let end = new Date();
-    if (endDate) {
-        end = new Date(endDate);
-    }
-
-    let trendQuery = supabase
-        .from('bookings')
-        .select('created_at, resources!inner(department)');
-    // Apply department filter (critical: was missing here)
-    trendQuery = applyDeptFilter(trendQuery, department, 'resources');
-    trendQuery = applyDateRangeFilter(trendQuery, startDate || start.toISOString(), endDate);
-
-    const { data: trendData } = await trendQuery;
 
     const trends: Record<string, number> = {};
     let current = new Date(start);
@@ -246,8 +265,6 @@ export const getUtilizationData = async (
 
     let resQuery = supabase.from('resources').select('id, name, type, department');
     resQuery = applyDeptFilter(resQuery, department);
-    const { data: resources, error: resError } = await resQuery;
-    if (resError) throw resError;
 
     let bkQuery = supabase
         .from('bookings')
@@ -255,8 +272,13 @@ export const getUtilizationData = async (
         .in('status', ['Approved', 'Completed']);
     bkQuery = applyDeptFilter(bkQuery, department, 'resources');
     bkQuery = applyDateRangeFilter(bkQuery, startDate || start.toISOString(), endDate, 'start_time');
-    const { data: bookings, error: bkError } = await bkQuery;
-    if (bkError) throw bkError;
+
+    const [resRes, bkRes] = await Promise.all([resQuery, bkQuery]);
+    if (resRes.error) throw resRes.error;
+    if (bkRes.error) throw bkRes.error;
+
+    const resources = resRes.data;
+    const bookings = bkRes.data;
 
     // Use business hours (8h/day) as the available window per resource for realistic utilization
     const availableHoursPerResource = days * 8;

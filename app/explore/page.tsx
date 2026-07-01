@@ -3,9 +3,11 @@
 import React, { useState } from "react";
 import ResourceCard from "@/components/ResourceCard";
 import ResourceModal from "@/components/ResourceModal";
-import { resourcesData, ResourceInterface } from "@/data/resources";
+import { ResourceInterface } from "@/data/resources";
+import { useAuth } from "@/lib/auth-context";
 
 export default function ExploreResourcesPage() {
+  const { user } = useAuth();
   const [selectedResource, setSelectedResource] = useState<ResourceInterface | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [resourcesData, setResourcesData] = useState<ResourceInterface[]>([]);
@@ -16,13 +18,17 @@ export default function ExploreResourcesPage() {
   const [activeCategory, setActiveCategory] = useState("All");
 
   React.useEffect(() => {
-    fetch('http://localhost:5000/api/resources', {
-      headers: {
-        'Authorization': `Bearer dev-token`
-      }
-    })
-      .then(res => res.json())
-      .then(data => {
+    const fetchResources = async () => {
+      try {
+        const token = (user && typeof user.getIdToken === 'function') ? await user.getIdToken() : 'dev-token';
+        const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${API}/api/resources`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        
         // Map backend resources to frontend interface
         const mapped = data.data?.map((r: any) => ({
           id: r.id.toString(),
@@ -36,10 +42,15 @@ export default function ExploreResourcesPage() {
           amenities: ["Wi-Fi", "Whiteboard"]
         })) || [];
         setResourcesData(mapped);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResources();
+  }, [user]);
 
   const filteredResources = resourcesData.filter((res) => 
     activeCategory === "All" ? true : res.category === activeCategory

@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import admin, { isFirebaseInitialized } from "../config/firebase.config";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { hashPassword, verifyPassword } from "../services/password.service";
@@ -9,24 +9,30 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
     try {
         const uid = req.user?.uid;
         if (!uid) {
-            return res.status(401).json({ message: "Unauthorized" });
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
         }
 
         // Auto-sync user profile to Supabase and ensure claims are correct
         const syncedUser = await syncSingleUser(uid);
         const userRecord = await admin.auth().getUser(uid);
         
-        return res.status(200).json({
+        const profileData = {
             uid: userRecord.uid,
             email: userRecord.email,
             displayName: userRecord.displayName || "",
             photoURL: userRecord.photoURL || "",
             role: userRecord.customClaims?.role || syncedUser?.role || "user",
             metadata: userRecord.metadata,
+        };
+
+        return res.status(200).json({
+            status: "success",
+            ...profileData,
+            data: profileData
         });
     } catch (error: any) {
         console.error("Error fetching user profile:", error);
-        return res.status(500).json({ message: "Failed to fetch profile", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to fetch profile", error: error.message });
     }
 };
 
@@ -34,28 +40,47 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
     try {
         const uid = req.user?.uid;
         if (!uid) {
-            return res.status(401).json({ message: "Unauthorized" });
+            return res.status(401).json({ status: "error", message: "Unauthorized" });
         }
 
-        const { displayName } = req.body;
+        const { displayName, phone } = req.body;
 
-        const updatedUser = await admin.auth().updateUser(uid, {
-            displayName: displayName,
-        });
+        let updatedUser: any = { uid, displayName };
+        if (isFirebaseInitialized) {
+            updatedUser = await admin.auth().updateUser(uid, {
+                displayName: displayName,
+            });
+        }
+
+        // Update name and phone in Supabase users table
+        const { error: dbError } = await supabase
+            .from("users")
+            .update({
+                name: displayName,
+                phone: phone
+            })
+            .eq("id", uid);
+
+        if (dbError) throw dbError;
+
+        const userObj = {
+            uid: updatedUser.uid,
+            email: updatedUser.email || req.user?.email || "",
+            displayName: updatedUser.displayName,
+            photoURL: updatedUser.photoURL || "",
+            role: updatedUser.customClaims?.role || req.user?.role || "user",
+            phone: phone
+        };
 
         return res.status(200).json({
+            status: "success",
             message: "Profile updated successfully",
-            user: {
-                uid: updatedUser.uid,
-                email: updatedUser.email,
-                displayName: updatedUser.displayName,
-                photoURL: updatedUser.photoURL,
-                role: updatedUser.customClaims?.role || "user",
-            }
+            user: userObj,
+            data: { user: userObj }
         });
     } catch (error: any) {
         console.error("Error updating user profile:", error);
-        return res.status(500).json({ message: "Failed to update profile", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to update profile", error: error.message });
     }
 };
 
@@ -72,19 +97,125 @@ export const hashPasswordHandler = async (req: AuthRequest, res: Response) => {
         const { password } = req.body;
 
         if (!password || typeof password !== "string") {
-            return res.status(400).json({ message: "Password is required." });
+            return res.status(400).json({ status: "error", message: "Password is required." });
         }
 
         if (password.length < 8) {
-            return res.status(400).json({ message: "Password must be at least 8 characters long." });
+            return res.status(400).json({ status: "error", message: "Password must be at least 8 characters long." });
         }
 
         const password_hash = await hashPassword(password);
 
-        return res.status(200).json({ password_hash });
+        return res.status(200).json({ status: "success", password_hash, data: { password_hash } });
     } catch (error: any) {
         console.error("Error hashing password:", error);
-        return res.status(500).json({ message: "Failed to hash password.", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to hash password.", error: error.message });
+    }
+};
+
+/**
+ * Self-registration endpoint — publicly accessible (no auth middleware applied here).
+ * The caller must supply a valid Firebase ID token in the Authorization header so we
+ * can verify their identity server-side before writing to Supabase using the service
+ * role key (which bypasses RLS).
+ *
+ * POST /api/users/register
+ * Headers: Authorization: Bearer <firebase-id-token>
+ * Body:    { name, email, role, department, password? }
+ * Returns: 201 + { message }
+ */
+export const selfRegister = async (req: Request, res: Response) => {
+    const authHeader = req.headers.authorization as string | undefined;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Unauthorized: No token provided" });
+    }
+
+    const idToken = authHeader.split(" ")[1];
+
+    try {
+        // Verify the Firebase ID token to confirm the caller's identity
+        let decodedToken: admin.auth.DecodedIdToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+        } catch {
+            return res.status(401).json({ message: "Unauthorized: Invalid or expired token" });
+        }
+
+        const uid = decodedToken.uid;
+        const { name, email, role, department, password } = req.body;
+
+        // Basic validation
+        if (!name || !email || !role || !department) {
+            return res.status(400).json({ message: "name, email, role, and department are all required." });
+        }
+
+        const allowedRoles = ["admin", "student", "lecturer", "maintenance"];
+        const normalizedRole = (role as string).toLowerCase();
+        if (!allowedRoles.includes(normalizedRole)) {
+            return res.status(400).json({ message: `Invalid role. Must be one of: ${allowedRoles.join(", ")}` });
+        }
+
+        // Hash the password if provided
+        let password_hash: string | undefined;
+        if (password && typeof password === "string" && password.length >= 8) {
+            try {
+                password_hash = await hashPassword(password);
+            } catch {
+                // Non-fatal — continue without a hash
+            }
+        }
+
+        // Check for an existing profile (e.g. created by userSync race)
+        const { data: existing } = await supabase
+            .from("users")
+            .select("id")
+            .eq("id", uid)
+            .maybeSingle();
+
+        const profileData: Record<string, unknown> = {
+            id: uid,
+            name: name.trim(),
+            email: email.toLowerCase(),
+            role: normalizedRole,
+            department,
+            approval_status: "Pending",
+            ...(password_hash ? { password_hash } : {}),
+        };
+
+        let dbError: any;
+        if (existing) {
+            // Row already exists (auto-created by userSync) — update it with the correct values
+            const { error } = await supabase
+                .from("users")
+                .update(profileData)
+                .eq("id", uid);
+            dbError = error;
+        } else {
+            const { error } = await supabase
+                .from("users")
+                .insert(profileData);
+            dbError = error;
+        }
+
+        if (dbError) {
+            console.error("selfRegister: Supabase error:", dbError);
+            return res.status(500).json({ message: "Failed to create user profile.", error: dbError.message });
+        }
+
+        // Set the Firebase custom claim for this user so future token refreshes carry the role
+        try {
+            await admin.auth().setCustomUserClaims(uid, { role: normalizedRole });
+        } catch (claimErr) {
+            console.warn("selfRegister: Could not set custom claim:", claimErr);
+        }
+
+        return res.status(201).json({
+            status: "success",
+            message: "Registration submitted. Your account is pending admin approval.",
+        });
+    } catch (error: any) {
+        console.error("selfRegister error:", error);
+        return res.status(500).json({ message: "Registration failed.", error: error.message });
     }
 };
 
@@ -101,7 +232,7 @@ export const verifyPasswordHandler = async (req: AuthRequest, res: Response) => 
         const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required." });
+            return res.status(400).json({ status: "error", message: "Email and password are required." });
         }
 
         // Look up the user's password_hash from Supabase
@@ -113,26 +244,26 @@ export const verifyPasswordHandler = async (req: AuthRequest, res: Response) => 
 
         if (dbError) {
             console.error("Error fetching user for password verification:", dbError);
-            return res.status(500).json({ message: "Internal server error." });
+            return res.status(500).json({ status: "error", message: "Internal server error." });
         }
 
         // If no user found, return generic invalid response (prevent user enumeration)
         if (!user) {
-            return res.status(200).json({ valid: false });
+            return res.status(200).json({ status: "success", valid: false, data: { valid: false } });
         }
 
         // If user has no stored hash (legacy/mock user), skip bcrypt check
         if (!user.password_hash) {
-            return res.status(200).json({ valid: true, skipped: true });
+            return res.status(200).json({ status: "success", valid: true, skipped: true, data: { valid: true, skipped: true } });
         }
 
         // Verify the password against the stored hash
         const isValid = await verifyPassword(password, user.password_hash);
 
-        return res.status(200).json({ valid: isValid });
+        return res.status(200).json({ status: "success", valid: isValid, data: { valid: isValid } });
     } catch (error: any) {
         console.error("Error verifying password:", error);
-        return res.status(500).json({ message: "Failed to verify password.", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to verify password.", error: error.message });
     }
 };
 
@@ -141,11 +272,25 @@ export const verifyPasswordHandler = async (req: AuthRequest, res: Response) => 
  */
 export const getAllUsers = async (req: AuthRequest, res: Response) => {
     try {
-        const users = await syncAllUsers();
-        return res.status(200).json({ status: "success", data: users });
+        // Fetch users directly from Supabase database for instantaneous loading
+        const { data: users, error: dbError } = await supabase
+            .from("users")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+        if (dbError) throw dbError;
+
+        // Trigger synchronization with Firebase in the background so it doesn't block the response
+        if (isFirebaseInitialized) {
+            syncAllUsers().catch((syncErr) => {
+                console.error("❌ Background syncAllUsers failed:", syncErr);
+            });
+        }
+
+        return res.status(200).json({ status: "success", data: users || [] });
     } catch (error: any) {
         console.error("Error fetching all users:", error);
-        return res.status(500).json({ message: "Failed to fetch users", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to fetch users", error: error.message });
     }
 };
 
@@ -154,15 +299,15 @@ export const getAllUsers = async (req: AuthRequest, res: Response) => {
  */
 export const adminCreateUser = async (req: AuthRequest, res: Response) => {
     try {
-        const { name, email, role, department, password } = req.body;
+        const { name, email, role, department, password, phone } = req.body;
 
         if (!name || !email || !role || !department || !password) {
-            return res.status(400).json({ message: "All fields are required (name, email, role, department, password)." });
+            return res.status(400).json({ status: "error", message: "All fields are required (name, email, role, department, password)." });
         }
 
         const validRoles = ["admin", "lecturer", "student", "maintenance"];
         if (!validRoles.includes(role.toLowerCase())) {
-            return res.status(400).json({ message: `Invalid role. Must be one of ${validRoles.join(", ")}.` });
+            return res.status(400).json({ status: "error", message: `Invalid role. Must be one of ${validRoles.join(", ")}.` });
         }
 
         let uid = "";
@@ -183,7 +328,7 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
                 await admin.auth().setCustomUserClaims(uid, { role: role.toLowerCase() });
             } catch (err: any) {
                 console.error("Error creating user in Firebase Auth:", err);
-                return res.status(500).json({ message: "Failed to create user in Firebase Auth.", error: err.message });
+                return res.status(500).json({ status: "error", message: "Failed to create user in Firebase Auth.", error: err.message });
             }
         } else {
             // Dev mode fallback
@@ -204,6 +349,8 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
                 role: role.toLowerCase(),
                 department,
                 password_hash: passwordHash,
+                phone: phone || null,
+                approval_status: "Approved" // Admin-created members are Approved by default
             });
 
         if (dbError) {
@@ -212,7 +359,7 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
             if (firebaseCreated && isFirebaseInitialized) {
                 await admin.auth().deleteUser(uid).catch(err => console.error("Failed to rollback Firebase user:", err));
             }
-            return res.status(500).json({ message: "Failed to create user profile in database.", error: dbError.message });
+            return res.status(500).json({ status: "error", message: "Failed to create user profile in database.", error: dbError.message });
         }
 
         return res.status(201).json({
@@ -224,11 +371,13 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
                 email,
                 role: role.toLowerCase(),
                 department,
+                phone: phone || null,
+                approval_status: "Approved"
             }
         });
     } catch (error: any) {
         console.error("Error in adminCreateUser:", error);
-        return res.status(500).json({ message: "Failed to create user.", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to create user.", error: error.message });
     }
 };
 
@@ -238,15 +387,15 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
 export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
     try {
         const id = req.params.id as string;
-        const { name, role, department, password } = req.body;
+        const { name, role, department, password, phone, approval_status } = req.body;
 
         if (!name || !role || !department) {
-            return res.status(400).json({ message: "Name, role, and department are required." });
+            return res.status(400).json({ status: "error", message: "Name, role, and department are required." });
         }
 
         const validRoles = ["admin", "lecturer", "student", "maintenance"];
         if (!validRoles.includes(role.toLowerCase())) {
-            return res.status(400).json({ message: `Invalid role. Must be one of ${validRoles.join(", ")}.` });
+            return res.status(400).json({ status: "error", message: `Invalid role. Must be one of ${validRoles.join(", ")}.` });
         }
 
         // Check if user exists in DB first
@@ -257,7 +406,7 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
             .maybeSingle();
 
         if (checkError || !existingUser) {
-            return res.status(404).json({ message: "User not found in database." });
+            return res.status(404).json({ status: "error", message: "User not found in database." });
         }
 
         if (isFirebaseInitialized && !id.startsWith("dev-")) {
@@ -274,7 +423,7 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
                 }
             } catch (err: any) {
                 console.error("Error updating user in Firebase Auth:", err);
-                return res.status(500).json({ message: "Failed to update user in Firebase Auth.", error: err.message });
+                return res.status(500).json({ status: "error", message: "Failed to update user in Firebase Auth.", error: err.message });
             }
         }
 
@@ -291,13 +440,15 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
                 name,
                 role: role.toLowerCase(),
                 department,
+                phone: phone !== undefined ? phone : undefined,
+                approval_status: approval_status !== undefined ? approval_status : undefined,
                 ...(passwordHash ? { password_hash: passwordHash } : {})
             })
             .eq("id", id);
 
         if (dbError) {
             console.error("Error updating user in Supabase:", dbError);
-            return res.status(500).json({ message: "Failed to update user profile in database.", error: dbError.message });
+            return res.status(500).json({ status: "error", message: "Failed to update user profile in database.", error: dbError.message });
         }
 
         return res.status(200).json({
@@ -308,11 +459,13 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
                 name,
                 role: role.toLowerCase(),
                 department,
+                phone,
+                approval_status,
             }
         });
     } catch (error: any) {
         console.error("Error in adminUpdateUser:", error);
-        return res.status(500).json({ message: "Failed to update user.", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to update user.", error: error.message });
     }
 };
 
@@ -331,7 +484,7 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
             .maybeSingle();
 
         if (checkError || !existingUser) {
-            return res.status(404).json({ message: "User not found." });
+            return res.status(404).json({ status: "error", message: "User not found." });
         }
 
         // Delete from Firebase Auth if initialized and not a mock/dev user
@@ -343,7 +496,7 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
                     console.warn(`User ${id} not found in Firebase Auth, proceeding with DB deletion.`);
                 } else {
                     console.error("Error deleting user from Firebase Auth:", err);
-                    return res.status(500).json({ message: "Failed to delete user from Firebase Auth.", error: err.message });
+                    return res.status(500).json({ status: "error", message: "Failed to delete user from Firebase Auth.", error: err.message });
                 }
             }
         }
@@ -356,7 +509,7 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
 
         if (dbError) {
             console.error("Error deleting user from Supabase:", dbError);
-            return res.status(500).json({ message: "Failed to delete user profile from database.", error: dbError.message });
+            return res.status(500).json({ status: "error", message: "Failed to delete user profile from database.", error: dbError.message });
         }
 
         return res.status(200).json({
@@ -365,6 +518,6 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response) => {
         });
     } catch (error: any) {
         console.error("Error in adminDeleteUser:", error);
-        return res.status(500).json({ message: "Failed to delete user.", error: error.message });
+        return res.status(500).json({ status: "error", message: "Failed to delete user.", error: error.message });
     }
 };

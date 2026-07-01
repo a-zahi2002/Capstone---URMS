@@ -7,24 +7,33 @@ import {
     getAllUsers,
     adminCreateUser,
     adminUpdateUser,
-    adminDeleteUser
+    adminDeleteUser,
+    selfRegister
 } from "../controllers/userCtrl";
 import { verifyToken, requireAdmin } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
+// ── Public routes (no auth required) ─────────────────────────
+// Self-registration: the handler verifies the Firebase token internally
+// and writes to Supabase via the service role key (bypasses RLS).
+router.post("/register", selfRegister as any);
+
+// Apply auth middleware to all routes below this line
+router.use(verifyToken);
+
 // Profile routes
-router.get("/profile", verifyToken as express.RequestHandler, getProfile as express.RequestHandler);
-router.put("/profile", verifyToken as express.RequestHandler, updateProfile as express.RequestHandler);
+router.get("/profile", getProfile as any);
+router.put("/profile", updateProfile as any);
 
 // Password encryption routes (bcrypt)
-router.post("/hash-password", verifyToken as express.RequestHandler, hashPasswordHandler as express.RequestHandler);
-router.post("/verify-password", verifyToken as express.RequestHandler, verifyPasswordHandler as express.RequestHandler);
+router.post("/hash-password", hashPasswordHandler as any);
+router.post("/verify-password", verifyPasswordHandler as any);
 
 // Admin-only user management routes
-router.get("/", verifyToken as express.RequestHandler, requireAdmin as express.RequestHandler, getAllUsers as express.RequestHandler);
-router.post("/", verifyToken as express.RequestHandler, requireAdmin as express.RequestHandler, adminCreateUser as express.RequestHandler);
-router.put("/:id", verifyToken as express.RequestHandler, requireAdmin as express.RequestHandler, adminUpdateUser as express.RequestHandler);
-router.delete("/:id", verifyToken as express.RequestHandler, requireAdmin as express.RequestHandler, adminDeleteUser as express.RequestHandler);
+router.get("/", requireAdmin as any, getAllUsers as any);
+router.post("/", requireAdmin as any, adminCreateUser as any);
+router.put("/:id", requireAdmin as any, adminUpdateUser as any);
+router.delete("/:id", requireAdmin as any, adminDeleteUser as any);
 
 export default router;

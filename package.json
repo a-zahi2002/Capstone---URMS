@@ -13,8 +13,14 @@
     "scaffold": "echo 'URMS scaffold ready!'",
     "seed": "cd backend && npm run seed",
     "db:setup": "cd backend && npm run db:setup",
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:migrate:rollback": "cd backend && npm run db:migrate:rollback",
+    "test": "concurrently \"npm run test:unit\" \"npm run test:security\"",
+    "test:unit": "jest --config jest.config.ts",
+    "test:security": "jest --config jest.config.js",
+    "test:watch": "jest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
@@ -41,7 +47,7 @@
   },
   "devDependencies": {
     "@next/swc-wasm-nodejs": "^16.2.6",
-    "@next/swc-win32-x64-msvc": "16.0.1",
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4.2.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@types/cors": "^2.8.19",
@@ -57,8 +63,20 @@
     "eslint-config-next": "16.0.1",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "supertest": "^7.2.2",
     "tailwindcss": "^4.2.4",
     "ts-jest": "^29.4.6",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@next/swc-darwin-arm64": "^16.2.6",
+    "@next/swc-darwin-x64": "^16.2.6",
+    "@next/swc-linux-arm64-gnu": "^16.2.6",
+    "@next/swc-linux-arm64-musl": "^16.2.6",
+    "@next/swc-linux-x64-gnu": "^16.2.6",
+    "@next/swc-linux-x64-musl": "^16.2.6",
+    "@next/swc-win32-arm64-msvc": "^16.2.6",
+    "@next/swc-win32-x64-msvc": "^16.2.6"
   }
 }

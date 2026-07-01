@@ -87,13 +87,9 @@ export default function MaintenanceReportsPage() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (!res.ok) throw new Error(`Server error: ${res.status}`);
-            const data: MaintenanceTicket[] = await res.json();
-            
-            if (Array.isArray(data)) {
-                setTickets(data);
-            } else {
-                setTickets([]);
-            }
+            const resJson = await res.json();
+            const data: MaintenanceTicket[] = Array.isArray(resJson) ? resJson : (resJson.data || []);
+            setTickets(data);
         } catch (e) {
             console.error("Failed to fetch filtered tickets:", e);
             setTickets([]);

@@ -19,6 +19,9 @@ async function seed() {
         const createdUsers: Record<string, string> = {}; // role -> uid
         const usersToCreate = [
             { email: 'admin@demo.lk', password: 'Password123', displayName: 'System Admin', role: 'admin', department: 'Faculty of Computing' },
+            { email: 'lecturer@demo.lk', password: 'Password123', displayName: 'Demo Lecturer', role: 'lecturer', department: 'Faculty of Computing' },
+            { email: 'student@demo.lk', password: 'Password123', displayName: 'Demo Student', role: 'student', department: 'Faculty of Applied Sciences' },
+            { email: 'maintenance@demo.lk', password: 'Password123', displayName: 'Demo Maintenance', role: 'maintenance', department: 'Faculty of Computing' },
         ];
 
         // ── 1. Clean up Firebase Auth Users ──────────────────────────

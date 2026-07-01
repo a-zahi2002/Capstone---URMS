@@ -29,6 +29,7 @@ import {
   sendBookingCancelledEmail,
   sendBookingModifiedEmail
 } from "../services/emailService";
+import { sendSMS } from "../services/smsService";
 
 // Helper to check user email preferences
 const checkEmailPreference = async (userId: string): Promise<boolean> => {
@@ -109,6 +110,37 @@ export const createBooking = async (req: AuthRequest, res: Response): Promise<vo
     }
     if (end <= start) {
       res.status(400).json({ status: "error", message: "end_time must be after start_time" });
+      return;
+    }
+
+    // Fetch resource to verify availability status
+    const { data: resource, error: resError } = await req.supabase
+      .from("resources")
+      .select("name, availability_status")
+      .eq("id", resource_id)
+      .maybeSingle();
+
+    if (resError || !resource) {
+      res.status(404).json({
+        status: "error",
+        message: "Resource not found",
+      });
+      return;
+    }
+
+    if (resource.availability_status === "Inactive") {
+      res.status(400).json({
+        status: "error",
+        message: `Cannot book resource '${resource.name}' because it is Inactive`,
+      });
+      return;
+    }
+
+    if (resource.availability_status === "Under Maintenance") {
+      res.status(400).json({
+        status: "error",
+        message: `Cannot book resource '${resource.name}' because it is Under Maintenance`,
+      });
       return;
     }
 
@@ -279,6 +311,11 @@ export const updateBooking = async (req: AuthRequest, res: Response): Promise<vo
               bookingDate,
               bookingTime
             );
+
+            if (targetUser.phone) {
+              const smsBody = `Hi ${targetUser.name}, your booking for ${resourceName} on ${bookingDate} (${bookingTime}) has been cancelled.`;
+              sendSMS({ toPhone: targetUser.phone, body: smsBody, userId }).catch(err => console.error("Failed to send booking cancelled SMS:", err));
+            }
           }
 
           // For modification
@@ -336,8 +373,24 @@ export const updateBooking = async (req: AuthRequest, res: Response): Promise<vo
 export const deleteBooking = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const bookingId = req.params.id as string;
+    const userId = req.user?.uid;
+    const role = req.user?.role || (req.user?.admin ? "admin" : "student");
 
-    const deleted = await BookingModel.delete(bookingId, req.supabase);
+    // Fetch the booking first using the service client to bypass RLS for checking ownership
+    const booking = await BookingModel.findById(bookingId, supabase);
+    if (!booking) {
+      res.status(404).json({ status: "error", message: "Booking not found" });
+      return;
+    }
+
+    // Check permissions: Admin can delete anything, non-admin can only delete their own bookings
+    if (role !== "admin" && booking.user_id !== userId) {
+      res.status(403).json({ status: "error", message: "Access denied: You can only delete your own bookings" });
+      return;
+    }
+
+    // Delete using the service role client to bypass the missing RLS delete policy on the bookings table
+    const deleted = await BookingModel.delete(bookingId, supabase);
     if (!deleted) {
       res.status(404).json({ status: "error", message: "Booking not found" });
       return;
@@ -404,7 +457,7 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response): Prom
     // 1. Fetch booking to retrieve user and resource details
     const { data: booking, error: fetchError } = await supabase
       .from("bookings")
-      .select("id, start_time, end_time, user_id, resource_id, users (name, email), resources (name, location)")
+      .select("id, start_time, end_time, user_id, resource_id, users (name, email, phone), resources (name, location)")
       .eq("id", bookingId)
       .single();
 
@@ -478,6 +531,13 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response): Prom
           rejectionReason
         );
       }
+    }
+
+    if (targetUser?.phone) {
+      const smsBody = status === "Approved"
+        ? `Hi ${targetUser.name}, your booking request for ${targetResource?.name || "Resource"} on ${bookingDate} (${bookingTime}) has been approved.`
+        : `Hi ${targetUser.name}, your booking request for ${targetResource?.name || "Resource"} on ${bookingDate} (${bookingTime}) was declined.${rejectionReason ? ` Reason: ${rejectionReason}` : ""}`;
+      sendSMS({ toPhone: targetUser.phone, body: smsBody, userId: targetUserId }).catch(err => console.error("Failed to send booking status SMS:", err));
     }
 
     res.json({

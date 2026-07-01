@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import './ChartConfig';
 import { ChartOptions, ChartData } from 'chart.js';
@@ -12,7 +12,7 @@ interface PieChartProps {
   title?: string;
 }
 
-export const BookingPieChart: React.FC<PieChartProps> = ({ data, title }) => {
+export const BookingPieChart: React.FC<PieChartProps> = memo(({ data, title }) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
@@ -53,4 +53,6 @@ export const BookingPieChart: React.FC<PieChartProps> = ({ data, title }) => {
       <Doughnut data={data} options={options} />
     </div>
   );
-};
+});
+
+BookingPieChart.displayName = 'BookingPieChart';

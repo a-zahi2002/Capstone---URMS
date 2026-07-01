@@ -84,8 +84,8 @@ export default function MaintenanceDashboard() {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) throw new Error(`Server error: ${res.status}`);
-            const data: MaintenanceTicket[] = await res.json();
-            if (!Array.isArray(data)) throw new Error("Invalid response");
+            const resJson = await res.json();
+            const data: MaintenanceTicket[] = Array.isArray(resJson) ? resJson : (resJson.data || []);
 
             setTasks(data.map(t => ({
                 id: `REQ-${String(t.id).slice(0, 8).toUpperCase()}`,

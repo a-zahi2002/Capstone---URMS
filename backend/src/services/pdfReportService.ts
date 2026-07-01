@@ -6,7 +6,7 @@ export const generateMaintenanceReportPDF = (
     stream: NodeJS.WritableStream,
     filtersApplied: any
 ) => {
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ margin: 50, bufferPages: true });
     
     // Pipe the PDF document to the provided write stream (HTTP Response)
     doc.pipe(stream);
