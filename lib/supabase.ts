@@ -34,6 +34,7 @@ export interface UserProfile {
   department?: string;
   password_hash?: string;
   phone?: string;
+  approval_status?: "Pending" | "Approved" | "Rejected";
   created_at: string;
 }
 

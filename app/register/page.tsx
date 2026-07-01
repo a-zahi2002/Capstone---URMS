@@ -185,6 +185,7 @@ export default function RegisterPage() {
         email: email.toLowerCase(),
         role: role.toLowerCase() as any,
         department: department,
+        approval_status: "Pending",
         ...(passwordHash ? { password_hash: passwordHash } : {}),
       });
 

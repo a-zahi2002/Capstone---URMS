@@ -244,6 +244,7 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
                 department,
                 password_hash: passwordHash,
                 phone: phone || null,
+                approval_status: "Approved" // Admin-created members are Approved by default
             });
 
         if (dbError) {
@@ -265,6 +266,7 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
                 role: role.toLowerCase(),
                 department,
                 phone: phone || null,
+                approval_status: "Approved"
             }
         });
     } catch (error: any) {
@@ -279,7 +281,7 @@ export const adminCreateUser = async (req: AuthRequest, res: Response) => {
 export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
     try {
         const id = req.params.id as string;
-        const { name, role, department, password, phone } = req.body;
+        const { name, role, department, password, phone, approval_status } = req.body;
 
         if (!name || !role || !department) {
             return res.status(400).json({ status: "error", message: "Name, role, and department are required." });
@@ -333,6 +335,7 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
                 role: role.toLowerCase(),
                 department,
                 phone: phone !== undefined ? phone : undefined,
+                approval_status: approval_status !== undefined ? approval_status : undefined,
                 ...(passwordHash ? { password_hash: passwordHash } : {})
             })
             .eq("id", id);
@@ -351,6 +354,7 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response) => {
                 role: role.toLowerCase(),
                 department,
                 phone,
+                approval_status,
             }
         });
     } catch (error: any) {
