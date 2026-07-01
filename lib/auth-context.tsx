@@ -15,11 +15,12 @@ import {
     createUserWithEmailAndPassword,
     signOut as firebaseSignOut,
     setPersistence,
-    browserSessionPersistence,
+    inMemoryPersistence,
 } from "firebase/auth";
 import { auth } from "./firebase";
 import { getUserProfile, UserProfile, setSupabaseAuthHeaders, clearSupabaseAuthHeaders } from "./supabase";
 import { BASE_URL } from "./apiClient";
+import { useTabSession } from "@/hooks/useTabSession";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Tab-scoped session utilities (backed by sessionStorage)
+    const tabSession = useTabSession();
+
+    // ─── Set Firebase to in-memory persistence once on mount ────────────────
+    // inMemoryPersistence means Firebase keeps auth state only in the current
+    // JavaScript execution context (i.e. this tab's memory).  It is NOT shared
+    // via IndexedDB or localStorage, so each tab is fully isolated.
     useEffect(() => {
         if (!auth) {
             setLoading(false);
@@ -51,99 +59,182 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        // Set persistence to session-based to resolve auto-login when opening fresh
-        setPersistence(auth, browserSessionPersistence).catch((err) => {
-            console.error("Failed to set session persistence:", err);
+        setPersistence(auth, inMemoryPersistence).catch((err) => {
+            console.error("Failed to set in-memory persistence:", err);
         });
-
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            setUser(firebaseUser);
-            if (firebaseUser) {
-                // Set temporary headers with UID so that Supabase RLS allows the user to query their own profile
-                setSupabaseAuthHeaders(firebaseUser.uid, "student");
-                
-                let token = "";
-                try {
-                    token = await firebaseUser.getIdToken();
-                    // Set cookie for middleware validation (session cookie)
-                    document.cookie = `firebaseToken=${token}; path=/; SameSite=Lax; Secure`;
-                } catch (tokenErr) {
-                    console.error("Failed to retrieve Firebase ID token:", tokenErr);
-                }
-
-                let userProfile = await getUserProfile(firebaseUser.uid);
-                
-                // If user exists in Firebase but has no profile in Supabase yet,
-                // call the backend profile endpoint which will trigger auto-sync/creation.
-                if (!userProfile && token) {
-                    try {
-                        const res = await fetch(`${BASE_URL}/users/profile`, {
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
-                        if (res.ok) {
-                            // Fetch again from Supabase now that the backend has auto-synced the user
-                            userProfile = await getUserProfile(firebaseUser.uid);
-                        }
-                    } catch (err) {
-                        console.error("Failed to auto-sync profile with backend:", err);
-                    }
-                }
-
-                setProfile(userProfile);
-                if (userProfile) {
-                    setSupabaseAuthHeaders(userProfile.id, userProfile.role);
-                }
-            } else {
-                setProfile(null);
-                clearSupabaseAuthHeaders();
-                // Clear cookie for middleware validation
-                document.cookie = "firebaseToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-            }
-            setLoading(false);
-        });
-        return unsubscribe;
     }, []);
 
-    const signIn = async (email: string, password: string) => {
+    // ─── Restore session from sessionStorage on mount ────────────────────────
+    // Because inMemoryPersistence does NOT survive page reloads, we cache the
+    // Firebase ID token + user profile in sessionStorage (which DOES survive
+    // reloads but is cleared when the tab closes).  On mount we check for a
+    // cached session and restore it so the user stays logged in after F5.
+    useEffect(() => {
+        if (!auth) return;
+
+        let unsubscribeAuth: (() => void) | null = null;
+
+        const restoreSession = async () => {
+            const isReload = tabSession.checkIsReload();
+            const cachedSession = tabSession.loadSession();
+
+            if (isReload && cachedSession) {
+                // ── Page reload in same tab: restore the existing session ──
+                // We have the cached Firebase ID token.  Re-authenticate via
+                // the /users/restore-session endpoint which exchanges the token
+                // for the user profile.  If the token is still valid we get
+                // the profile back and can set the auth state directly.
+                try {
+                    const res = await fetch(`${BASE_URL}/users/profile`, {
+                        headers: { Authorization: `Bearer ${cachedSession.token}` },
+                    });
+
+                    if (res.ok) {
+                        // Token is still valid — restore profile from cache
+                        // (the fetch was just a liveness check)
+                        const restoredProfile = cachedSession.profile;
+                        setProfile(restoredProfile);
+                        setSupabaseAuthHeaders(restoredProfile.id, restoredProfile.role);
+
+                        // Create a synthetic user object so ProtectedRoute passes
+                        const syntheticUser = {
+                            uid: cachedSession.uid,
+                            email: restoredProfile.email,
+                            getIdToken: async () => cachedSession.token,
+                        } as unknown as User;
+                        setUser(syntheticUser);
+                        setLoading(false);
+                        return; // Skip the onAuthStateChanged listener below
+                    }
+                } catch {
+                    // Backend unreachable or token expired — fall through to
+                    // fresh login flow below.
+                }
+
+                // If we reach here, the cached token is invalid — clear it.
+                tabSession.clearSession();
+            }
+
+            // ── Fresh tab open (or cache expired): require login ──────────
+            // Listen for Firebase auth state.  With inMemoryPersistence there
+            // will be no authenticated user here, so this immediately resolves
+            // to null and sets loading = false, causing ProtectedRoute to
+            // redirect to /login.
+            unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+                setUser(firebaseUser);
+
+                if (firebaseUser) {
+                    let token = "";
+                    try {
+                        token = await firebaseUser.getIdToken();
+                    } catch (tokenErr) {
+                        console.error("Failed to retrieve Firebase ID token:", tokenErr);
+                    }
+
+                    // Set temporary headers so Supabase RLS can identify the user
+                    setSupabaseAuthHeaders(firebaseUser.uid, "student");
+
+                    let userProfile = await getUserProfile(firebaseUser.uid);
+
+                    // Auto-sync profile if it doesn't exist yet in Supabase
+                    if (!userProfile && token) {
+                        try {
+                            const res = await fetch(`${BASE_URL}/users/profile`, {
+                                headers: { Authorization: `Bearer ${token}` },
+                            });
+                            if (res.ok) {
+                                userProfile = await getUserProfile(firebaseUser.uid);
+                            }
+                        } catch (err) {
+                            console.error("Failed to auto-sync profile with backend:", err);
+                        }
+                    }
+
+                    setProfile(userProfile);
+                    if (userProfile) {
+                        setSupabaseAuthHeaders(userProfile.id, userProfile.role);
+                        // Cache the session in sessionStorage for reload resilience
+                        tabSession.saveSession(token, firebaseUser.uid, userProfile);
+                    }
+                } else {
+                    setProfile(null);
+                    clearSupabaseAuthHeaders();
+                    tabSession.clearSession();
+                }
+
+                setLoading(false);
+            });
+        };
+
+        restoreSession();
+
+        return () => {
+            if (unsubscribeAuth) unsubscribeAuth();
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // ─── Tab-close logout ────────────────────────────────────────────────────
+    // When the tab is closed (not reloaded — reload is detected via the
+    // RELOADING_KEY flag set by useTabSession's beforeunload listener),
+    // we clear the session so the next open of the app requires a fresh login.
+    //
+    // Note: We cannot reliably call async Firebase signOut in beforeunload
+    // because browsers terminate the page immediately.  Instead we rely on:
+    //   1. sessionStorage being cleared by the browser on tab close.
+    //   2. inMemoryPersistence ensuring Firebase state is never persisted.
+    // Both together guarantee that a new tab always starts unauthenticated.
+    //
+    // The clearSession() call in useTabSession's beforeunload does the cleanup.
+    // No extra listener is needed here.
+
+    // ─── Auth Actions ─────────────────────────────────────────────────────────
+
+    const signIn = async (email: string, password: string): Promise<void> => {
         if (!auth) throw new Error("Firebase is not initialized.");
+        // Ensure persistence is in-memory for this sign-in
+        await setPersistence(auth, inMemoryPersistence);
         await signInWithEmailAndPassword(auth, email, password);
+        // The onAuthStateChanged listener above will pick up the new user,
+        // fetch the profile and save the session to sessionStorage.
     };
 
-    const signUp = async (email: string, password: string) => {
+    const signUp = async (email: string, password: string): Promise<UserCredential> => {
         if (!auth) throw new Error("Firebase is not initialized.");
         return await createUserWithEmailAndPassword(auth, email, password);
     };
 
-    const signOut = async () => {
+    const signOut = async (): Promise<void> => {
         if (auth) {
             await firebaseSignOut(auth);
         }
         setProfile(null);
         setUser(null);
         clearSupabaseAuthHeaders();
-        document.cookie = "firebaseToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        tabSession.clearSession();
     };
 
-    const setMockUser = (role: UserProfile["role"]) => {
-        // This is just for UI demonstration/demo purposes
+    const setMockUser = (role: UserProfile["role"]): void => {
+        // Demo / UI development helper — not for production use
         const mockProfile: UserProfile = {
             id: `mock-${role}`,
             name: `Demo ${role.charAt(0).toUpperCase() + role.slice(1)}`,
             email: `${role}@demo.lk`,
             role: role,
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
         };
         setProfile(mockProfile);
         setSupabaseAuthHeaders(mockProfile.id, mockProfile.role);
 
         const mockToken = `mock-token:${mockProfile.id}:${mockProfile.role}`;
-        document.cookie = `firebaseToken=${mockToken}; path=/; SameSite=Lax; Secure`;
 
-        // We set a fake user object to pass ProtectedRoute checks
-        setUser({ 
-            uid: mockProfile.id, 
+        // Store in sessionStorage so mock sessions survive reloads within the tab
+        tabSession.saveSession(mockToken, mockProfile.id, mockProfile);
+
+        setUser({
+            uid: mockProfile.id,
             email: mockProfile.email,
-            getIdToken: async () => mockToken
+            getIdToken: async () => mockToken,
         } as unknown as User);
     };
 
