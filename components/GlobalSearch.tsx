@@ -16,6 +16,7 @@ export interface Resource {
 
 export default function GlobalSearch() {
     const { user } = useAuth();
+    void user;
     const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState("");
     const [resources, setResources] = useState<Resource[]>([]);
@@ -27,6 +28,11 @@ export default function GlobalSearch() {
     const [filterStatus, setFilterStatus] = useState("All");
 
     const searchRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement | null>(null);
+
+    // Suggestions state for autocomplete
+    const [suggestions, setSuggestions] = useState<Resource[]>([]);
+    const [selectedIndex, setSelectedIndex] = useState(-1);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -68,6 +74,29 @@ export default function GlobalSearch() {
         fetchResources();
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (suggestions.length === 0) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setSelectedIndex((i) => Math.min(i + 1, suggestions.length - 1));
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setSelectedIndex((i) => Math.max(i - 1, 0));
+        } else if (e.key === "Enter") {
+            if (selectedIndex >= 0) {
+                e.preventDefault();
+                const s = suggestions[selectedIndex];
+                setQuery(s.name || "");
+                setSuggestions([]);
+                setIsOpen(true);
+                setSelectedIndex(-1);
+                // keep input focused
+                inputRef.current?.focus();
+            }
+        }
+    };
+
     const getCategoryIcon = (category?: string) => {
         switch (category) {
             case "Lecture Halls": return <Building2 className="w-4 h-4" />;
@@ -91,6 +120,43 @@ export default function GlobalSearch() {
         return matchesQuery && matchesStatus;
     });
 
+    // Debounce query -> suggestions
+    useEffect(() => {
+        const id = setTimeout(() => {
+            const q = query.trim();
+            if (q.length === 0) {
+                setSuggestions([]);
+                setSelectedIndex(-1);
+                return;
+            }
+
+            const lower = q.toLowerCase();
+            const sugg = resources
+                .filter(r => (r.name && String(r.name).toLowerCase().includes(lower)) || (r.category && String(r.category).toLowerCase().includes(lower)))
+                .slice(0, 6);
+
+            setSuggestions(sugg);
+            setSelectedIndex(-1);
+        }, 180);
+
+        return () => clearTimeout(id);
+    }, [query, resources]);
+
+    const highlight = (text?: string) => {
+        if (!text) return null;
+        const q = query.trim();
+        if (!q) return text;
+        const idx = String(text).toLowerCase().indexOf(q.toLowerCase());
+        if (idx === -1) return text;
+        return (
+            <>
+                {String(text).slice(0, idx)}
+                <span className="bg-yellow-100">{String(text).slice(idx, idx + q.length)}</span>
+                {String(text).slice(idx + q.length)}
+            </>
+        );
+    };
+
     return (
         <div className="relative w-full max-w-md mx-auto xl:max-w-lg hidden lg:block" ref={searchRef}>
             <div className="relative group flex items-center">
@@ -104,6 +170,8 @@ export default function GlobalSearch() {
                         fetchResources();
                     }}
                     onFocus={handleFocus}
+                    onKeyDown={handleKeyDown}
+                    ref={(el) => { inputRef.current = el; }}
                     placeholder="Search resources, labs, equipment..."
                     className="w-full pl-9 pr-10 py-2 bg-slate-50 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-full text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary transition-all text-slate-700 dark:text-foreground placeholder-slate-400 dark:placeholder-foreground/30"
                 />
