@@ -14,6 +14,8 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut as firebaseSignOut,
+    setPersistence,
+    browserSessionPersistence,
 } from "firebase/auth";
 import { auth } from "./firebase";
 import { getUserProfile, UserProfile, setSupabaseAuthHeaders, clearSupabaseAuthHeaders } from "./supabase";
@@ -49,6 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
         }
 
+        // Set persistence to session-based to resolve auto-login when opening fresh
+        setPersistence(auth, browserSessionPersistence).catch((err) => {
+            console.error("Failed to set session persistence:", err);
+        });
+
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             setUser(firebaseUser);
             if (firebaseUser) {
@@ -58,8 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 let token = "";
                 try {
                     token = await firebaseUser.getIdToken();
-                    // Set cookie for middleware validation
-                    document.cookie = `firebaseToken=${token}; path=/; max-age=3600; SameSite=Lax; Secure`;
+                    // Set cookie for middleware validation (session cookie)
+                    document.cookie = `firebaseToken=${token}; path=/; SameSite=Lax; Secure`;
                 } catch (tokenErr) {
                     console.error("Failed to retrieve Firebase ID token:", tokenErr);
                 }
@@ -130,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSupabaseAuthHeaders(mockProfile.id, mockProfile.role);
 
         const mockToken = `mock-token:${mockProfile.id}:${mockProfile.role}`;
-        document.cookie = `firebaseToken=${mockToken}; path=/; max-age=3600; SameSite=Lax; Secure`;
+        document.cookie = `firebaseToken=${mockToken}; path=/; SameSite=Lax; Secure`;
 
         // We set a fake user object to pass ProtectedRoute checks
         setUser({ 
