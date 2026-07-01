@@ -37,6 +37,7 @@ import { auth } from "@/lib/firebase";
 import { createUserProfile } from "@/lib/supabase";
 import { apiClient, BASE_URL as API_BASE } from "@/lib/apiClient";
 import { motion } from "framer-motion";
+import { useAuth } from "@/lib/auth-context";
 
 /* Password strength helper */
 function PasswordStrength({ password }: { password: string }) {
@@ -71,6 +72,7 @@ function PasswordStrength({ password }: { password: string }) {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -104,6 +106,13 @@ export default function RegisterPage() {
       clearInterval(clockInterval);
     };
   }, []);
+
+  // Redirect immediately if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/dashboard");
+    }
+  }, [user, authLoading, router]);
 
   const validateForm = () => {
     if (!fullName || !email || !role || !department || !password || !confirmPassword) {
