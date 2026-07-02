@@ -136,7 +136,7 @@ export default function MaintenanceRequestPage() {
 
   return (
     <div className="flex-grow flex items-center justify-center p-4 md:p-8 bg-slate-50 min-h-[calc(100vh-140px)]">
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden transform transition-all">
+      <div className="w-full max-w-2xl bg-white rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-100 overflow-hidden transform transition-all">
         {/* Header Section */}
         <div className="bg-brand-primary p-8 text-white relative">
           <div className="relative z-10">
@@ -146,14 +146,14 @@ export default function MaintenanceRequestPage() {
             </p>
           </div>
           {/* Subtle background decoration */}
-          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-slate-100 dark:bg-white/10 rounded-full blur-2xl"></div>
-          <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-24 h-24 bg-brand-accent/20 rounded-full blur-xl"></div>
+          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-slate-100 dark:bg-white/10 rounded-none blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-24 h-24 bg-brand-accent/20 rounded-none blur-xl"></div>
         </div>
 
         <div className="p-8">
           {isSubmitted ? (
             <div className="py-12 text-center space-y-4 animate-in fade-in zoom-in duration-300">
-              <div className="bg-brand-success/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto text-brand-success">
+              <div className="bg-brand-success/10 w-20 h-20 rounded-none flex items-center justify-center mx-auto text-brand-success">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                 </svg>
@@ -172,8 +172,8 @@ export default function MaintenanceRequestPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               {submissionError && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-655 dark:text-red-400 text-sm font-semibold rounded-2xl flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-655 dark:text-red-400 text-sm font-semibold rounded-none flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-none bg-red-500 animate-pulse shrink-0" />
                   {submissionError}
                 </div>
               )}
@@ -185,7 +185,7 @@ export default function MaintenanceRequestPage() {
                 </label>
                 <div className="relative">
                   {loadingResources ? (
-                    <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2">
+                    <div className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-none flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin text-brand-primary" />
                       <span className="text-sm font-bold text-slate-400">Loading resources...</span>
                     </div>
@@ -196,7 +196,7 @@ export default function MaintenanceRequestPage() {
                       value={formData.resource}
                       onChange={handleChange}
                       disabled={submitting}
-                      className={`w-full appearance-none px-4 py-3 bg-slate-55 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
+                      className={`w-full appearance-none px-4 py-3 bg-slate-55 border rounded-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
                         errors.resource ? "border-brand-danger bg-red-50" : "border-slate-200"
                       }`}
                     >
@@ -239,7 +239,7 @@ export default function MaintenanceRequestPage() {
                   value={formData.description}
                   onChange={handleChange}
                   disabled={submitting}
-                  className={`w-full px-4 py-3 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all resize-none placeholder:text-slate-400 ${
+                  className={`w-full px-4 py-3 bg-slate-50 border rounded-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all resize-none placeholder:text-slate-400 ${
                     errors.description ? "border-brand-danger bg-red-50" : "border-slate-200"
                   }`}
                 ></textarea>
@@ -266,7 +266,7 @@ export default function MaintenanceRequestPage() {
                     value={formData.date}
                     onChange={handleChange}
                     disabled={submitting}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all"
                   />
                 </div>
 
@@ -282,7 +282,7 @@ export default function MaintenanceRequestPage() {
                       value={formData.priority}
                       onChange={handleChange}
                       disabled={submitting}
-                      className="w-full appearance-none px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer"
+                      className="w-full appearance-none px-4 py-3 bg-slate-50 border border-slate-200 rounded-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer"
                     >
                       <option value="Low">Low - Improvement / Minor</option>
                       <option value="Medium">Medium - Normal usage affected</option>
@@ -302,7 +302,7 @@ export default function MaintenanceRequestPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-brand-primary hover:bg-brand-secondary active:scale-[0.98] text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-brand-primary/20 transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-60"
+                  className="w-full bg-brand-primary hover:bg-brand-secondary active:scale-[0.98] text-white font-bold py-4 px-6 rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-brand-primary/20 transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-60"
                 >
                   {submitting ? (
                     <><Loader2 className="w-5 h-5 animate-spin" /> Submitting Request…</>

@@ -315,9 +315,9 @@ export default function PersonalBookingDashboard({
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.35, delay: i * 0.05 }}
-                        className="bg-card border border-slate-200 dark:border-white/[0.06] rounded-2xl p-5 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
+                        className="bg-card border border-slate-200 dark:border-white/[0.06] rounded-none p-5 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
                     >
-                        <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
+                        <div className={`w-10 h-10 rounded-none ${stat.bg} flex items-center justify-center mb-3`}>
                             <stat.icon className={`w-5 h-5 ${stat.color}`} />
                         </div>
                         <p className="text-[10px] font-black text-slate-500 dark:text-foreground/40 uppercase tracking-widest leading-none mb-1">
@@ -329,7 +329,7 @@ export default function PersonalBookingDashboard({
             </div>
 
             {/* ── Toolbar & Filters ── */}
-            <div className="bg-white dark:bg-slate-900/60 p-5 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm space-y-4">
+            <div className="bg-white dark:bg-slate-900/60 p-5 rounded-none border border-slate-100 dark:border-white/[0.06] shadow-sm space-y-4">
                 <div className="flex flex-col lg:flex-row gap-4">
                     {/* Search Input */}
                     <div className="relative flex-1 group">
@@ -339,7 +339,7 @@ export default function PersonalBookingDashboard({
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search by resource name, location, or type..."
-                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#0c0a14] border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#0c0a14] border border-slate-200 dark:border-white/10 rounded-none text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
                         />
                     </div>
 
@@ -351,7 +351,7 @@ export default function PersonalBookingDashboard({
                             <select
                                 value={resourceTypeFilter}
                                 onChange={(e) => setResourceTypeFilter(e.target.value)}
-                                className="px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-700 dark:text-foreground/80 bg-slate-50 dark:bg-[#0c0a14] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-colors min-w-[120px]"
+                                className="px-3 py-2 border border-slate-200 dark:border-white/10 rounded-none text-xs font-bold text-slate-700 dark:text-foreground/80 bg-slate-50 dark:bg-[#0c0a14] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-colors min-w-[120px]"
                             >
                                 {resourceTypes.map((type) => (
                                     <option key={type} value={type}>
@@ -368,7 +368,7 @@ export default function PersonalBookingDashboard({
                             <select
                                 value={sortOption}
                                 onChange={(e) => setSortOption(e.target.value)}
-                                className="px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-700 dark:text-foreground/80 bg-slate-50 dark:bg-[#0c0a14] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-colors min-w-[150px]"
+                                className="px-3 py-2 border border-slate-200 dark:border-white/10 rounded-none text-xs font-bold text-slate-700 dark:text-foreground/80 bg-slate-50 dark:bg-[#0c0a14] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-colors min-w-[150px]"
                             >
                                 <option value="date-desc">Date (Newest First)</option>
                                 <option value="date-asc">Date (Oldest First)</option>
@@ -393,7 +393,7 @@ export default function PersonalBookingDashboard({
                         <button
                             key={status.id}
                             onClick={() => setStatusFilter(status.id)}
-                            className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                            className={`px-4 py-2 rounded-none text-xs font-black transition-all ${
                                 statusFilter === status.id
                                     ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
                                     : "bg-slate-50 dark:bg-white/5 text-slate-650 dark:text-foreground/60 hover:bg-slate-100 dark:hover:bg-white/10"
@@ -442,7 +442,7 @@ export default function PersonalBookingDashboard({
                             "my_bookings"
                         );
                     }}
-                    className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+                    className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-none shadow-sm transition-all duration-200 text-sm"
                 >
                     <DownloadCloud className="w-4 h-4 text-emerald-500" />
                     <span>Export CSV</span>
@@ -450,7 +450,7 @@ export default function PersonalBookingDashboard({
             </div>
 
             {/* ── Bookings Grid / Table List ── */}
-            <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-900/60 rounded-none border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
@@ -467,7 +467,7 @@ export default function PersonalBookingDashboard({
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-sm font-semibold text-slate-400">
                                         <div className="flex items-center justify-center gap-2">
-                                            <div className="w-4 h-4 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
+                                            <div className="w-4 h-4 border-2 border-brand-primary border-t-transparent rounded-none animate-spin"></div>
                                             Loading your bookings...
                                         </div>
                                     </td>
@@ -504,7 +504,7 @@ export default function PersonalBookingDashboard({
                                             {/* Resource name */}
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-2xl bg-brand-primary/5 flex items-center justify-center shrink-0">
+                                                    <div className="w-10 h-10 rounded-none bg-brand-primary/5 flex items-center justify-center shrink-0">
                                                         <MapPin className="w-5 h-5 text-brand-primary" />
                                                     </div>
                                                     <div className="min-w-0">
@@ -539,7 +539,7 @@ export default function PersonalBookingDashboard({
 
                                             {/* Status Badge */}
                                             <td className="px-6 py-5">
-                                                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${getBookingStatusClasses(statusLabel)}`}>
+                                                <span className={`inline-flex px-3 py-1 rounded-none text-[10px] font-black uppercase tracking-widest shadow-sm ${getBookingStatusClasses(statusLabel)}`}>
                                                     {statusLabel}
                                                 </span>
                                             </td>
@@ -551,7 +551,7 @@ export default function PersonalBookingDashboard({
                                                         e.stopPropagation();
                                                         setActiveDropdown(activeDropdown === booking.id ? null : booking.id);
                                                     }}
-                                                    className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-foreground"
+                                                    className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-none transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-foreground"
                                                 >
                                                     <MoreVertical className="w-5 h-5" />
                                                 </button>
@@ -563,7 +563,7 @@ export default function PersonalBookingDashboard({
                                                             animate={{ opacity: 1, scale: 1 }}
                                                             exit={{ opacity: 0, scale: 0.95 }}
                                                             transition={{ duration: 0.1 }}
-                                                            className="absolute right-8 top-12 z-20 w-48 bg-white dark:bg-slate-950 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 overflow-hidden text-left"
+                                                            className="absolute right-8 top-12 z-20 w-48 bg-white dark:bg-slate-950 rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-100 dark:border-white/10 overflow-hidden text-left"
                                                         >
                                                             <div className="py-1">
                                                                 <button
@@ -643,7 +643,7 @@ export default function PersonalBookingDashboard({
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                                className="absolute inset-0 bg-black/50 "
                                 onClick={() => setSelectedBooking(null)}
                             />
 
@@ -652,7 +652,7 @@ export default function PersonalBookingDashboard({
                                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden"
+                                className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-100 dark:border-slate-800 overflow-hidden"
                             >
                                 {/* Header */}
                                 <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
@@ -662,7 +662,7 @@ export default function PersonalBookingDashboard({
                                     </div>
                                     <button
                                         onClick={() => setSelectedBooking(null)}
-                                        className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-foreground"
+                                        className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-none transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-foreground"
                                     >
                                         <X className="w-5 h-5" />
                                     </button>
@@ -675,8 +675,8 @@ export default function PersonalBookingDashboard({
                                         <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40 leading-none">
                                             Resource Information
                                         </h4>
-                                        <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] p-4 rounded-2xl flex items-start gap-4">
-                                            <div className="w-10 h-10 rounded-2xl bg-brand-primary/5 flex items-center justify-center shrink-0">
+                                        <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] p-4 rounded-none flex items-start gap-4">
+                                            <div className="w-10 h-10 rounded-none bg-brand-primary/5 flex items-center justify-center shrink-0">
                                                 <MapPin className="w-5 h-5 text-brand-primary" />
                                             </div>
                                             <div>
@@ -736,7 +736,7 @@ export default function PersonalBookingDashboard({
                                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-foreground/40 leading-none">
                                             Booking Purpose
                                         </span>
-                                        <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] p-4 rounded-2xl text-sm font-semibold text-slate-650 dark:text-foreground/70 min-h-[60px]">
+                                        <div className="bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] p-4 rounded-none text-sm font-semibold text-slate-650 dark:text-foreground/70 min-h-[60px]">
                                             {(selectedBooking as any).purpose || "No purpose provided."}
                                         </div>
                                     </div>
@@ -748,7 +748,7 @@ export default function PersonalBookingDashboard({
                                                 Status
                                             </span>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${getBookingStatusClasses(statusLabel)}`}>
+                                                <span className={`inline-flex px-3 py-1 rounded-none text-[10px] font-black uppercase tracking-widest shadow-sm ${getBookingStatusClasses(statusLabel)}`}>
                                                     {statusLabel}
                                                 </span>
                                             </div>
@@ -772,7 +772,7 @@ export default function PersonalBookingDashboard({
                                     <button
                                         type="button"
                                         onClick={() => setSelectedBooking(null)}
-                                        className="px-5 py-2.5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                                        className="px-5 py-2.5 border border-slate-200 dark:border-white/10 rounded-none text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
                                     >
                                         Close
                                     </button>
@@ -783,7 +783,7 @@ export default function PersonalBookingDashboard({
                                                 onEditBooking(selectedBooking);
                                                 setSelectedBooking(null);
                                             }}
-                                            className="px-5 py-2.5 bg-brand-primary text-white font-bold rounded-2xl hover:bg-brand-secondary transition-all"
+                                            className="px-5 py-2.5 bg-brand-primary text-white font-bold rounded-none hover:bg-brand-secondary transition-all"
                                         >
                                             Edit
                                         </button>
@@ -797,7 +797,7 @@ export default function PersonalBookingDashboard({
                                                     setSelectedBooking(null);
                                                 }
                                             }}
-                                            className="px-5 py-2.5 bg-amber-600 text-white font-bold rounded-2xl hover:bg-amber-700 transition-all"
+                                            className="px-5 py-2.5 bg-amber-600 text-white font-bold rounded-none hover:bg-amber-700 transition-all"
                                         >
                                             Cancel Booking
                                         </button>

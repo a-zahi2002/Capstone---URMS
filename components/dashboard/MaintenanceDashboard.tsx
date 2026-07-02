@@ -174,7 +174,7 @@ export default function MaintenanceDashboard() {
             >
                 <div>
                     <h1 className="text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-none bg-amber-500/10 flex items-center justify-center">
                             <PenTool className="w-5 h-5 text-amber-500" />
                         </div>
                         Operations Hub
@@ -188,7 +188,7 @@ export default function MaintenanceDashboard() {
                 </div>
                 <button
                     onClick={fetchTasks}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-sm hover:bg-amber-500/20 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-none bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-sm hover:bg-amber-500/20 transition-colors"
                 >
                     <RefreshCcw className="w-4 h-4" /> Refresh
                 </button>
@@ -203,8 +203,8 @@ export default function MaintenanceDashboard() {
                     { label: "Completed", value: stats.completed, icon: CheckCircle2, color: "emerald" },
                     { label: "High Priority", value: stats.highPriority, icon: AlertCircle, color: "red" },
                 ].map(({ label, value, icon: Icon, color }) => (
-                    <div key={label} className="bg-card border border-slate-200 dark:border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                        <div className={`w-9 h-9 rounded-xl bg-${color}-500/10 flex items-center justify-center mb-3`}>
+                    <div key={label} className="bg-card border border-slate-200 dark:border-border rounded-none p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div className={`w-9 h-9 rounded-none bg-${color}-500/10 flex items-center justify-center mb-3`}>
                             <Icon className={`w-4 h-4 text-${color}-500`} />
                         </div>
                         <p className="text-[10px] font-black text-slate-500 dark:text-foreground/40 uppercase tracking-widest">{label}</p>
@@ -216,12 +216,12 @@ export default function MaintenanceDashboard() {
             {/* ── Main Grid ── */}
             <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Critical Tasks */}
-                <div className="bg-card border border-red-200 dark:border-red-500/20 rounded-3xl p-6 shadow-sm">
+                <div className="bg-card border border-red-200 dark:border-red-500/20 rounded-none p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                         <AlertCircle className="w-5 h-5 text-red-500" />
                         Critical Tasks
                         {criticalTasks.length > 0 && (
-                            <span className="ml-auto text-xs font-black bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full border border-red-500/20">
+                            <span className="ml-auto text-xs font-black bg-red-500/10 text-red-500 px-2 py-0.5 rounded-none border border-red-500/20">
                                 {criticalTasks.length}
                             </span>
                         )}
@@ -238,7 +238,7 @@ export default function MaintenanceDashboard() {
                             </div>
                         ) : (
                             criticalTasks.slice(0, 4).map(task => (
-                                <div key={task.rawId} className="bg-red-50 dark:bg-red-500/5 p-4 rounded-xl border border-red-200 dark:border-red-500/15 flex justify-between items-center gap-3">
+                                <div key={task.rawId} className="bg-red-50 dark:bg-red-500/5 p-4 rounded-none border border-red-200 dark:border-red-500/15 flex justify-between items-center gap-3">
                                     <div className="min-w-0">
                                         <p className="font-bold text-foreground text-sm truncate">{task.title}</p>
                                         <p className="text-xs text-slate-500 dark:text-foreground/40 mt-0.5">{task.resourceName}</p>
@@ -256,14 +256,14 @@ export default function MaintenanceDashboard() {
                 </div>
 
                 {/* Routine Maintenance Schedule */}
-                <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm">
+                <div className="bg-card border border-slate-200 dark:border-border rounded-none p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                         <CalendarDays className="w-5 h-5 text-amber-500" />
                         Routine Maintenance
                     </h3>
                     <div className="space-y-3">
                         {routineMaintenance.map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03] gap-3">
+                            <div key={idx} className="flex items-center justify-between p-4 rounded-none border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03] gap-3">
                                 <div className="flex items-center gap-3 min-w-0">
                                     <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
                                         <Wrench className="w-4 h-4 text-amber-500" />
@@ -284,7 +284,7 @@ export default function MaintenanceDashboard() {
             </motion.div>
 
             {/* ── Active Ticket Queue ── */}
-            <motion.div variants={fadeInUp} className="bg-card border border-slate-200 dark:border-border rounded-3xl shadow-sm overflow-hidden">
+            <motion.div variants={fadeInUp} className="bg-card border border-slate-200 dark:border-border rounded-none shadow-sm overflow-hidden">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200 dark:border-border">
                     <h3 className="text-lg font-bold text-foreground">Active Ticket Queue</h3>
                     <div className="relative">
@@ -293,7 +293,7 @@ export default function MaintenanceDashboard() {
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder="Search tickets..."
-                            className="pl-9 pr-4 py-2 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 w-52"
+                            className="pl-9 pr-4 py-2 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-none text-sm font-bold text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 w-52"
                         />
                     </div>
                 </div>
@@ -323,7 +323,7 @@ export default function MaintenanceDashboard() {
                             return (
                                 <div key={task.rawId} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors gap-4">
                                     <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                                        <div className="w-10 h-10 rounded-none bg-amber-500/10 flex items-center justify-center shrink-0">
                                             <Wrench className="w-5 h-5 text-amber-500" />
                                         </div>
                                         <div className="min-w-0">
@@ -334,10 +334,10 @@ export default function MaintenanceDashboard() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${priorityColors[task.priority]}`}>
+                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-none border ${priorityColors[task.priority]}`}>
                                             {task.priority}
                                         </span>
-                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${statusColors[task.status]}`}>
+                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-none border ${statusColors[task.status]}`}>
                                             {task.status}
                                         </span>
                                         <button
@@ -356,8 +356,8 @@ export default function MaintenanceDashboard() {
 
             {/* Outcome Selection Modal */}
             {completingTask && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-card border border-slate-200 dark:border-border rounded-3xl shadow-2xl w-full max-w-md overflow-hidden text-left">
+                <div className="fixed inset-0 bg-black/60  z-50 flex items-center justify-center p-4">
+                    <div className="bg-card border border-slate-200 dark:border-border rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] w-full max-w-md overflow-hidden text-left">
                         <div className="bg-slate-900 p-6 text-white relative font-sans">
                             <h3 className="text-xl font-black">Select Maintenance Outcome</h3>
                             <p className="text-slate-400 text-xs mt-1 font-medium">Specify resolution to update resource status</p>
@@ -369,7 +369,7 @@ export default function MaintenanceDashboard() {
                                     { value: "Faulty", label: "Faulty (Under Maintenance)", desc: "Keep resource status as 'Under Maintenance'" },
                                     { value: "Decommissioned", label: "Decommissioned (Inactive)", desc: "Set resource status to 'Inactive' (retired)" }
                                 ].map(opt => (
-                                    <label key={opt.value} className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                                    <label key={opt.value} className={`flex items-start gap-3 p-3.5 rounded-none border-2 cursor-pointer transition-all ${
                                         outcome === opt.value 
                                             ? "border-amber-500 bg-amber-500/5 text-foreground" 
                                             : "border-slate-200 dark:border-border text-foreground hover:bg-slate-50 dark:hover:bg-white/[0.02]"
@@ -393,7 +393,7 @@ export default function MaintenanceDashboard() {
                                 <button 
                                     type="button" 
                                     onClick={() => setCompletingTask(null)}
-                                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-border text-foreground font-black text-sm hover:bg-slate-50 dark:hover:bg-foreground/5 transition-all"
+                                    className="flex-1 px-4 py-3 rounded-none border border-slate-200 dark:border-border text-foreground font-black text-sm hover:bg-slate-50 dark:hover:bg-foreground/5 transition-all"
                                 >
                                     Cancel
                                 </button>
@@ -403,7 +403,7 @@ export default function MaintenanceDashboard() {
                                         await updateStatus(completingTask.rawId, "COMPLETED", outcome);
                                         setCompletingTask(null);
                                     }}
-                                    className="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                                    className="flex-1 px-4 py-3 rounded-none bg-amber-500 hover:bg-amber-600 text-white font-black text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2"
                                 >
                                     <CheckCircle2 className="w-4 h-4" /> Confirm & Complete
                                 </button>
