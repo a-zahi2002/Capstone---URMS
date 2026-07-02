@@ -243,7 +243,7 @@ export default function NotificationsPage() {
                             {unreadCount > 0 && (
                                 <button
                                     onClick={markAllAsRead}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-card hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-200 dark:border-border px-4 py-2.5 rounded-xl text-sm font-bold text-foreground transition-all active:scale-95"
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-card hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-200 dark:border-border px-4 py-2.5 rounded-none text-sm font-bold text-foreground transition-all active:scale-95"
                                 >
                                     <Check className="w-4 h-4" /> Mark All Read
                                 </button>
@@ -251,7 +251,7 @@ export default function NotificationsPage() {
                             {notifications.some((n) => n.read) && (
                                 <button
                                     onClick={deleteAllRead}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-card hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-200 dark:border-border px-4 py-2.5 rounded-xl text-sm font-bold text-foreground transition-all active:scale-95"
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-card hover:bg-slate-50 dark:hover:bg-white/5 border border-slate-200 dark:border-border px-4 py-2.5 rounded-none text-sm font-bold text-foreground transition-all active:scale-95"
                                 >
                                     <Trash2 className="w-4 h-4 text-slate-500" /> Clear Read
                                 </button>
@@ -259,7 +259,7 @@ export default function NotificationsPage() {
                             {totalCount > 0 && (
                                 <button
                                     onClick={clearAllHistory}
-                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 px-4 py-2.5 rounded-xl text-sm font-bold text-red-500 transition-all active:scale-95"
+                                    className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 px-4 py-2.5 rounded-none text-sm font-bold text-red-500 transition-all active:scale-95"
                                 >
                                     <Trash2 className="w-4 h-4" /> Clear All
                                 </button>
@@ -269,8 +269,8 @@ export default function NotificationsPage() {
 
                     {/* Stats Dashboard */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                        <div className="bg-card p-6 rounded-2xl border border-slate-200 dark:border-border shadow-sm flex items-center gap-4">
-                            <div className="bg-blue-500/10 p-4 rounded-xl text-blue-500 border border-blue-500/20 shrink-0">
+                        <div className="bg-card p-6 rounded-none border border-slate-200 dark:border-border shadow-sm flex items-center gap-4">
+                            <div className="bg-blue-500/10 p-4 rounded-none text-blue-500 border border-blue-500/20 shrink-0">
                                 <Inbox className="w-6 h-6" />
                             </div>
                             <div>
@@ -281,8 +281,8 @@ export default function NotificationsPage() {
                             </div>
                         </div>
 
-                        <div className="bg-card p-6 rounded-2xl border border-slate-200 dark:border-border shadow-sm flex items-center gap-4">
-                            <div className="bg-amber-500/10 p-4 rounded-xl text-amber-500 border border-amber-500/20 shrink-0">
+                        <div className="bg-card p-6 rounded-none border border-slate-200 dark:border-border shadow-sm flex items-center gap-4">
+                            <div className="bg-amber-500/10 p-4 rounded-none text-amber-500 border border-amber-500/20 shrink-0">
                                 <Bell className="w-6 h-6" />
                             </div>
                             <div>
@@ -293,11 +293,11 @@ export default function NotificationsPage() {
                             </div>
                         </div>
 
-                        <div className="bg-card p-6 rounded-2xl border border-slate-200 dark:border-border shadow-sm flex items-center gap-4">
-                            <div className="bg-emerald-500/10 p-4 rounded-xl text-emerald-500 border border-emerald-500/20 shrink-0 flex items-center justify-center">
+                        <div className="bg-card p-6 rounded-none border border-slate-200 dark:border-border shadow-sm flex items-center gap-4">
+                            <div className="bg-emerald-500/10 p-4 rounded-none text-emerald-500 border border-emerald-500/20 shrink-0 flex items-center justify-center">
                                 <span className="relative flex h-3 w-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-none h-3 w-3 bg-emerald-500"></span>
                                 </span>
                             </div>
                             <div>
@@ -310,9 +310,9 @@ export default function NotificationsPage() {
                     </div>
 
                     {/* Filter & Control Bar */}
-                    <div className="bg-card border border-slate-200 dark:border-border rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <div className="bg-card border border-slate-200 dark:border-border rounded-none p-4 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
                         {/* Status Toggle Filter */}
-                        <div className="flex bg-slate-100 dark:bg-foreground/5 p-1 rounded-xl w-full md:w-auto">
+                        <div className="flex bg-slate-100 dark:bg-foreground/5 p-1 rounded-none w-full md:w-auto">
                             <button
                                 onClick={() => setStatusFilter("all")}
                                 className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${
@@ -333,7 +333,7 @@ export default function NotificationsPage() {
                             >
                                 Unread
                                 {unreadCount > 0 && (
-                                    <span className="absolute -top-1.5 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white">
+                                    <span className="absolute -top-1.5 -right-1 flex h-4 w-4 items-center justify-center rounded-none bg-red-500 text-[10px] font-black text-white">
                                         {unreadCount}
                                     </span>
                                 )}
@@ -368,16 +368,16 @@ export default function NotificationsPage() {
                                 placeholder="Search notification contents..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-slate-100 dark:bg-foreground/5 border border-transparent hover:border-slate-300 dark:hover:border-white/10 focus:border-brand-primary focus:bg-card focus:ring-1 focus:ring-brand-primary pl-10 pr-4 py-2.5 rounded-xl text-xs font-semibold text-foreground placeholder:text-slate-400 dark:placeholder:text-foreground/30 outline-none transition-all"
+                                className="w-full bg-slate-100 dark:bg-foreground/5 border border-transparent hover:border-slate-300 dark:hover:border-white/10 focus:border-brand-primary focus:bg-card focus:ring-1 focus:ring-brand-primary pl-10 pr-4 py-2.5 rounded-none text-xs font-semibold text-foreground placeholder:text-slate-400 dark:placeholder:text-foreground/30 outline-none transition-all"
                             />
                         </div>
                     </div>
 
                     {/* Notifications Log List */}
-                    <div className="bg-card border border-slate-200 dark:border-border rounded-3xl overflow-hidden shadow-sm min-h-[300px] flex flex-col justify-between">
+                    <div className="bg-card border border-slate-200 dark:border-border rounded-none overflow-hidden shadow-sm min-h-[300px] flex flex-col justify-between">
                         {loading ? (
                             <div className="p-20 text-center flex flex-col items-center justify-center text-slate-500 dark:text-foreground/40 flex-grow">
-                                <div className="w-8 h-8 rounded-full border-2 border-brand-primary border-t-transparent animate-spin mb-4" />
+                                <div className="w-8 h-8 rounded-none border-2 border-brand-primary border-t-transparent animate-spin mb-4" />
                                 <p className="text-sm font-semibold">Loading notifications...</p>
                             </div>
                         ) : filteredNotifications.length === 0 ? (
@@ -408,7 +408,7 @@ export default function NotificationsPage() {
                                         >
                                             {/* Left icon wrapper */}
                                             <div className="shrink-0 mt-0.5">
-                                                <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-foreground/5 flex items-center justify-center border border-slate-200 dark:border-border/30">
+                                                <div className="w-10 h-10 rounded-none bg-slate-100 dark:bg-foreground/5 flex items-center justify-center border border-slate-200 dark:border-border/30">
                                                     {getIcon(notification.type)}
                                                 </div>
                                             </div>
@@ -426,7 +426,7 @@ export default function NotificationsPage() {
                                                         {notification.title}
                                                     </h3>
                                                     {!notification.read && (
-                                                        <span className="bg-brand-primary/10 text-brand-primary border border-brand-primary/20 text-[9px] font-black uppercase px-2 py-0.5 rounded-full tracking-wide">
+                                                        <span className="bg-brand-primary/10 text-brand-primary border border-brand-primary/20 text-[9px] font-black uppercase px-2 py-0.5 rounded-none tracking-wide">
                                                             New
                                                         </span>
                                                     )}
@@ -452,7 +452,7 @@ export default function NotificationsPage() {
                                             </div>
 
                                             {/* Float action tools */}
-                                            <div className="flex items-center gap-1 bg-card/95 border border-slate-200 dark:border-border p-1 rounded-xl opacity-0 group-hover:opacity-100 shadow-md shadow-black/5 absolute right-4 top-1/2 -translate-y-1/2 transition-all">
+                                            <div className="flex items-center gap-1 bg-card/95 border border-slate-200 dark:border-border p-1 rounded-none opacity-0 group-hover:opacity-100 shadow-md shadow-black/5 absolute right-4 top-1/2 -translate-y-1/2 transition-all">
                                                 <button
                                                     onClick={() => toggleReadStatus(notification.id, notification.read)}
                                                     className={`p-2 rounded-lg text-xs font-bold transition-all ${

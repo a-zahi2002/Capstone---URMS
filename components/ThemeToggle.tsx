@@ -16,7 +16,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border animate-pulse" />
+      <div className="w-10 h-10 rounded-none bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border animate-pulse" />
     );
   }
 
@@ -27,7 +27,7 @@ export function ThemeToggle() {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="relative w-10 h-10 rounded-xl bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border flex items-center justify-center overflow-hidden hover:bg-slate-200 dark:bg-foreground/10 hover:border-brand-primary/50 transition-colors group"
+      className="relative w-10 h-10 rounded-none bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border flex items-center justify-center overflow-hidden hover:bg-slate-200 dark:bg-foreground/10 hover:border-brand-primary/50 transition-colors group"
       aria-label="Toggle theme"
     >
       <AnimatePresence mode="wait" initial={false}>

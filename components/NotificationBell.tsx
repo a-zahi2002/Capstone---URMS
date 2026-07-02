@@ -171,20 +171,20 @@ export default function NotificationBell() {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 rounded-xl text-slate-500 dark:text-foreground/60 hover:bg-slate-100 dark:hover:bg-foreground/5 hover:text-foreground transition-colors"
+                className="relative p-2 rounded-none text-slate-500 dark:text-foreground/60 hover:bg-slate-100 dark:hover:bg-foreground/5 hover:text-foreground transition-colors"
                 aria-label="Notifications"
             >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
                     <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-none bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-none h-2 w-2 bg-red-500"></span>
                     </span>
                 )}
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-card border border-slate-200 dark:border-border rounded-2xl shadow-xl shadow-black/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50 flex flex-col max-h-[85vh]">
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-card border border-slate-200 dark:border-border rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-black/10 overflow-hidden animate-in fade-in slide-in- duration-200 z-50 flex flex-col max-h-[85vh]">
                     {/* Header */}
                     <div className="px-4 py-3 border-b border-slate-200 dark:border-border flex items-center justify-between bg-slate-50 dark:bg-foreground/5">
                         <h3 className="font-bold text-foreground">Notifications</h3>
@@ -215,7 +215,7 @@ export default function NotificationBell() {
                                         className={`p-4 transition-colors relative group flex gap-3 ${getBgColor(notification.type, notification.read)}`}
                                     >
                                         {!notification.read && (
-                                            <span className="absolute top-4 left-1.5 w-1.5 h-1.5 rounded-full bg-brand-primary" />
+                                            <span className="absolute top-4 left-1.5 w-1.5 h-1.5 rounded-none bg-brand-primary" />
                                         )}
                                         
                                         <div className="shrink-0 mt-0.5">

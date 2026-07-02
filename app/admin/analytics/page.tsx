@@ -24,7 +24,7 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 
 // Reusable animated orb for ambient background
 function Orb({ className }: { className: string }) {
-    return <div className={`absolute rounded-full blur-3xl opacity-20 animate-pulse pointer-events-none ${className}`} />;
+    return <div className={`absolute rounded-none blur-3xl opacity-20 animate-pulse pointer-events-none ${className}`} />;
 }
 
 export default function AnalyticsDashboard() {
@@ -225,8 +225,8 @@ export default function AnalyticsDashboard() {
             <div className="flex items-center justify-center min-h-screen bg-background">
                 <div className="flex flex-col items-center gap-6">
                     <div className="relative flex justify-center items-center">
-                        <div className="absolute animate-ping w-16 h-16 rounded-full bg-blue-500/20" />
-                        <div className="animate-spin rounded-full h-12 w-12 border-[3px] border-slate-200 dark:border-border border-t-blue-500 relative z-10" />
+                        <div className="absolute animate-ping w-16 h-16 rounded-none bg-blue-500/20" />
+                        <div className="animate-spin rounded-none h-12 w-12 border-[3px] border-slate-200 dark:border-border border-t-blue-500 relative z-10" />
                     </div>
                     <p className="text-blue-500 dark:text-blue-400 font-black tracking-widest text-[10px] uppercase animate-pulse">Initializing Analytics</p>
                 </div>
@@ -305,7 +305,7 @@ export default function AnalyticsDashboard() {
         <ProtectedRoute allowedRoles={['admin']}>
             <div className="min-h-screen bg-background text-foreground overflow-hidden relative pb-24">
                 {/* Ambient Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/5 via-background to-background -z-20" />
+                <div className="absolute inset-0 bg-card    -z-20" />
                 <div className="absolute inset-0 opacity-[0.03] -z-10" style={{ backgroundImage: "linear-gradient(rgba(128,128,128,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(128,128,128,0.3) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
                 <Orb className="w-[500px] h-[500px] bg-blue-600/10 -top-40 -left-40" />
                 <Orb className="w-[400px] h-[400px] bg-indigo-600/5 top-1/2 right-[-100px]" />
@@ -316,11 +316,11 @@ export default function AnalyticsDashboard() {
                     {/* Header */}
                     <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 mb-10">
                         <div className="flex items-center gap-5">
-                            <Link href="/dashboard" className="p-2.5 bg-card border border-slate-200 dark:border-border rounded-2xl hover:bg-slate-100 dark:bg-foreground/5 transition-colors shadow-sm">
+                            <Link href="/dashboard" className="p-2.5 bg-card border border-slate-200 dark:border-border rounded-none hover:bg-slate-100 dark:bg-foreground/5 transition-colors shadow-sm">
                                 <ArrowLeft className="w-5 h-5 text-slate-700 dark:text-foreground/70" />
                             </Link>
                             <div>
-                                <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-3 py-1 mb-2">
+                                <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-none px-3 py-1 mb-2">
                                     <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                                     <span className="text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider">Command Center</span>
                                 </div>
@@ -333,7 +333,7 @@ export default function AnalyticsDashboard() {
                         
                         <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
                             {/* Tabs */}
-                            <div className="flex items-center gap-1 bg-card p-1 rounded-2xl border border-slate-200 dark:border-border shadow-sm">
+                            <div className="flex items-center gap-1 bg-card p-1 rounded-none border border-slate-200 dark:border-border shadow-sm">
                                 {[
                                     { id: 'overview', label: 'Overview' },
                                     { id: 'bookings', label: 'Bookings' },
@@ -342,7 +342,7 @@ export default function AnalyticsDashboard() {
                                     <button 
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id as any)}
-                                        className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25' : 'text-slate-500 dark:text-foreground/40 hover:bg-slate-100 dark:bg-foreground/5 hover:text-foreground'}`}
+                                        className={`px-5 py-2.5 rounded-none text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-blue-600 text-white border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-blue-500/25' : 'text-slate-500 dark:text-foreground/40 hover:bg-slate-100 dark:bg-foreground/5 hover:text-foreground'}`}
                                     >
                                         {tab.label}
                                     </button>
@@ -351,13 +351,13 @@ export default function AnalyticsDashboard() {
 
                             {/* Filters + Export Bar */}
                             <div className="flex flex-col gap-2 w-full xl:w-auto">
-                                <div className="flex items-center gap-3 bg-card p-1.5 pr-3 rounded-2xl border border-slate-200 dark:border-border shadow-sm flex-wrap">
+                                <div className="flex items-center gap-3 bg-card p-1.5 pr-3 rounded-none border border-slate-200 dark:border-border shadow-sm flex-wrap">
                                     {/* Department Selector */}
                                     <div className="relative group">
                                         <select
                                             value={department}
                                             onChange={(e) => setDepartment(e.target.value)}
-                                            className="appearance-none pl-4 pr-10 py-2 bg-transparent text-slate-800 dark:text-foreground/90 font-black text-[10px] uppercase tracking-widest rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all cursor-pointer"
+                                            className="appearance-none pl-4 pr-10 py-2 bg-transparent text-slate-800 dark:text-foreground/90 font-black text-[10px] uppercase tracking-widest rounded-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all cursor-pointer"
                                         >
                                             <option value="" className="bg-card">All Departments</option>
                                             {departments.map((dept) => (
@@ -375,7 +375,7 @@ export default function AnalyticsDashboard() {
                                             onClick={() => handleExport('pdf', activeTab)}
                                             disabled={!!exporting}
                                             title="Export PDF"
-                                            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-foreground/10 transition-colors disabled:opacity-40"
+                                            className="p-2 rounded-none hover:bg-slate-100 dark:hover:bg-foreground/10 transition-colors disabled:opacity-40"
                                         >
                                             {exporting === `${activeTab}-pdf`
                                                 ? <RefreshCcw className="w-4 h-4 text-red-500 animate-spin" />
@@ -385,7 +385,7 @@ export default function AnalyticsDashboard() {
                                             onClick={() => handleExport('excel', activeTab)}
                                             disabled={!!exporting}
                                             title="Export Excel"
-                                            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-foreground/10 transition-colors disabled:opacity-40"
+                                            className="p-2 rounded-none hover:bg-slate-100 dark:hover:bg-foreground/10 transition-colors disabled:opacity-40"
                                         >
                                             {exporting === `${activeTab}-excel`
                                                 ? <RefreshCcw className="w-4 h-4 text-emerald-500 animate-spin" />
@@ -395,7 +395,7 @@ export default function AnalyticsDashboard() {
                                             onClick={() => handleExport('sheets', activeTab)}
                                             disabled={!!exporting}
                                             title="Export to Google Sheets"
-                                            className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-foreground/10 transition-colors disabled:opacity-40"
+                                            className="p-2 rounded-none hover:bg-slate-100 dark:hover:bg-foreground/10 transition-colors disabled:opacity-40"
                                         >
                                             {exporting === `${activeTab}-sheets`
                                                 ? <RefreshCcw className="w-4 h-4 text-blue-500 animate-spin" />
@@ -407,7 +407,7 @@ export default function AnalyticsDashboard() {
 
                                     <Link
                                         href="/admin/analytics/reports"
-                                        className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-foreground/5 hover:bg-slate-200 dark:hover:bg-foreground/10 text-foreground font-black text-[10px] uppercase tracking-widest rounded-xl transition-all"
+                                        className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-foreground/5 hover:bg-slate-200 dark:hover:bg-foreground/10 text-foreground font-black text-[10px] uppercase tracking-widest rounded-none transition-all"
                                     >
                                         <BellRing className="w-3.5 h-3.5" />
                                         Schedule
@@ -416,7 +416,7 @@ export default function AnalyticsDashboard() {
 
                                 {/* Custom date range inputs — only shown when 'custom' is selected */}
                                 {timeRange === 'custom' && (
-                                    <div className="flex items-center gap-2 bg-card px-4 py-2.5 rounded-2xl border border-blue-500/30 shadow-sm">
+                                    <div className="flex items-center gap-2 bg-card px-4 py-2.5 rounded-none border border-blue-500/30 shadow-sm">
                                         <span className="text-[10px] font-black text-slate-500 dark:text-foreground/40 uppercase tracking-widest">From</span>
                                         <input
                                             type="date"
@@ -439,7 +439,7 @@ export default function AnalyticsDashboard() {
 
                     {googleSheetUrl && (
                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-8">
-                            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300 rounded-2xl flex items-center justify-between gap-3 backdrop-blur-md">
+                            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300 rounded-none flex items-center justify-between gap-3 ">
                                 <div className="flex items-center gap-3">
                                     <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                                     <div>
@@ -451,7 +451,7 @@ export default function AnalyticsDashboard() {
                                     href={googleSheetUrl} 
                                     target="_blank" 
                                     rel="noreferrer"
-                                    className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20"
+                                    className="bg-emerald-500 text-white px-4 py-2 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-emerald-500/20"
                                 >
                                     Open Sheet
                                 </a>
@@ -460,7 +460,7 @@ export default function AnalyticsDashboard() {
                     )}
 
                     {error && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8 p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-300 rounded-2xl flex items-center justify-between gap-3 backdrop-blur-md">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8 p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-300 rounded-none flex items-center justify-between gap-3 ">
                             <div className="flex items-center gap-3">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                                 <p className="font-bold text-xs">{error}</p>
@@ -496,7 +496,7 @@ export default function AnalyticsDashboard() {
 
                                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                         {/* Booking Trends */}
-                                        <motion.div variants={itemVariants} className="lg:col-span-2 bg-card p-8 rounded-3xl border border-slate-200 dark:border-border shadow-xl">
+                                        <motion.div variants={itemVariants} className="lg:col-span-2 bg-card p-8 rounded-none border border-slate-200 dark:border-border border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]">
                                             <div className="flex items-center justify-between mb-8">
                                                 <h3 className="text-lg font-black text-foreground flex items-center gap-2">
                                                     <TrendingUp className="w-5 h-5 text-blue-500" /> Recent Activity
@@ -526,8 +526,8 @@ export default function AnalyticsDashboard() {
                                         </motion.div>
 
                                         {/* Booking Status */}
-                                        <motion.div variants={itemVariants} className="bg-card p-8 rounded-3xl border border-slate-200 dark:border-border shadow-xl relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
+                                        <motion.div variants={itemVariants} className="bg-card p-8 rounded-none border border-slate-200 dark:border-border border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-none pointer-events-none" />
                                             <h3 className="text-lg font-black text-foreground mb-8 flex items-center gap-2 relative z-10">
                                                 <PieIcon className="w-5 h-5 text-emerald-500" /> Status Mix
                                             </h3>
@@ -556,7 +556,7 @@ export default function AnalyticsDashboard() {
                                             <div className="grid grid-cols-2 gap-3 mt-6 relative z-10">
                                                 {bookingStatusData.slice(0, 4).map((item, i) => (
                                                     <div key={item.name} className="flex items-center gap-2 bg-slate-100 dark:bg-foreground/5 rounded-lg px-2 py-1.5">
-                                                        <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{backgroundColor: COLORS[i % COLORS.length]}} />
+                                                        <div className="w-2.5 h-2.5 rounded-none shadow-sm" style={{backgroundColor: COLORS[i % COLORS.length]}} />
                                                         <span className="text-[10px] font-black text-slate-600 dark:text-foreground/60 truncate uppercase tracking-tight">{item.name}</span>
                                                     </div>
                                                 ))}
@@ -564,17 +564,17 @@ export default function AnalyticsDashboard() {
                                         </motion.div>
 
                                         {/* Maintenance Summary */}
-                                        <motion.div variants={itemVariants} className="bg-card p-8 rounded-3xl border border-slate-200 dark:border-border shadow-xl">
+                                        <motion.div variants={itemVariants} className="bg-card p-8 rounded-none border border-slate-200 dark:border-border border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]">
                                             <h3 className="text-lg font-black text-foreground mb-6 flex items-center gap-2">
                                                 <AlertTriangle className="w-5 h-5 text-red-500" /> Maintenance
                                             </h3>
-                                            <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-2xl mb-6 text-center">
+                                            <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-none mb-6 text-center">
                                                 <p className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-2">Avg. Resolution</p>
                                                 <p className="text-4xl font-black text-foreground tracking-tighter">{rechartsMaintenance?.avgCompletionTimeHours}<span className="text-red-500 text-2xl">h</span></p>
                                             </div>
                                             <div className="space-y-3">
                                                 {rechartsMaintenance?.topMaintainedResources.slice(0, 3).map((res: any, i: number) => (
-                                                    <div key={i} className="flex items-center justify-between p-3.5 bg-slate-100 dark:bg-foreground/5 rounded-xl border border-slate-200 dark:border-border hover:bg-slate-200 dark:bg-foreground/10 transition-colors">
+                                                    <div key={i} className="flex items-center justify-between p-3.5 bg-slate-100 dark:bg-foreground/5 rounded-none border border-slate-200 dark:border-border hover:bg-slate-200 dark:bg-foreground/10 transition-colors">
                                                         <p className="text-[10px] font-black text-slate-700 dark:text-foreground/70 truncate mr-2 uppercase tracking-tight">{res.name}</p>
                                                         <span className="text-[9px] font-black bg-red-500/20 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-md whitespace-nowrap uppercase tracking-widest">{res.count} Issues</span>
                                                     </div>
@@ -583,7 +583,7 @@ export default function AnalyticsDashboard() {
                                         </motion.div>
 
                                         {/* Categories */}
-                                        <motion.div variants={itemVariants} className="lg:col-span-2 bg-card p-8 rounded-3xl border border-slate-200 dark:border-border shadow-xl">
+                                        <motion.div variants={itemVariants} className="lg:col-span-2 bg-card p-8 rounded-none border border-slate-200 dark:border-border border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]">
                                             <div className="flex items-center justify-between mb-8">
                                                 <h3 className="text-lg font-black text-foreground flex items-center gap-2">
                                                     <LayoutDashboard className="w-5 h-5 text-purple-500" /> Asset Distribution
@@ -612,7 +612,7 @@ export default function AnalyticsDashboard() {
 
                             {activeTab === 'bookings' && (
                                 <div className="space-y-6">
-                                    <div className="flex items-center justify-between bg-card p-6 rounded-3xl border border-slate-200 dark:border-border shadow-md">
+                                    <div className="flex items-center justify-between bg-card p-6 rounded-none border border-slate-200 dark:border-border shadow-md">
                                         <h3 className="text-lg font-black text-foreground flex items-center gap-2">
                                             <CalendarCheck className="w-5 h-5 text-indigo-500" /> Booking Statistics
                                         </h3>
@@ -640,7 +640,7 @@ export default function AnalyticsDashboard() {
 
                             {activeTab === 'utilization' && (
                                 <div className="space-y-6">
-                                    <div className="flex items-center justify-between bg-card p-6 rounded-3xl border border-slate-200 dark:border-border shadow-md">
+                                    <div className="flex items-center justify-between bg-card p-6 rounded-none border border-slate-200 dark:border-border shadow-md">
                                         <h3 className="text-lg font-black text-foreground flex items-center gap-2">
                                             <Clock className="w-5 h-5 text-amber-500" /> Peak Usage & Efficiency
                                         </h3>
@@ -652,13 +652,13 @@ export default function AnalyticsDashboard() {
                                         <motion.div variants={itemVariants}><ChartCard title="Busiest Days" icon={<CalendarCheck className="text-emerald-500" />} loading={reportsLoading}><BookingBarChart data={chartJsPeakDays} /></ChartCard></motion.div>
                                     </div>
 
-                                    <motion.div variants={itemVariants} className="bg-card p-8 rounded-3xl border border-slate-200 dark:border-border shadow-lg overflow-hidden">
+                                    <motion.div variants={itemVariants} className="bg-card p-8 rounded-none border border-slate-200 dark:border-border border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] overflow-hidden">
                                         <h3 className="text-lg font-black text-foreground mb-8 flex items-center gap-2">
                                             <BarChart3 className="w-5 h-5 text-indigo-500" /> Detailed Resource Utilization
                                         </h3>
                                         
                                         {reportsLoading ? (
-                                            <div className="h-64 flex items-center justify-center"><div className="w-10 h-10 border-4 border-slate-200 dark:border-border border-t-blue-500 rounded-full animate-spin" /></div>
+                                            <div className="h-64 flex items-center justify-center"><div className="w-10 h-10 border-4 border-slate-200 dark:border-border border-t-blue-500 rounded-none animate-spin" /></div>
                                         ) : (
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-left border-collapse">
@@ -679,18 +679,18 @@ export default function AnalyticsDashboard() {
                                                             <tr key={res.id ?? res.name} className="group hover:bg-foreground/[0.02] transition-colors">
                                                                 <td className="py-4 font-black text-slate-800 dark:text-foreground/90 uppercase tracking-tight text-xs">{res.name}</td>
                                                                 <td className="py-4">
-                                                                    <span className="px-2.5 py-1 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-full text-[9px] font-black uppercase text-slate-600 dark:text-foreground/60 tracking-widest">{res.type}</span>
+                                                                    <span className="px-2.5 py-1 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-none text-[9px] font-black uppercase text-slate-600 dark:text-foreground/60 tracking-widest">{res.type}</span>
                                                                 </td>
                                                                 <td className="py-4 font-black text-blue-600 dark:text-blue-400 text-center text-sm">{res.totalBookings}</td>
                                                                 <td className="py-4 text-[10px] font-black text-slate-600 dark:text-foreground/60 text-center uppercase tracking-widest">{res.totalHours}h</td>
                                                                 <td className="py-4 text-right">
                                                                     <div className="flex items-center justify-end gap-3">
-                                                                        <div className="w-24 bg-slate-200 dark:bg-foreground/10 h-2 rounded-full overflow-hidden hidden sm:block">
+                                                                        <div className="w-24 bg-slate-200 dark:bg-foreground/10 h-2 rounded-none overflow-hidden hidden sm:block">
                                                                             <motion.div 
                                                                                 initial={{ width: 0 }}
                                                                                 animate={{ width: `${res.utilizationRate}%` }}
                                                                                 transition={{ duration: 1, ease: "easeOut" }}
-                                                                                className={`h-full rounded-full ${res.utilizationRate > 70 ? 'bg-red-500' : res.utilizationRate > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                                                                className={`h-full rounded-none ${res.utilizationRate > 70 ? 'bg-red-500' : res.utilizationRate > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                                                                             />
                                                                         </div>
                                                                         <span className="text-xs font-black text-foreground w-10">{res.utilizationRate}%</span>
@@ -722,7 +722,7 @@ function TimeRangePicker({ value, onChange, mini }: { value: string, onChange: (
     ];
 
     return (
-        <div className="flex items-center gap-1 bg-card p-1 rounded-xl border border-slate-200 dark:border-border shadow-sm">
+        <div className="flex items-center gap-1 bg-card p-1 rounded-none border border-slate-200 dark:border-border shadow-sm">
             {options.map((opt) => (
                 <button 
                     key={opt.value}
@@ -738,12 +738,12 @@ function TimeRangePicker({ value, onChange, mini }: { value: string, onChange: (
 
 function ChartCard({ title, icon, loading, children }: { title: string, icon: React.ReactNode, loading: boolean, children: React.ReactNode }) {
     return (
-        <div className="bg-card p-8 rounded-3xl border border-slate-200 dark:border-border shadow-xl min-h-[400px] flex flex-col relative overflow-hidden group">
+        <div className="bg-card p-8 rounded-none border border-slate-200 dark:border-border border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] min-h-[400px] flex flex-col relative overflow-hidden group">
             <h3 className="text-lg font-black text-foreground mb-6 flex items-center gap-2">
                 {icon} {title}
             </h3>
             {loading ? (
-                <div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-[3px] border-slate-200 dark:border-border border-t-blue-500 rounded-full animate-spin" /></div>
+                <div className="flex-1 flex items-center justify-center"><div className="w-8 h-8 border-[3px] border-slate-200 dark:border-border border-t-blue-500 rounded-none animate-spin" /></div>
             ) : (
                 <div className="flex-1 relative z-10">{children}</div>
             )}
@@ -753,10 +753,10 @@ function ChartCard({ title, icon, loading, children }: { title: string, icon: Re
 
 function StatCard({ title, value, icon, color }: { title: string, value: any, icon: React.ReactNode, color: string }) {
     return (
-        <div className="bg-card p-6 rounded-3xl border border-slate-200 dark:border-border shadow-xl relative overflow-hidden group hover:bg-foreground/[0.02] transition-colors duration-300">
-            <div className={`absolute -right-8 -top-8 w-32 h-32 ${color} opacity-[0.1] rounded-full blur-2xl group-hover:opacity-20 transition-opacity duration-500`} />
+        <div className="bg-card p-6 rounded-none border border-slate-200 dark:border-border border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] relative overflow-hidden group hover:bg-foreground/[0.02] transition-colors duration-300">
+            <div className={`absolute -right-8 -top-8 w-32 h-32 ${color} opacity-[0.1] rounded-none blur-2xl group-hover:opacity-20 transition-opacity duration-500`} />
             <div className="flex items-center gap-5 relative z-10">
-                <div className={`${color} p-4 rounded-2xl text-white shadow-lg ring-1 ring-white/10`}>
+                <div className={`${color} p-4 rounded-none text-white border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] ring-1 ring-white/10`}>
                     {icon}
                 </div>
                 <div>

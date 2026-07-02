@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, FormEvent, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { 
   AtSign, 
@@ -10,71 +10,112 @@ import {
   EyeOff, 
   ArrowRight, 
   AlertCircle, 
-  Sparkles, 
-  Shield, 
-  Zap, 
-  Users, 
   ChevronLeft,
-  LayoutDashboard,
-  Calendar,
-  Building2,
-  Wrench,
-  TrendingUp,
-  Settings,
-  Bell,
-  Search,
-  Activity,
-  ArrowUpRight,
-  ShieldCheck,
-  CheckCircle2,
-  Clock
+  User,
+  BadgeCheck,
+  ChevronDown,
+  Sparkles,
+  CheckCircle2
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { auth } from "@/lib/firebase";
-import { signOut as firebaseSignOut } from "firebase/auth";
-import { motion } from "framer-motion";
+import { 
+  signOut as firebaseSignOut,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut
+} from "firebase/auth";
+import { motion, AnimatePresence } from "framer-motion";
 import { BASE_URL as API_BASE } from "@/lib/apiClient";
 
-export default function LoginPage() {
-  const { signIn, user, loading: authLoading } = useAuth();
-  const router = useRouter();
+/* ─── Password Strength Helper ─── */
+function PasswordStrength({ password }: { password: string }) {
+  const strength = password.length === 0 ? 0
+    : password.length < 6 ? 1
+    : password.length < 8 ? 2
+    : /[A-Z]/.test(password) && /[0-9]/.test(password) ? 4
+    : 3;
 
+  const labels = ["", "Weak", "Fair", "Good", "Strong"];
+  const colors = ["", "bg-rose-500", "bg-amber-500", "bg-blue-500", "bg-emerald-500"];
+  const textColors = ["", "text-rose-500", "text-amber-500", "text-blue-500", "text-emerald-500"];
+
+  if (!password) return null;
+
+  return (
+    <div className="mt-1 space-y-1 ml-1">
+      <div className="flex gap-1">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className={`h-0.5 flex-1 rounded-none transition-all duration-300 ${i <= strength ? colors[strength] : "bg-border"}`}
+          />
+        ))}
+      </div>
+      <p className={`text-[9px] font-bold uppercase tracking-wider ${textColors[strength]}`}>{labels[strength]} Password</p>
+    </div>
+  );
+}
+
+/* ─── Auth Content ─── */
+function AuthContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialMode = searchParams.get("mode") === "register" ? false : true;
+  
+  // true = Login, false = Register
+  const [isLogin, setIsLogin] = useState(initialMode);
+  
+  const { signIn, user, loading: authLoading } = useAuth();
+
+  // Shared States
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [currentTime, setCurrentTime] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  // Register specific states
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState("");
+  const [department, setDepartment] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  
+  // UI States
+  const [isMobile, setIsMobile] = useState(false);
 
+  // Monitor screen size for animations
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
     };
-    window.addEventListener("mousemove", handleMouseMove);
-
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-    };
-    updateTime();
-    const clockInterval = setInterval(updateTime, 1000);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      clearInterval(clockInterval);
-    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Redirect immediately if already logged in
+  // Redirect if already logged in (only for login flow, not register)
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && isLogin) {
       router.push("/dashboard");
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, isLogin]);
 
-  const handleSubmit = async (e: FormEvent) => {
+  // Toggle modes and clear errors
+  const toggleMode = (loginMode: boolean) => {
+    setError(null);
+    setSuccess(null);
+    setIsLogin(loginMode);
+    
+    // update URL without reloading
+    const url = new URL(window.location.href);
+    if (loginMode) url.searchParams.delete('mode');
+    else url.searchParams.set('mode', 'register');
+    window.history.pushState({}, '', url.toString());
+  };
+
+  const handleLoginSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -99,17 +140,14 @@ export default function LoginPage() {
           if (verifyResponse.ok) {
             const verifyData = await verifyResponse.json();
             if (verifyData.valid === false) {
-              // Bcrypt hash mismatch — sign out and block login
               if (auth) await firebaseSignOut(auth);
               setError("Password verification failed. Please reset your password.");
               setLoading(false);
               return;
             }
           }
-          // If verify endpoint is unreachable, we allow login (graceful degradation)
         }
       } catch (verifyErr) {
-        // If bcrypt verification call fails, allow login but log a warning
         console.warn("Bcrypt verification endpoint unreachable. Proceeding with Firebase auth only.", verifyErr);
       }
 
@@ -133,297 +171,363 @@ export default function LoginPage() {
     }
   };
 
+  const validateRegisterForm = () => {
+    if (!fullName || !email || !role || !department || !password || !confirmPassword) {
+      setError("All fields are required.");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return false;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return false;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return false;
+    }
+    return true;
+  };
 
+  const handleRegisterSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    if (!validateRegisterForm()) return;
+
+    setLoading(true);
+    try {
+      if (!auth) throw new Error("Authentication service is not available.");
+      
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      if (fullName.trim()) {
+        await updateProfile(userCredential.user, { displayName: fullName.trim() });
+      }
+
+      const idToken = await userCredential.user.getIdToken();
+
+      const registerRes = await fetch(`${API_BASE}/users/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          name: fullName.trim(),
+          email: email.toLowerCase(),
+          role: role.toLowerCase(),
+          department,
+          password,
+        }),
+      });
+
+      if (!registerRes.ok) {
+        const errData = await registerRes.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to save registration.");
+      }
+
+      if (auth) {
+        await signOut(auth);
+      }
+
+      setSuccess("Account created! Pending admin approval.");
+      setTimeout(() => toggleMode(true), 2500);
+
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        const code = (err as { code?: string }).code ?? "";
+        if (code.includes("email-already-in-use")) {
+          setError("An account with this email already exists. Please sign in instead.");
+        } else if (code.includes("weak-password")) {
+          setError("Password is too weak. Use at least 8 characters.");
+        } else if (code.includes("invalid-email")) {
+          setError("The email address is not valid.");
+        } else {
+          setError("Registration failed. Please try again.");
+        }
+      } else {
+        setError("An unexpected error occurred.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputBase = "block w-full pl-9 pr-3 py-2 bg-card border-2 border-border focus:border-foreground rounded-none text-xs font-bold text-foreground placeholder-foreground/30 focus:outline-none transition-all disabled:opacity-40";
 
   return (
-    <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden relative flex items-center justify-center">
+    <div className="min-h-screen w-full bg-background text-foreground overflow-hidden relative flex items-center justify-center p-4 selection:bg-brand-primary selection:text-white">
       
-      {/* Premium Cursor Highlight */}
-      <motion.div
-        className="pointer-events-none fixed inset-0 z-40 transition-opacity duration-300 hidden lg:block"
-        animate={{
-          background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(124, 58, 237, 0.05), transparent 45%)`
-        }}
-      />
-
-      {/* BACKGROUND MOCKUP: Live simulated UniLink Dashboard (Visible only on Desktop for richness) */}
-      <div className="absolute inset-0 z-0 pointer-events-none select-none opacity-35 dark:opacity-20 hidden lg:flex">
+      {/* Responsive Neo-Brutalist Main Container */}
+      <div className="w-full max-w-md md:max-w-5xl h-[600px] md:h-[650px] bg-background border-2 border-foreground shadow-[8px_8px_0_0_rgba(0,0,0,1)] dark:shadow-[8px_8px_0_0_rgba(255,255,255,0.2)] relative flex overflow-hidden">
         
-        {/* Mock Sidebar */}
-        <div className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-6 flex flex-col justify-between">
-          <div className="space-y-8">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-brand-primary to-indigo-600 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-black text-lg tracking-tight text-slate-900 dark:text-white">UniLink</span>
-            </div>
-            
-            <div className="space-y-1">
-              {[
-                { name: "Dashboard", icon: <LayoutDashboard className="w-4 h-4" />, active: true },
-                { name: "Bookings", icon: <Calendar className="w-4 h-4" /> },
-                { name: "Resources", icon: <Building2 className="w-4 h-4" /> },
-                { name: "Maintenance", icon: <Wrench className="w-4 h-4" /> },
-                { name: "Analytics", icon: <TrendingUp className="w-4 h-4" /> },
-                { name: "Settings", icon: <Settings className="w-4 h-4" /> }
-              ].map((item, idx) => (
-                <div 
-                  key={idx} 
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
-                    item.active 
-                      ? "text-brand-primary bg-brand-primary/10" 
-                      : "text-slate-500 dark:text-slate-400"
-                  }`}
-                >
-                  {item.icon}
-                  <span>{item.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700" />
-            <div>
-              <p className="text-[10px] font-black uppercase text-slate-400">Gateway Standby</p>
-              <p className="text-xs font-bold text-slate-600 dark:text-slate-350">Authorization Req.</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Mock Main Dashboard View */}
-        <div className="flex-1 flex flex-col">
-          {/* Topbar */}
-          <div className="h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 px-8 flex items-center justify-between">
-            <div className="flex items-center gap-3 w-80 py-2 px-4 rounded-xl bg-slate-100 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50">
-              <Search className="w-4 h-4 text-slate-400" />
-              <span className="text-xs text-slate-450 dark:text-slate-400">Search spaces, lecturers, faculties...</span>
-            </div>
-            
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-brand-primary bg-brand-primary/10 px-3 py-1.5 rounded-lg border border-brand-primary/15">
-                <Clock className="w-3.5 h-3.5 animate-pulse" />
-                {currentTime || "19:20:00"}
-              </div>
-              <div className="relative p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-655 dark:text-slate-400">
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-primary" />
-              </div>
-              <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700" />
-            </div>
-          </div>
-
-          {/* Dashboard Main Grid Area */}
-          <div className="p-8 space-y-6 flex-1 overflow-hidden">
-            
-            {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-6">
-              {[
-                { label: "Active Room Occupancy", value: "89.2%", change: "+4.2% from peak", color: "text-brand-primary bg-brand-primary/5" },
-                { label: "Conflict Resolution Solver", value: "99.8%", change: "14 conflicts auto-resolved", color: "text-emerald-500 bg-emerald-500/5" },
-                { label: "Sensors Online Node status", value: "98.4%", change: "264 active devices online", color: "text-blue-500 bg-blue-500/5" }
-              ].map((stat, i) => (
-                <div key={i} className="p-5 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 flex flex-col justify-between h-28">
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.label}</span>
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${stat.color}`}>{stat.change}</span>
-                  </div>
-                  <span className="text-3xl font-black text-slate-900 dark:text-white">{stat.value}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Room Availability Matrix Grid */}
-            <div className="space-y-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Campus Facilities Status Monitor</span>
-              <div className="grid grid-cols-4 gap-6">
-                {[
-                  { name: "Computing Lab 01", cap: "36/40 seats", status: "Occupied", desc: "CS302 Database Lecture", border: "border-brand-primary/20", fill: "bg-brand-primary" },
-                  { name: "Lecture Theatre B", cap: "0/120 seats", status: "Vacant", desc: "Next: 2:00 PM Lecture", border: "border-emerald-500/20", fill: "bg-emerald-500" },
-                  { name: "Seminar Room 02", cap: "15/30 seats", status: "Occupied", desc: "AI Ethics Symposium", border: "border-brand-primary/20", fill: "bg-brand-primary" },
-                  { name: "IoT & Robotics Lab", cap: "0/20 seats", status: "Maintenance", desc: "AC Repair In Progress", border: "border-rose-500/20", fill: "bg-rose-500" }
-                ].map((room, i) => (
-                  <div key={i} className={`p-5 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 flex flex-col justify-between h-36 ${room.border}`}>
-                    <div className="flex justify-between items-start">
-                      <span className="font-black text-sm text-slate-900 dark:text-white truncate max-w-[130px]">{room.name}</span>
-                      <span className="text-[9px] font-bold text-slate-400">{room.cap}</span>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">{room.desc}</p>
-                      <div className="flex items-center gap-2 mt-3">
-                        <span className={`h-2 w-2 rounded-full ${room.fill}`} />
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-350">{room.status}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Simulated Live Analytics Grid */}
-            <div className="p-5 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 h-32 flex flex-col justify-between">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Weekly Resource Allocations Telemetry</span>
-                <span className="text-[10px] font-bold text-brand-primary">Automated scheduler: Online</span>
-              </div>
-              <div className="flex items-end gap-2 h-14 pt-2">
-                {[60, 45, 80, 55, 90, 70, 85, 95, 60, 75, 85, 92, 78, 88].map((val, idx) => (
-                  <div key={idx} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-lg h-full relative overflow-hidden">
-                    <div className="absolute bottom-0 w-full rounded-t-lg bg-brand-primary/45" style={{ height: `${val}%` }} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-
-      {/* Semi-transparent Glassmorphic Security Overlay */}
-      <div className="absolute inset-0 z-10 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-[6px]" />
-
-      {/* Floating Centered Authentication portal */}
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
-        className="w-full max-w-[460px] mx-4 bg-white/75 dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl p-8 sm:p-10 relative z-20 space-y-6"
-      >
-        
-        {/* Back to Home Control */}
-        <div className="absolute top-6 left-6 z-30">
+        {/* Back Home Button (Absolute) */}
+        <div className="absolute top-4 left-4 z-50">
           <Link 
             href="/" 
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100/90 dark:bg-foreground/5 hover:bg-slate-200/90 dark:hover:bg-foreground/10 border border-slate-200 dark:border-border text-slate-700 dark:text-foreground/75 hover:text-foreground text-[9px] font-black uppercase tracking-wider transition-all group"
+            className="inline-flex items-center gap-1 px-2.5 py-1 border-2 border-transparent hover:border-foreground bg-card text-foreground text-[8px] font-black uppercase tracking-wider transition-all group"
           >
-            <ChevronLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            <ChevronLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
             Home
           </Link>
         </div>
 
-        {/* Card Header & Branding */}
-        <div className="text-center pt-4">
-          <div className="inline-flex items-center gap-2 bg-brand-primary/5 dark:bg-brand-primary/10 border border-brand-primary/15 rounded-full px-3 py-1 mb-5">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-primary"></span>
-            </span>
-            <span className="text-brand-primary text-[9px] font-black uppercase tracking-widest">Secure Access Gateway</span>
-          </div>
-          
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
-            Welcome Back
-          </h1>
-          <p className="text-slate-500 dark:text-foreground/50 text-sm font-semibold">
-            Sign in to your institutional account
-          </p>
-        </div>
+        {/* ─── SLIDING FORM PANEL ─── */}
+        <motion.div 
+          initial={false}
+          animate={{ x: isMobile ? "0%" : (isLogin ? "100%" : "0%") }}
+          transition={{ type: "spring", stiffness: 400, damping: 40 }}
+          className="absolute top-0 left-0 w-full md:w-1/2 h-full bg-background flex flex-col items-center justify-center p-6 md:p-12 z-20"
+        >
+          <div className="w-full max-w-[360px]">
+            <AnimatePresence mode="wait">
+              {isLogin ? (
+                <motion.div 
+                  key="login-form"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <div className="mb-6">
+                    <h2 className="text-2xl md:text-3xl font-heading font-black text-foreground uppercase tracking-tighter mb-1">Welcome Back</h2>
+                    <p className="text-xs font-bold text-foreground/60 uppercase tracking-wider">Sign in to your account</p>
+                  </div>
 
-        {/* Credentials Form */}
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          
-          {/* Email Address */}
-          <div>
-            <label htmlFor="email" className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-foreground/45 mb-1.5 ml-1">
-              Institutional Email
-            </label>
-            <div className={`relative transition-all duration-255 ${focusedField === "email" ? "scale-[1.01]" : ""}`}>
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <AtSign className={`h-4 w-4 transition-colors ${focusedField === "email" ? "text-brand-primary" : "text-slate-400 dark:text-foreground/30"}`} />
-              </div>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onFocus={() => setFocusedField("email")}
-                onBlur={() => setFocusedField(null)}
-                placeholder="name@university.ac.lk"
-                disabled={loading}
-                className="block w-full pl-11 pr-4 py-3 bg-white/50 dark:bg-slate-950/20 border border-slate-200 dark:border-border/85 rounded-2xl text-sm font-bold text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary/50 transition-all disabled:opacity-40"
-              />
-            </div>
-          </div>
+                  <form onSubmit={handleLoginSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-[9px] font-black uppercase tracking-widest text-foreground/60 mb-1 ml-1">Institutional Email</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <AtSign className="h-3.5 w-3.5 text-foreground/40" />
+                        </div>
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="name@university.ac.lk"
+                          disabled={loading}
+                          className={inputBase}
+                        />
+                      </div>
+                    </div>
 
-          {/* Password Input */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5 ml-1">
-              <label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-foreground/45">
-                Password
-              </label>
-              <Link 
-                href="/forgot-password" 
-                className="text-[10px] font-bold text-brand-primary hover:text-brand-secondary transition-colors"
+                    <div>
+                      <div className="flex items-center justify-between mb-1 ml-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-foreground/60">Password</label>
+                        <Link href="/forgot-password" className="text-[9px] font-black text-brand-primary uppercase hover:underline underline-offset-2">Forgot?</Link>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Lock className="h-3.5 w-3.5 text-foreground/40" />
+                        </div>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          disabled={loading}
+                          className={inputBase}
+                        />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-foreground/40 hover:text-brand-primary">
+                          {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {error && (
+                      <div className="flex items-center gap-2 bg-brand-primary border-2 border-brand-primary p-2.5 text-white">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <p className="text-[9px] font-black uppercase tracking-wider leading-tight">{error}</p>
+                      </div>
+                    )}
+
+                    <button type="submit" disabled={loading} className="w-full bg-foreground text-background font-black uppercase tracking-widest py-3 border-2 border-transparent hover:bg-brand-primary hover:text-white transition-colors duration-0 flex items-center justify-center gap-1.5 mt-2 disabled:opacity-50 text-xs">
+                      {loading ? <span className="animate-pulse">Authenticating...</span> : <>Sign In <ArrowRight className="w-3.5 h-3.5" /></>}
+                    </button>
+                  </form>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="register-form"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <div className="mb-4">
+                    <h2 className="text-2xl md:text-3xl font-heading font-black text-foreground uppercase tracking-tighter mb-1">Join UniLink</h2>
+                    <p className="text-xs font-bold text-foreground/60 uppercase tracking-wider">Register for access</p>
+                  </div>
+
+                  <form onSubmit={handleRegisterSubmit} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-foreground/60 mb-1 ml-1">Full Name</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                            <User className="h-3.5 w-3.5 text-foreground/40" />
+                          </div>
+                          <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" disabled={loading} className={`${inputBase} pl-8`} />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-foreground/60 mb-1 ml-1">Email</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                            <AtSign className="h-3.5 w-3.5 text-foreground/40" />
+                          </div>
+                          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@univ" disabled={loading} className={`${inputBase} pl-8`} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-foreground/60 mb-1 ml-1">Role</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                            <BadgeCheck className="h-3.5 w-3.5 text-foreground/40" />
+                          </div>
+                          <select required value={role} onChange={(e) => setRole(e.target.value)} disabled={loading} className={`${inputBase} pl-8 pr-6 appearance-none`}>
+                            <option value="" disabled>Role</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Lecturer">Lecturer</option>
+                            <option value="Student">Student</option>
+                            <option value="Maintenance">Maintenance</option>
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/40 pointer-events-none" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-foreground/60 mb-1 ml-1">Faculty</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                            <Sparkles className="h-3.5 w-3.5 text-foreground/40" />
+                          </div>
+                          <select required value={department} onChange={(e) => setDepartment(e.target.value)} disabled={loading} className={`${inputBase} pl-8 pr-6 appearance-none`}>
+                            <option value="" disabled>Faculty</option>
+                            <option value="Faculty of Computing">Computing</option>
+                            <option value="Faculty of Applied Sciences">Applied Sci</option>
+                            <option value="Faculty of Management">Management</option>
+                            <option value="Faculty of Engineering">Engineering</option>
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/40 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-foreground/60 mb-1 ml-1">Password</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                            <Lock className="h-3.5 w-3.5 text-foreground/40" />
+                          </div>
+                          <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" disabled={loading} className={`${inputBase} pl-8 pr-8`} />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-foreground/40 hover:text-brand-primary">
+                            {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
+                        <PasswordStrength password={password} />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-foreground/60 mb-1 ml-1">Confirm</label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                            <Lock className="h-3.5 w-3.5 text-foreground/40" />
+                          </div>
+                          <input type={showPassword ? "text" : "password"} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" disabled={loading} className={`${inputBase} pl-8`} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {error && (
+                      <div className="flex items-center gap-2 bg-brand-primary border-2 border-brand-primary p-2.5 text-white">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <p className="text-[9px] font-black uppercase tracking-wider leading-tight">{error}</p>
+                      </div>
+                    )}
+                    {success && (
+                      <div className="flex items-center gap-2 bg-emerald-500 border-2 border-emerald-500 p-2.5 text-white">
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <p className="text-[9px] font-black uppercase tracking-wider leading-tight">{success}</p>
+                      </div>
+                    )}
+
+                    <button type="submit" disabled={loading} className="w-full bg-foreground text-background font-black uppercase tracking-widest py-3 border-2 border-transparent hover:bg-brand-primary hover:text-white transition-colors duration-0 flex items-center justify-center gap-1.5 mt-2 disabled:opacity-50 text-xs">
+                      {loading ? <span className="animate-pulse">Processing...</span> : <>Create Account <ArrowRight className="w-3.5 h-3.5" /></>}
+                    </button>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Mobile-only toggle switcher */}
+            <div className="mt-4 text-center md:hidden">
+              <button 
+                onClick={() => toggleMode(!isLogin)}
+                className="text-[10px] font-black uppercase tracking-wider text-brand-primary hover:underline"
               >
-                Forgot Password?
-              </Link>
-            </div>
-            <div className={`relative transition-all duration-255 ${focusedField === "password" ? "scale-[1.01]" : ""}`}>
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Lock className={`h-4 w-4 transition-colors ${focusedField === "password" ? "text-brand-primary" : "text-slate-400 dark:text-foreground/30"}`} />
-              </div>
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onFocus={() => setFocusedField("password")}
-                onBlur={() => setFocusedField(null)}
-                placeholder="••••••••"
-                disabled={loading}
-                className="block w-full pl-11 pr-12 py-3 bg-white/50 dark:bg-slate-950/20 border border-slate-200 dark:border-border/85 rounded-2xl text-sm font-bold text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary/50 transition-all disabled:opacity-40"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 dark:text-foreground/40 hover:text-brand-primary transition-colors"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {isLogin ? "Need an Account? Create One" : "Have an Account? Sign In"}
               </button>
             </div>
           </div>
+        </motion.div>
 
-          {/* Form Error Alert */}
-          {error && (
-            <div className="flex items-center gap-3 bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
-              <AlertCircle className="w-4.5 h-4.5 text-rose-500 shrink-0" />
-              <p className="text-xs font-bold text-rose-500 leading-tight">{error}</p>
+        {/* ─── SLIDING BRANDING PANEL (HIDDEN ON MOBILE) ─── */}
+        <motion.div 
+          initial={false}
+          animate={{ x: isMobile ? "100%" : (isLogin ? "0%" : "100%") }}
+          transition={{ type: "spring", stiffness: 400, damping: 40 }}
+          className="absolute top-0 left-0 w-full md:w-1/2 h-full bg-foreground flex flex-col items-center justify-center text-background z-30 hidden md:flex"
+        >
+          {/* Subtle Grid Pattern Overlay */}
+          <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] dark:opacity-10" 
+             style={{ backgroundImage: "linear-gradient(var(--background) 1px, transparent 1px), linear-gradient(90deg, var(--background) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+
+          <div className="relative z-10 flex flex-col items-center text-center px-12">
+            <div className="w-20 h-20 mb-6 bg-background rounded-none flex items-center justify-center shadow-[6px_6px_0_0_rgba(255,87,34,1)]">
+              <img src="/urms-logo.png" alt="URMS Logo" className="w-12 h-12 grayscale" />
             </div>
-          )}
+            
+            <h1 className="text-5xl font-heading font-black uppercase tracking-tighter mb-3 text-background">
+              Uni<span className="text-brand-primary">Link</span>
+            </h1>
+            <p className="text-background/80 text-xs font-bold uppercase tracking-wider max-w-xs mb-10 leading-relaxed">
+              The Unified Resource Management Platform for University Faculties.
+            </p>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full relative overflow-hidden bg-gradient-to-r from-brand-primary to-indigo-600 hover:from-brand-secondary hover:to-indigo-500 text-white font-black py-3.5 rounded-2xl transition-all duration-300 shadow-xl shadow-brand-primary/20 hover:shadow-brand-primary/30 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group mt-2"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
-            {loading ? (
-              <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                Sign In
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </>
-            )}
-          </button>
-        </form>
+            {/* Toggle Button */}
+            <div className="flex flex-col items-center gap-3">
+              <p className="text-[9px] font-black uppercase tracking-widest text-background/60">
+                {isLogin ? "New to UniLink?" : "Already Registered?"}
+              </p>
+              <button 
+                onClick={() => toggleMode(!isLogin)}
+                className="px-6 py-2.5 border-2 border-background text-background font-black uppercase tracking-widest hover:bg-background hover:text-foreground transition-colors duration-0 text-xs"
+              >
+                {isLogin ? "Create an Account" : "Sign in to Portal"}
+              </button>
+            </div>
+          </div>
+        </motion.div>
 
-        {/* Redirect to Register */}
-        <p className="text-center text-xs font-semibold text-slate-500 dark:text-foreground/50">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="font-black text-brand-primary hover:text-brand-secondary transition-colors">
-            Create Account
-          </Link>
-        </p>
-
-
-
-      </motion.div>
+      </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="w-8 h-8 border-4 border-foreground border-t-brand-primary rounded-none animate-spin" /></div>}>
+      <AuthContent />
+    </Suspense>
   );
 }

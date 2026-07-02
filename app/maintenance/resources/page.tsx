@@ -142,17 +142,17 @@ export default function MaintenanceResourcesPage() {
             <div className="max-w-7xl mx-auto space-y-8">
                 
                 {/* Header */}
-                <div className="relative overflow-hidden rounded-3xl bg-card border border-slate-200 dark:border-border p-8 shadow-2xl">
+                <div className="relative overflow-hidden rounded-none bg-card border border-slate-200 dark:border-border p-8 border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]">
                     <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                         <Wrench className="w-64 h-64 rotate-45 text-amber-500" />
                     </div>
                     <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 rounded-full text-sm font-semibold text-amber-600 dark:text-amber-400 mb-4 border border-amber-500/20">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 rounded-none text-sm font-semibold text-amber-600 dark:text-amber-400 mb-4 border border-amber-500/20">
                                 <ShieldAlert className="w-4 h-4" /> Resource Management
                             </div>
                             <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2">
-                                Resource <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">Condition</span> Updates
+                                Resource <span className="text-transparent bg-clip-text bg-card  ">Condition</span> Updates
                             </h1>
                             <p className="text-slate-600 dark:text-foreground/50 text-lg font-medium max-w-xl">
                                 Instantly modify availability status, mark units under repair, and record decommissioned equipment.
@@ -160,7 +160,7 @@ export default function MaintenanceResourcesPage() {
                         </div>
                         <button
                             onClick={fetchResources}
-                            className="bg-card hover:bg-slate-100 dark:hover:bg-foreground/5 px-6 py-3 rounded-xl text-foreground font-bold border border-slate-200 dark:border-border flex items-center justify-center gap-2 self-start md:self-auto transition-colors"
+                            className="bg-card hover:bg-slate-100 dark:hover:bg-foreground/5 px-6 py-3 rounded-none text-foreground font-bold border border-slate-200 dark:border-border flex items-center justify-center gap-2 self-start md:self-auto transition-colors"
                         >
                             <RefreshCcw className="w-5 h-5 text-amber-500" /> Refresh List
                         </button>
@@ -175,12 +175,12 @@ export default function MaintenanceResourcesPage() {
                         { label: "Under Maintenance", value: stats.inMaintenance, icon: Wrench, color: "text-amber-500 bg-amber-500/10 border-amber-500/20" },
                         { label: "Inactive / Retired", value: stats.inactive, icon: XCircle, color: "text-red-500 bg-red-500/10 border-red-500/20" }
                     ].map((card, idx) => (
-                        <div key={idx} className={`bg-card rounded-3xl p-6 shadow-xl border-2 flex items-center justify-between ${card.color}`}>
+                        <div key={idx} className={`bg-card rounded-none p-6 border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border-2 flex items-center justify-between ${card.color}`}>
                             <div>
                                 <p className="text-[10px] font-black text-slate-500 dark:text-foreground/40 uppercase tracking-widest mb-1">{card.label}</p>
                                 <p className="text-4xl font-black text-foreground">{loading ? "—" : card.value}</p>
                             </div>
-                            <div className="p-3.5 rounded-2xl bg-white/10 dark:bg-black/10">
+                            <div className="p-3.5 rounded-none bg-white/10 dark:bg-black/10">
                                 <card.icon className="w-6 h-6" />
                             </div>
                         </div>
@@ -189,13 +189,13 @@ export default function MaintenanceResourcesPage() {
 
                 {/* Error Banner */}
                 {error && (
-                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-600 dark:text-red-400 text-sm font-bold flex items-center gap-2">
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-none text-red-600 dark:text-red-400 text-sm font-bold flex items-center gap-2">
                         <ShieldAlert className="w-4 h-4 flex-shrink-0" /> {error}
                     </div>
                 )}
 
                 {/* Table Container */}
-                <div className="bg-card rounded-3xl shadow-xl border border-slate-200 dark:border-border overflow-hidden">
+                <div className="bg-card rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-200 dark:border-border overflow-hidden">
                     {/* Filters Header */}
                     <div className="p-6 md:p-8 border-b border-slate-200 dark:border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <h2 className="text-2xl font-black text-foreground">Operational Catalog</h2>
@@ -207,14 +207,14 @@ export default function MaintenanceResourcesPage() {
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
                                     placeholder="Search resources..."
-                                    className="w-full md:w-56 pl-9 pr-4 py-2.5 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                                    className="w-full md:w-56 pl-9 pr-4 py-2.5 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-none text-sm font-bold text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                                 />
                             </div>
                             {/* Type Filter */}
                             <select
                                 value={typeFilter}
                                 onChange={e => setTypeFilter(e.target.value)}
-                                className="px-4 py-2.5 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                                className="px-4 py-2.5 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-none text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                             >
                                 <option value="All">All Types</option>
                                 <option value="Lecture Halls">Lecture Halls</option>
@@ -227,7 +227,7 @@ export default function MaintenanceResourcesPage() {
                             <select
                                 value={statusFilter}
                                 onChange={e => setStatusFilter(e.target.value)}
-                                className="px-4 py-2.5 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                                className="px-4 py-2.5 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-none text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                             >
                                 <option value="All">All Statuses</option>
                                 <option value="Available">Available</option>
@@ -261,7 +261,7 @@ export default function MaintenanceResourcesPage() {
                                     <tr>
                                         <td colSpan={5} className="px-6 py-16 text-center">
                                             <div className="inline-flex flex-col items-center gap-3">
-                                                <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-foreground/5 flex items-center justify-center"><Database className="w-7 h-7 text-slate-400" /></div>
+                                                <div className="w-14 h-14 rounded-none bg-slate-100 dark:bg-foreground/5 flex items-center justify-center"><Database className="w-7 h-7 text-slate-400" /></div>
                                                 <p className="font-black text-foreground">No resources found</p>
                                                 <p className="text-sm text-slate-550 dark:text-foreground/40 font-bold">Try adjusting your filters or search query.</p>
                                             </div>
@@ -299,14 +299,14 @@ export default function MaintenanceResourcesPage() {
                                                     {resource.location}
                                                 </td>
                                                 <td className="px-6 py-5">
-                                                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${getCategoryColor(resource.type)}`}>
+                                                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-none border ${getCategoryColor(resource.type)}`}>
                                                         {getCategoryIcon(resource.type)}
                                                         {resource.type}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-5">
-                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${statusBadgeClass}`}>
-                                                        <span className={`w-1.5 h-1.5 rounded-full ${statusDotClass}`} />
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-bold border ${statusBadgeClass}`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-none ${statusDotClass}`} />
                                                         {currentStatus === "Maintenance" ? "Under Maintenance" : currentStatus === "Inactive" ? "Decommissioned" : currentStatus}
                                                     </span>
                                                 </td>

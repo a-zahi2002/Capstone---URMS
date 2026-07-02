@@ -42,7 +42,7 @@ export default function ProtectedRoute({
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-brand-primary border-t-transparent rounded-none animate-spin" />
                     <span className="text-slate-500 dark:text-foreground/40 text-sm font-medium animate-pulse">
                         Loading…
                     </span>
@@ -64,10 +64,10 @@ export default function ProtectedRoute({
                 <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.03),transparent_70%)]" />
                 
                 {/* Card Container */}
-                <div className="relative z-10 w-full max-w-md bg-white/75 dark:bg-slate-900/70 border border-slate-200/60 dark:border-slate-800/80 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl p-8 sm:p-10 text-center space-y-6">
+                <div className="relative z-10 w-full max-w-md bg-white/75 dark:bg-slate-900/70 border border-slate-200/60 dark:border-slate-800/80  rounded-[2.5rem] border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] p-8 sm:p-10 text-center space-y-6">
                     {/* Glowing status icon */}
                     <div className="relative">
-                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto border shadow-lg ${
+                        <div className={`w-16 h-16 rounded-none flex items-center justify-center mx-auto border border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] ${
                             isPending 
                                 ? "bg-amber-500/10 border-amber-500/20 text-amber-500 shadow-amber-500/5 animate-pulse" 
                                 : "bg-rose-500/10 border-rose-500/20 text-rose-500 shadow-rose-500/5"
@@ -95,7 +95,7 @@ export default function ProtectedRoute({
 
                     {/* User Metadata Overview */}
                     {profile && (
-                        <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-800/60 rounded-2xl p-4 text-left text-xs font-semibold space-y-2.5 text-slate-600 dark:text-slate-350">
+                        <div className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200/50 dark:border-slate-800/60 rounded-none p-4 text-left text-xs font-semibold space-y-2.5 text-slate-600 dark:text-slate-350">
                             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-900 pb-1.5">
                                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Name</span>
                                 <span className="font-bold text-slate-800 dark:text-foreground">{profile.name}</span>
@@ -120,7 +120,7 @@ export default function ProtectedRoute({
                     {/* Actions */}
                     <button
                         onClick={() => signOut()}
-                        className="w-full flex items-center justify-center gap-2 py-3.5 bg-slate-100/80 hover:bg-slate-200/80 dark:bg-foreground/5 dark:hover:bg-foreground/10 border border-slate-200 dark:border-border text-slate-700 dark:text-foreground/80 font-bold text-sm rounded-2xl transition-all active:scale-[0.98] group"
+                        className="w-full flex items-center justify-center gap-2 py-3.5 bg-slate-100/80 hover:bg-slate-200/80 dark:bg-foreground/5 dark:hover:bg-foreground/10 border border-slate-200 dark:border-border text-slate-700 dark:text-foreground/80 font-bold text-sm rounded-none transition-all active:scale-[0.98] group"
                     >
                         <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
                         Sign Out & Go Home
