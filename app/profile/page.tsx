@@ -37,13 +37,13 @@ const roleMeta: Record<string, {
     dot: string;
     icon: string;
 }> = {
-    admin:       { label: "Administrator", gradient: " ",  badge: "bg-violet-500/10 border-violet-500/20",  badgeText: "text-violet-500",  dot: "bg-violet-500", icon: "👑" },
-    lecturer:    { label: "Lecturer",      gradient: " ",   badge: "bg-emerald-500/10 border-emerald-500/20",badgeText: "text-emerald-500", dot: "bg-emerald-500",icon: "🎓" },
-    student:     { label: "Student",       gradient: " ",    badge: "bg-blue-500/10 border-blue-500/20",      badgeText: "text-blue-500",    dot: "bg-blue-500",   icon: "📚" },
-    maintenance: { label: "Maintenance",   gradient: " ",   badge: "bg-amber-500/10 border-amber-500/20",    badgeText: "text-amber-500",   dot: "bg-amber-500",  icon: "🔧" },
+    admin:       { label: "Administrator", gradient: "bg-gradient-to-br from-violet-600 to-indigo-600",  badge: "bg-violet-500/10 border-violet-500/20",  badgeText: "text-violet-500",  dot: "bg-violet-500", icon: "👑" },
+    lecturer:    { label: "Lecturer",      gradient: "bg-gradient-to-br from-emerald-500 to-teal-600",   badge: "bg-emerald-500/10 border-emerald-500/20",badgeText: "text-emerald-500", dot: "bg-emerald-500",icon: "🎓" },
+    student:     { label: "Student",       gradient: "bg-gradient-to-br from-blue-500 to-indigo-600",    badge: "bg-blue-500/10 border-blue-500/20",      badgeText: "text-blue-500",    dot: "bg-blue-500",   icon: "📚" },
+    maintenance: { label: "Maintenance",   gradient: "bg-gradient-to-br from-amber-500 to-orange-600",   badge: "bg-amber-500/10 border-amber-500/20",    badgeText: "text-amber-500",   dot: "bg-amber-500",  icon: "🔧" },
 };
 
-const defaultMeta = { label: "User", gradient: " ", badge: "bg-slate-500/10 border-slate-200", badgeText: "text-slate-700", dot: "bg-slate-500", icon: "👤" };
+const defaultMeta = { label: "User", gradient: "bg-gradient-to-br from-slate-500 to-slate-700", badge: "bg-slate-500/10 border-slate-200", badgeText: "text-slate-700", dot: "bg-slate-500", icon: "👤" };
 
 /* ── Custom Toggle Switch Component ── */
 interface SwitchProps {
@@ -301,16 +301,16 @@ export default function ProfilePage() {
 
                             {/* White body */}
                             <div className="bg-card px-8 pb-8">
-                                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-14 mb-7">
-                                    <div className="flex items-end gap-5">
-                                        <div className={`relative p-1 rounded-none bg-card ${meta.gradient} border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]`}>
+                                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-7">
+                                    <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-5 text-center sm:text-left">
+                                        <div className={`relative -mt-14 p-1 rounded-none bg-card ${meta.gradient} border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shrink-0 z-10`}>
                                             <div className="w-24 h-24 rounded-[20px] bg-card flex items-center justify-center text-3xl font-black text-slate-800 dark:text-white">
                                                 {initials}
                                             </div>
                                             <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-none bg-emerald-400 border-2 border-white dark:border-slate-900 shadow online-dot" />
                                         </div>
 
-                                        <div className="pb-2">
+                                        <div className="pb-2 flex flex-col items-center sm:items-start">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">{currentName}</h1>
                                                 <span className="text-lg">{meta.icon}</span>
@@ -326,7 +326,7 @@ export default function ProfilePage() {
                                     {activeTab === "profile" && !isEditing && (
                                         <button
                                             onClick={() => setIsEditing(true)}
-                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-none text-sm font-bold text-white bg-card ${meta.gradient} shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200`}
+                                            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-none text-sm font-bold text-white bg-card ${meta.gradient} border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all duration-200 w-full sm:w-auto`}
                                         >
                                             <Edit2 className="w-4 h-4" />
                                             Edit Profile
@@ -334,7 +334,7 @@ export default function ProfilePage() {
                                     )}
                                 </div>
 
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                     {infoItems.map((item, i) => (
                                         <div key={i} className={`card-hover flex items-center gap-3 p-4 rounded-none border ${item.border} ${item.bg}`}>
                                             <div className={`shrink-0 w-9 h-9 rounded-none bg-card border border-slate-200/40 dark:border-white/5 flex items-center justify-center shadow-sm ${item.color}`}>
@@ -477,11 +477,11 @@ export default function ProfilePage() {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex gap-3 pt-2">
+                                                <div className="flex flex-col sm:flex-row gap-3 pt-2">
                                                     <button
                                                         type="submit"
                                                         disabled={saveLoading}
-                                                        className={`relative overflow-hidden inline-flex items-center gap-2 px-6 py-3 rounded-none text-sm font-bold text-white bg-card ${meta.gradient} border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all`}
+                                                        className={`relative overflow-hidden inline-flex items-center justify-center gap-2 px-6 py-3 rounded-none text-sm font-bold text-white bg-card ${meta.gradient} border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto`}
                                                     >
                                                         {saveLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                                         Save Changes
@@ -490,7 +490,7 @@ export default function ProfilePage() {
                                                         type="button"
                                                         onClick={() => { setIsEditing(false); setDisplayName(currentName); setError(null); }}
                                                         disabled={saveLoading}
-                                                        className="inline-flex items-center gap-2 px-6 py-3 rounded-none text-sm font-bold text-slate-650 border border-slate-200 dark:border-white/10 bg-card hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+                                                        className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-none text-sm font-bold text-slate-650 border border-slate-200 dark:border-white/10 bg-card hover:bg-slate-50 dark:hover:bg-white/5 transition-all w-full sm:w-auto"
                                                     >
                                                         <X className="w-4 h-4" />
                                                         Cancel

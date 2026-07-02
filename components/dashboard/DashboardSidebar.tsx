@@ -159,7 +159,7 @@ export default function DashboardSidebar({
             </div>
 
             {/* ── Navigation ── */}
-            <nav className={`flex-1 overflow-y-auto no-scrollbar py-4 space-y-1 ${collapsed && !isMobile ? "px-0" : "px-3"}`}>
+            <nav className={`flex-1 py-4 space-y-1 no-scrollbar ${collapsed && !isMobile ? "overflow-visible px-0" : "overflow-y-auto px-3"}`}>
                 {(!collapsed || isMobile) && (
                     <p className="text-[10px] font-black text-slate-400 dark:text-foreground/30 uppercase tracking-[0.15em] px-3 mb-3">
                         Navigation
