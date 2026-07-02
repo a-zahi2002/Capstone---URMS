@@ -119,22 +119,37 @@ export default function DashboardSidebar({
     const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => (
         <div className="flex flex-col h-full">
             {/* ── Header / Logo ── */}
-            <div className={`flex items-center gap-3 px-5 h-16 border-b border-slate-200/80 dark:border-white/[0.06] shrink-0 ${collapsed && !isMobile ? "justify-center px-3" : ""}`}>
+            <div className={`flex items-center gap-3 px-5 h-16 border-b border-slate-200/80 dark:border-white/[0.06] shrink-0 ${collapsed && !isMobile ? "justify-center px-3" : "justify-between"}`}>
                 {(!collapsed || isMobile) && (
-                    <Link href="/" className="flex items-center gap-2.5 group min-w-0">
-                        <div className={`w-8 h-8 rounded-none bg-card ${meta.gradient} flex items-center justify-center border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shrink-0`}>
-                            <LayoutDashboard className="w-4 h-4 text-white" />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-sm font-black text-foreground truncate leading-tight">UniLink</p>
-                            <p className={`text-[10px] font-bold ${meta.color} uppercase tracking-widest truncate`}>{meta.label}</p>
-                        </div>
-                    </Link>
+                    <>
+                        <Link href="/" className="flex items-center gap-2.5 group min-w-0">
+                            <div className={`w-8 h-8 rounded-none bg-card ${meta.gradient} flex items-center justify-center border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shrink-0`}>
+                                <LayoutDashboard className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-sm font-black text-foreground truncate leading-tight">UniLink</p>
+                                <p className={`text-[10px] font-bold ${meta.color} uppercase tracking-widest truncate`}>{meta.label}</p>
+                            </div>
+                        </Link>
+                        {!isMobile && (
+                            <button
+                                onClick={onToggle}
+                                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 dark:text-foreground/30 hover:text-foreground transition-all shrink-0"
+                                title="Collapse Sidebar"
+                            >
+                                <PanelLeftClose className="w-4.5 h-4.5" />
+                            </button>
+                        )}
+                    </>
                 )}
                 {collapsed && !isMobile && (
-                    <div className={`w-9 h-9 rounded-none bg-card ${meta.gradient} flex items-center justify-center border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]`}>
-                        <LayoutDashboard className="w-4.5 h-4.5 text-white" />
-                    </div>
+                    <button
+                        onClick={onToggle}
+                        className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 dark:text-foreground/30 hover:text-foreground transition-all shrink-0"
+                        title="Expand Sidebar"
+                    >
+                        <PanelLeftOpen className="w-5 h-5" />
+                    </button>
                 )}
                 {isMobile && (
                     <button onClick={onMobileClose} className="ml-auto p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
@@ -238,19 +253,6 @@ export default function DashboardSidebar({
                     {(!collapsed || isMobile) && <span className="text-[13px]">Sign Out</span>}
                 </button>
             </div>
-
-            {/* ── Collapse toggle (desktop only) ── */}
-            {!isMobile && (
-                <div className="shrink-0 border-t border-slate-200/80 dark:border-white/[0.06] p-3">
-                    <button
-                        onClick={onToggle}
-                        className="w-full flex items-center justify-center gap-2 rounded-none px-3 py-2 text-slate-400 dark:text-foreground/30 hover:text-foreground hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-all"
-                    >
-                        {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-                        {!collapsed && <span className="text-xs font-bold">Collapse</span>}
-                    </button>
-                </div>
-            )}
         </div>
     );
 
