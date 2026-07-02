@@ -243,7 +243,7 @@ function ResourcesPageContent() {
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => setIsBulkImportOpen(true)}
-                                    className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-all duration-200"
+                                    className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-5 py-2.5 rounded-none shadow-sm transition-all duration-200"
                                 >
                                     <UploadCloud className="w-4 h-4" />
                                     Bulk Import
@@ -251,7 +251,7 @@ function ResourcesPageContent() {
                                 <button
                                     id="add-resource-btn"
                                     onClick={() => setIsAddModalOpen(true)}
-                                    className="inline-flex items-center gap-2 bg-[#1E3A8A] dark:bg-blue-600 hover:bg-[#1e40af] dark:hover:bg-blue-500 active:scale-95 text-white font-semibold px-5 py-2.5 rounded-xl shadow-md shadow-blue-900/20 dark:shadow-blue-500/10 transition-all duration-200"
+                                    className="inline-flex items-center gap-2 bg-[#1E3A8A] dark:bg-blue-600 hover:bg-[#1e40af] dark:hover:bg-blue-500 active:scale-95 text-white font-semibold px-5 py-2.5 rounded-none shadow-md shadow-blue-900/20 dark:shadow-blue-500/10 transition-all duration-200"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Add Resource
@@ -263,8 +263,8 @@ function ResourcesPageContent() {
                     {/* ── Stats Cards ── */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
                         {/* Total */}
-                        <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] p-6 flex items-center gap-5">
-                            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <div className="bg-white dark:bg-slate-900/60 rounded-none shadow-sm border border-slate-100 dark:border-white/[0.06] p-6 flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-none bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
                                 <Database className="w-6 h-6 text-[#1E3A8A] dark:text-blue-400" />
                             </div>
                             <div>
@@ -276,8 +276,8 @@ function ResourcesPageContent() {
                         </div>
 
                         {/* Available */}
-                        <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] p-6 flex items-center gap-5">
-                            <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
+                        <div className="bg-white dark:bg-slate-900/60 rounded-none shadow-sm border border-slate-100 dark:border-white/[0.06] p-6 flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-none bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0">
                                 <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-450" />
                             </div>
                             <div>
@@ -289,8 +289,8 @@ function ResourcesPageContent() {
                         </div>
 
                         {/* Booked */}
-                        <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] p-6 flex items-center gap-5">
-                            <div className="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center shrink-0">
+                        <div className="bg-white dark:bg-slate-900/60 rounded-none shadow-sm border border-slate-100 dark:border-white/[0.06] p-6 flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-none bg-red-50 dark:bg-red-500/10 flex items-center justify-center shrink-0">
                                 <XCircle className="w-6 h-6 text-red-500 dark:text-red-400" />
                             </div>
                             <div>
@@ -303,7 +303,7 @@ function ResourcesPageContent() {
                     </div>
 
                     {/* ── Search & Filters ── */}
-                    <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] p-4 mb-4 flex flex-col sm:flex-row gap-3">
+                    <div className="bg-white dark:bg-slate-900/60 rounded-none shadow-sm border border-slate-100 dark:border-white/[0.06] p-4 mb-4 flex flex-col sm:flex-row gap-3">
                         <div className="relative flex-1">
                             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <input
@@ -314,7 +314,7 @@ function ResourcesPageContent() {
                                     updateUrlParams(1, pageSize);
                                 }}
                                 placeholder="Search resources…"
-                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-none text-sm font-medium text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             />
                         </div>
                         <select
@@ -323,7 +323,7 @@ function ResourcesPageContent() {
                                 setSelectedCategory(e.target.value);
                                 updateUrlParams(1, pageSize);
                             }}
-                            className="px-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-700 dark:text-foreground/75 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                            className="px-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-none text-sm font-medium text-slate-700 dark:text-foreground/75 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                         >
                             <option value="All">All Categories</option>
                             <option value="Lecture Halls">Lecture Halls</option>
@@ -338,7 +338,7 @@ function ResourcesPageContent() {
                                 setSelectedStatus(e.target.value);
                                 updateUrlParams(1, pageSize);
                             }}
-                            className="px-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-slate-700 dark:text-foreground/75 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                            className="px-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-none text-sm font-medium text-slate-700 dark:text-foreground/75 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                         >
                             <option value="All">All Statuses</option>
                             <option value="Available">Available</option>
@@ -372,7 +372,7 @@ function ResourcesPageContent() {
                                     "resources"
                                 );
                             }}
-                            className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+                            className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-none shadow-sm transition-all duration-200 text-sm"
                         >
                             <DownloadCloud className="w-4 h-4 text-emerald-500" />
                             <span>Export CSV</span>
@@ -381,21 +381,21 @@ function ResourcesPageContent() {
 
                     {/* ── Error Banner ── */}
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium flex items-center gap-2">
+                        <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-none text-sm font-medium flex items-center gap-2">
                             <XCircle className="w-4 h-4 shrink-0" />
                             {error}
                         </div>
                     )}
 
                     {/* ── Table ── */}
-                    <div className="bg-white dark:bg-slate-900/60 rounded-2xl shadow-sm border border-slate-100 dark:border-white/[0.06] overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900/60 rounded-none shadow-sm border border-slate-100 dark:border-white/[0.06] overflow-hidden">
                         {loading ? (
                             <div className="flex items-center justify-center py-24">
-                                <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-slate-200 border-t-[#1E3A8A] dark:border-t-blue-500" />
+                                <div className="animate-spin rounded-none h-10 w-10 border-[3px] border-slate-200 border-t-[#1E3A8A] dark:border-t-blue-500" />
                             </div>
                         ) : filteredResources.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-24 text-center px-6">
-                                <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-4">
+                                <div className="w-16 h-16 rounded-none bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center mb-4">
                                     <Search className="w-7 h-7 text-blue-300 dark:text-blue-400" />
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-800 dark:text-foreground mb-1">No resources found</h3>
@@ -448,7 +448,7 @@ function ResourcesPageContent() {
 
                                                 {/* Category */}
                                                 <td className="px-6 py-4">
-                                                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${getCategoryColor(resource.type)}`}>
+                                                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-none border ${getCategoryColor(resource.type)}`}>
                                                         {getCategoryIcon(resource.type)}
                                                         {resource.type}
                                                     </span>
@@ -466,7 +466,7 @@ function ResourcesPageContent() {
                                                         onClick={() => handleToggleStatus(resource)}
                                                         disabled={updatingStatusId === resource.id}
                                                         title="Click to toggle status"
-                                                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full transition-colors border ${resource.availability_status === "Available"
+                                                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-none transition-colors border ${resource.availability_status === "Available"
                                                             ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-450 border-emerald-250 dark:border-emerald-500/20"
                                                             : resource.availability_status === "Booked"
                                                                 ? "bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-250 dark:border-red-500/20"
@@ -477,7 +477,7 @@ function ResourcesPageContent() {
                                                             }`}
                                                     >
                                                         <span
-                                                            className={`w-1.5 h-1.5 rounded-full ${resource.availability_status === "Available"
+                                                            className={`w-1.5 h-1.5 rounded-none ${resource.availability_status === "Available"
                                                                 ? "bg-emerald-500"
                                                                 : resource.availability_status === "Booked"
                                                                     ? "bg-red-500"

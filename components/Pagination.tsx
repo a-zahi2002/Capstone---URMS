@@ -42,7 +42,7 @@ export default function Pagination({
             id="pageSize-select"
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="text-xs font-semibold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-700 dark:text-foreground/80 cursor-pointer"
+            className="text-xs font-semibold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-none px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-700 dark:text-foreground/80 cursor-pointer"
           >
             {sizes.map((size) => (
               <option key={size} value={size} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
@@ -57,7 +57,7 @@ export default function Pagination({
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="p-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-500 dark:text-foreground/50 hover:bg-slate-50 dark:hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-white/5 active:scale-95 transition-all"
+            className="p-1.5 rounded-none border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-500 dark:text-foreground/50 hover:bg-slate-50 dark:hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-white/5 active:scale-95 transition-all"
             title="Previous Page"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -70,7 +70,7 @@ export default function Pagination({
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            className="p-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-500 dark:text-foreground/50 hover:bg-slate-50 dark:hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-white/5 active:scale-95 transition-all"
+            className="p-1.5 rounded-none border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-500 dark:text-foreground/50 hover:bg-slate-50 dark:hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-white/5 active:scale-95 transition-all"
             title="Next Page"
           >
             <ChevronRight className="w-4 h-4" />
