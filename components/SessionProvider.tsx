@@ -29,11 +29,11 @@ export default function SessionProvider({ children }: { children: React.ReactNod
             {isWarning && !isIdle && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     {/* Backdrop */}
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    <div className="absolute inset-0 bg-black/60 " />
                     
                     {/* Modal Content */}
-                    <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-amber-200 dark:border-amber-500/20 overflow-hidden animate-in fade-in zoom-in-95 p-6 text-center">
-                        <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                    <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-amber-200 dark:border-amber-500/20 overflow-hidden animate-in fade-in zoom-in-95 p-6 text-center">
+                        <div className="w-12 h-12 rounded-none bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
                             <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                         </div>
                         
@@ -47,7 +47,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
                         
                         <button
                             onClick={resetTimers}
-                            className="w-full bg-brand-primary text-white font-bold py-3 rounded-xl hover:bg-brand-secondary transition-all active:scale-95 shadow-lg shadow-brand-primary/20"
+                            className="w-full bg-brand-primary text-white font-bold py-3 rounded-none hover:bg-brand-secondary transition-all active:scale-95 border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-brand-primary/20"
                         >
                             Stay Logged In
                         </button>

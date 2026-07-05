@@ -161,7 +161,7 @@ export default function AdminDashboard() {
                     </div>
                     <Link
                         href="/admin/analytics"
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-primary text-white font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-brand-primary/20"
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-none bg-brand-primary text-white font-bold text-sm hover:opacity-90 transition-all border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-brand-primary/20"
                     >
                         <BarChart3 className="w-4 h-4" /> View Analytics
                     </Link>
@@ -176,11 +176,11 @@ export default function AdminDashboard() {
                     { label: "Active Bookings", value: stats.activeBookings, icon: CalendarCheck, color: "emerald", trend: "+8%" },
                     { label: "Maint. Tickets", value: stats.maintenanceTickets, icon: Wrench, color: "amber", trend: "-2" },
                 ].map(({ label, value, icon: Icon, color, trend }) => (
-                    <div key={label} className="bg-card border border-slate-200 dark:border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                    <div key={label} className="bg-card border border-slate-200 dark:border-border rounded-none p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
                         <div className="absolute -top-4 -right-4 opacity-5 group-hover:opacity-10 transition-opacity">
                             <Icon className="w-24 h-24" />
                         </div>
-                        <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 flex items-center justify-center mb-3 relative z-10`}>
+                        <div className={`w-10 h-10 rounded-none bg-${color}-500/10 flex items-center justify-center mb-3 relative z-10`}>
                             <Icon className={`w-5 h-5 text-${color}-500`} />
                         </div>
                         <p className="text-[10px] font-black text-slate-500 dark:text-foreground/40 uppercase tracking-widest relative z-10">{label}</p>
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
             {/* ── Main content grid ── */}
             <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Resource Utilization */}
-                <div className="lg:col-span-2 bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm">
+                <div className="lg:col-span-2 bg-card border border-slate-200 dark:border-border rounded-none p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-foreground">Resource Utilization</h3>
                         <Link href="/admin/analytics" className="text-xs font-bold text-brand-primary hover:underline">
@@ -212,12 +212,12 @@ export default function AdminDashboard() {
                                     <span className="text-sm font-semibold text-slate-600 dark:text-foreground/60">{item.name}</span>
                                     <span className="text-sm font-black text-foreground">{item.rate}%</span>
                                 </div>
-                                <div className="w-full h-2.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
+                                <div className="w-full h-2.5 bg-slate-100 dark:bg-white/5 rounded-none overflow-hidden">
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${item.rate}%` }}
                                         transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                                        className={`h-full rounded-full ${item.color}`}
+                                        className={`h-full rounded-none ${item.color}`}
                                     />
                                 </div>
                             </div>
@@ -226,7 +226,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Recent Activity */}
-                <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm">
+                <div className="bg-card border border-slate-200 dark:border-border rounded-none p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-foreground mb-5">Recent Activity</h3>
                     <div className="space-y-4">
                         {activities.map((activity, idx) => {
@@ -253,7 +253,7 @@ export default function AdminDashboard() {
             {/* ── Management Actions ── */}
             <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* User Management */}
-                <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm">
+                <div className="bg-card border border-slate-200 dark:border-border rounded-none p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-5">
                         <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                             <UserCog className="w-5 h-5 text-purple-500" /> User Management
@@ -269,9 +269,9 @@ export default function AdminDashboard() {
                             { role: "Maintenance", count: stats.maintenanceCount, color: "amber" },
                             { role: "Admins", count: stats.adminCount, color: "purple" },
                         ].map(item => (
-                            <div key={item.role} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-border">
+                            <div key={item.role} className="flex items-center justify-between p-3 rounded-none bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-border">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-2 h-2 rounded-full bg-${item.color}-500`} />
+                                    <div className={`w-2 h-2 rounded-none bg-${item.color}-500`} />
                                     <span className="text-sm font-semibold text-slate-600 dark:text-foreground/60">{item.role}</span>
                                 </div>
                                 <span className="text-sm font-black text-foreground">{item.count}</span>
@@ -281,7 +281,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Quick Management Actions */}
-                <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm">
+                <div className="bg-card border border-slate-200 dark:border-border rounded-none p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-foreground mb-5 flex items-center gap-2">
                         <Settings className="w-5 h-5 text-purple-500" /> Management Actions
                     </h3>
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
                                 <Link
                                     key={item.label}
                                     href={item.href}
-                                    className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-border hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:border-brand-primary/20 transition-all group"
+                                    className="flex items-center gap-3 p-3.5 rounded-none bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-border hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:border-brand-primary/20 transition-all group"
                                 >
                                     <div className={`w-8 h-8 rounded-lg bg-${item.color}-500/10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}>
                                         <Icon className={`w-4 h-4 text-${item.color}-500`} />

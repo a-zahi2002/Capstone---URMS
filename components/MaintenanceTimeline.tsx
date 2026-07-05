@@ -41,8 +41,8 @@ const getStatusConfig = (status: string) => {
 export default function MaintenanceTimeline({ records, resourceName }: MaintenanceTimelineProps) {
     if (!records || records.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center p-8 bg-slate-50 border border-slate-100 rounded-2xl w-full">
-                <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-3 shadow-sm border border-slate-200">
+            <div className="flex flex-col items-center justify-center p-8 bg-slate-50 border border-slate-100 rounded-none w-full">
+                <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-none flex items-center justify-center mb-3 shadow-sm border border-slate-200">
                     <AlertCircle className="w-6 h-6" />
                 </div>
                 <h3 className="text-sm font-semibold text-slate-700">No maintenance history</h3>
@@ -59,7 +59,7 @@ export default function MaintenanceTimeline({ records, resourceName }: Maintenan
     const sortedRecords = [...records].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-100 p-4 md:p-6 shadow-sm w-full">
+        <div className="bg-white rounded-none border border-slate-100 p-4 md:p-6 shadow-sm w-full">
             <div className="mb-6 border-b border-slate-100 pb-4">
                 <h2 className="text-lg font-bold text-[#1E3A8A] flex items-center gap-2">
                     <Wrench className="w-5 h-5 text-blue-600" />
@@ -79,14 +79,14 @@ export default function MaintenanceTimeline({ records, resourceName }: Maintenan
                     return (
                         <div key={record.maintenance_id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active z-10">
                             {/* Timeline Icon */}
-                            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 ${statusConfig.iconContainer}`}>
+                            <div className={`flex items-center justify-center w-10 h-10 rounded-none border-4 border-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10 ${statusConfig.iconContainer}`}>
                                 {statusConfig.icon}
                             </div>
                             
                             {/* Record Card */}
-                            <div className="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 hover:border-slate-300">
+                            <div className="w-[calc(100%-3.5rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-none border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all duration-200 hover:border-slate-300">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2.5 gap-2">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusConfig.badge} shadow-sm`}>
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-none text-xs font-bold border ${statusConfig.badge} shadow-sm`}>
                                         {record.status}
                                     </span>
                                     <time className="text-xs font-semibold text-slate-500 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">

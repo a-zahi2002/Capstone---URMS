@@ -31,24 +31,24 @@ export default function ResourceModal({ resource, isOpen, onClose }: ResourceMod
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"
+        className="absolute inset-0 bg-slate-900/60  transition-opacity duration-300"
         onClick={onClose}
       />
 
       {/* Modal Container */}
-      <div className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 z-10 sticky top-0">
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-extrabold text-slate-800 dark:text-foreground">{resource.name}</h2>
-            <span className={`px-3 py-1 text-xs font-bold rounded-full border ${statusColors[resource.status]}`}>
+            <span className={`px-3 py-1 text-xs font-bold rounded-none border ${statusColors[resource.status]}`}>
               {resource.status}
             </span>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-foreground transition-colors"
+            className="p-2 rounded-none text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-foreground transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -62,14 +62,14 @@ export default function ResourceModal({ resource, isOpen, onClose }: ResourceMod
             <div className="lg:col-span-7 space-y-8">
               
               {/* Main Image */}
-              <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden shadow-inner border border-slate-100 dark:border-white/[0.06]">
+              <div className="relative w-full h-64 md:h-80 rounded-none overflow-hidden shadow-inner border border-slate-100 dark:border-white/[0.06]">
                 <img 
                   src={resource.image} 
                   alt={resource.name} 
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1.5 text-xs font-bold rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-blue-600 dark:text-blue-450 shadow-sm uppercase tracking-wider">
+                  <span className="px-3 py-1.5 text-xs font-bold rounded-lg bg-white/90 dark:bg-slate-900/90  text-blue-600 dark:text-blue-450 shadow-sm uppercase tracking-wider">
                     {resource.category}
                   </span>
                 </div>
@@ -85,9 +85,9 @@ export default function ResourceModal({ resource, isOpen, onClose }: ResourceMod
                   {resource.description}
                 </p>
                 
-                <div className="flex flex-wrap gap-6 mt-6 p-4 bg-slate-50 dark:bg-white/[0.03] rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="flex flex-wrap gap-6 mt-6 p-4 bg-slate-50 dark:bg-white/[0.03] rounded-none border border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                    <div className="w-10 h-10 rounded-none bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
                       <MapPin className="w-5 h-5" />
                     </div>
                     <div>
@@ -96,7 +96,7 @@ export default function ResourceModal({ resource, isOpen, onClose }: ResourceMod
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                    <div className="w-10 h-10 rounded-none bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
                       <Users className="w-5 h-5" />
                     </div>
                     <div>
@@ -140,7 +140,7 @@ export default function ResourceModal({ resource, isOpen, onClose }: ResourceMod
 
             {/* Right Column (Booking) */}
             <div className="lg:col-span-5">
-              <div className="bg-white dark:bg-slate-900 border text-left border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none rounded-3xl p-6 sticky top-0">
+              <div className="bg-white dark:bg-slate-900 border text-left border-slate-200 dark:border-slate-800 border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-slate-200/50 dark:shadow-none rounded-none p-6 sticky top-0">
                 <h3 className="text-xl font-bold text-slate-800 dark:text-foreground mb-6 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-blue-650 dark:text-brand-primary" />
                   Book Facility
@@ -153,7 +153,7 @@ export default function ResourceModal({ resource, isOpen, onClose }: ResourceMod
                     type="date" 
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-medium"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-700 rounded-none text-slate-800 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-medium"
                   />
                 </div>
 
@@ -174,7 +174,7 @@ export default function ResourceModal({ resource, isOpen, onClose }: ResourceMod
                             key={i}
                             disabled={isBooked}
                             onClick={() => setSelectedSlot(slot.time)}
-                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-none border text-sm font-medium transition-all ${
                               isBooked 
                                 ? "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 dark:text-foreground/30 cursor-not-allowed opacity-70" 
                                 : isSelected 
@@ -193,7 +193,7 @@ export default function ResourceModal({ resource, isOpen, onClose }: ResourceMod
                       })}
                     </div>
                   ) : (
-                    <div className="px-4 py-8 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/20 flex flex-col items-center justify-center text-center">
+                    <div className="px-4 py-8 rounded-none border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/20 flex flex-col items-center justify-center text-center">
                       <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-700 mb-2" />
                       <p className="text-sm font-medium text-slate-500 dark:text-foreground/50">Please select a date to view slots</p>
                     </div>
@@ -203,7 +203,7 @@ export default function ResourceModal({ resource, isOpen, onClose }: ResourceMod
                 {/* Action Button */}
                 <button 
                   disabled={!selectedDate || !selectedSlot || resource.status === "Maintenance"}
-                  className="w-full py-4 rounded-xl font-bold text-white bg-brand-primary hover:bg-brand-secondary active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:bg-brand-primary shadow-xl shadow-brand-primary/20"
+                  className="w-full py-4 rounded-none font-bold text-white bg-brand-primary hover:bg-brand-secondary active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:bg-brand-primary border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-brand-primary/20"
                 >
                   {resource.status === "Maintenance" 
                     ? "Currently in Maintenance" 

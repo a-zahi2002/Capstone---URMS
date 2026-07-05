@@ -37,13 +37,13 @@ const roleMeta: Record<string, {
     dot: string;
     icon: string;
 }> = {
-    admin:       { label: "Administrator", gradient: "from-violet-500 to-purple-600",  badge: "bg-violet-500/10 border-violet-500/20",  badgeText: "text-violet-500",  dot: "bg-violet-500", icon: "👑" },
-    lecturer:    { label: "Lecturer",      gradient: "from-emerald-500 to-teal-600",   badge: "bg-emerald-500/10 border-emerald-500/20",badgeText: "text-emerald-500", dot: "bg-emerald-500",icon: "🎓" },
-    student:     { label: "Student",       gradient: "from-blue-500 to-indigo-600",    badge: "bg-blue-500/10 border-blue-500/20",      badgeText: "text-blue-500",    dot: "bg-blue-500",   icon: "📚" },
-    maintenance: { label: "Maintenance",   gradient: "from-amber-500 to-orange-600",   badge: "bg-amber-500/10 border-amber-500/20",    badgeText: "text-amber-500",   dot: "bg-amber-500",  icon: "🔧" },
+    admin:       { label: "Administrator", gradient: " ",  badge: "bg-violet-500/10 border-violet-500/20",  badgeText: "text-violet-500",  dot: "bg-violet-500", icon: "👑" },
+    lecturer:    { label: "Lecturer",      gradient: " ",   badge: "bg-emerald-500/10 border-emerald-500/20",badgeText: "text-emerald-500", dot: "bg-emerald-500",icon: "🎓" },
+    student:     { label: "Student",       gradient: " ",    badge: "bg-blue-500/10 border-blue-500/20",      badgeText: "text-blue-500",    dot: "bg-blue-500",   icon: "📚" },
+    maintenance: { label: "Maintenance",   gradient: " ",   badge: "bg-amber-500/10 border-amber-500/20",    badgeText: "text-amber-500",   dot: "bg-amber-500",  icon: "🔧" },
 };
 
-const defaultMeta = { label: "User", gradient: "from-slate-500 to-slate-700", badge: "bg-slate-500/10 border-slate-200", badgeText: "text-slate-700", dot: "bg-slate-500", icon: "👤" };
+const defaultMeta = { label: "User", gradient: " ", badge: "bg-slate-500/10 border-slate-200", badgeText: "text-slate-700", dot: "bg-slate-500", icon: "👤" };
 
 /* ── Custom Toggle Switch Component ── */
 interface SwitchProps {
@@ -58,12 +58,12 @@ function ToggleSwitch({ checked, onChange, disabled }: SwitchProps) {
             type="button"
             disabled={disabled}
             onClick={() => onChange(!checked)}
-            className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary/25 ${
+            className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-none border-2 border-transparent transition-colors duration-250 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary/25 ${
                 checked ? "bg-brand-primary" : "bg-slate-200 dark:bg-white/10"
             } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
         >
             <span
-                className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
+                className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-none bg-white shadow-md ring-0 transition duration-250 ease-in-out ${
                     checked ? "translate-x-5.5" : "translate-x-0"
                 }`}
             />
@@ -272,7 +272,7 @@ export default function ProfilePage() {
 
                 {authLoading ? (
                     <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-                        <div className="w-16 h-16 rounded-3xl bg-brand-primary/5 border border-brand-primary/10 flex items-center justify-center shadow-md">
+                        <div className="w-16 h-16 rounded-none bg-brand-primary/5 border border-brand-primary/10 flex items-center justify-center shadow-md">
                             <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
                         </div>
                         <p className="text-slate-400 font-semibold text-sm">Loading your profile…</p>
@@ -280,7 +280,7 @@ export default function ProfilePage() {
 
                 ) : !user ? (
                     <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-                        <div className="w-16 h-16 rounded-3xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 flex items-center justify-center shadow-md">
+                        <div className="w-16 h-16 rounded-none bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 flex items-center justify-center shadow-md">
                             <AlertCircle className="w-8 h-8 text-red-400" />
                         </div>
                         <p className="text-slate-700 dark:text-white/80 font-bold">Not signed in</p>
@@ -291,11 +291,11 @@ export default function ProfilePage() {
                     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
 
                         {/* HERO BANNER CARD */}
-                        <div className="anim-up-1 relative overflow-hidden rounded-3xl shadow-xl shadow-slate-100 dark:shadow-none border border-slate-100 dark:border-white/5">
+                        <div className="anim-up-1 relative overflow-hidden rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-slate-100 dark:shadow-none border border-slate-100 dark:border-white/5">
                             {/* Gradient banner top */}
-                            <div className={`h-36 bg-gradient-to-br ${meta.gradient} relative overflow-hidden`}>
-                                <div className="absolute -top-8 -right-8 w-48 h-48 bg-white/10 rounded-full" />
-                                <div className="absolute -bottom-12 -left-8 w-56 h-56 bg-white/10 rounded-full" />
+                            <div className={`h-36 bg-card ${meta.gradient} relative overflow-hidden`}>
+                                <div className="absolute -top-8 -right-8 w-48 h-48 bg-white/10 rounded-none" />
+                                <div className="absolute -bottom-12 -left-8 w-56 h-56 bg-white/10 rounded-none" />
                                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
                             </div>
 
@@ -303,11 +303,11 @@ export default function ProfilePage() {
                             <div className="bg-card px-8 pb-8">
                                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-14 mb-7">
                                     <div className="flex items-end gap-5">
-                                        <div className={`relative p-1 rounded-3xl bg-gradient-to-br ${meta.gradient} shadow-2xl`}>
+                                        <div className={`relative p-1 rounded-none bg-card ${meta.gradient} border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]`}>
                                             <div className="w-24 h-24 rounded-[20px] bg-card flex items-center justify-center text-3xl font-black text-slate-800 dark:text-white">
                                                 {initials}
                                             </div>
-                                            <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-emerald-400 border-2 border-white dark:border-slate-900 shadow online-dot" />
+                                            <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-none bg-emerald-400 border-2 border-white dark:border-slate-900 shadow online-dot" />
                                         </div>
 
                                         <div className="pb-2">
@@ -316,7 +316,7 @@ export default function ProfilePage() {
                                                 <span className="text-lg">{meta.icon}</span>
                                             </div>
                                             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{currentEmail}</p>
-                                            <span className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-bold border ${meta.badge} ${meta.badgeText}`}>
+                                            <span className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-none text-xs font-bold border ${meta.badge} ${meta.badgeText}`}>
                                                 <BadgeCheck className="w-3.5 h-3.5" />
                                                 {meta.label}
                                             </span>
@@ -326,7 +326,7 @@ export default function ProfilePage() {
                                     {activeTab === "profile" && !isEditing && (
                                         <button
                                             onClick={() => setIsEditing(true)}
-                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r ${meta.gradient} shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200`}
+                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-none text-sm font-bold text-white bg-card ${meta.gradient} shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200`}
                                         >
                                             <Edit2 className="w-4 h-4" />
                                             Edit Profile
@@ -336,8 +336,8 @@ export default function ProfilePage() {
 
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                                     {infoItems.map((item, i) => (
-                                        <div key={i} className={`card-hover flex items-center gap-3 p-4 rounded-2xl border ${item.border} ${item.bg}`}>
-                                            <div className={`shrink-0 w-9 h-9 rounded-xl bg-card border border-slate-200/40 dark:border-white/5 flex items-center justify-center shadow-sm ${item.color}`}>
+                                        <div key={i} className={`card-hover flex items-center gap-3 p-4 rounded-none border ${item.border} ${item.bg}`}>
+                                            <div className={`shrink-0 w-9 h-9 rounded-none bg-card border border-slate-200/40 dark:border-white/5 flex items-center justify-center shadow-sm ${item.color}`}>
                                                 {item.icon}
                                             </div>
                                             <div className="min-w-0">
@@ -387,7 +387,7 @@ export default function ProfilePage() {
 
                         {/* Feedback Banner */}
                         {success && (
-                            <div className="anim-fade flex items-center gap-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-250 dark:border-emerald-500/20 p-4 rounded-2xl shadow-sm">
+                            <div className="anim-fade flex items-center gap-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-250 dark:border-emerald-500/20 p-4 rounded-none shadow-sm">
                                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                                 <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{success}</p>
                             </div>
@@ -398,11 +398,11 @@ export default function ProfilePage() {
                             <div className="space-y-6">
                                 {/* EDIT FORM */}
                                 {isEditing && (
-                                    <div className="anim-up-2 bg-card border border-slate-100 dark:border-white/5 rounded-3xl shadow-sm overflow-hidden">
-                                        <div className={`h-1 bg-gradient-to-r ${meta.gradient}`} />
+                                    <div className="anim-up-2 bg-card border border-slate-100 dark:border-white/5 rounded-none shadow-sm overflow-hidden">
+                                        <div className={`h-1 bg-card ${meta.gradient}`} />
                                         <div className="p-8">
                                             <div className="flex items-center gap-3 mb-7">
-                                                <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center shadow-md`}>
+                                                <div className={`w-10 h-10 rounded-none bg-card ${meta.gradient} flex items-center justify-center shadow-md`}>
                                                     <Edit2 className="w-4 h-4 text-white" />
                                                 </div>
                                                 <div>
@@ -412,7 +412,7 @@ export default function ProfilePage() {
                                             </div>
 
                                             {error && (
-                                                <div className="flex items-center gap-3 bg-red-50 border border-red-200 p-4 rounded-2xl mb-6">
+                                                <div className="flex items-center gap-3 bg-red-50 border border-red-200 p-4 rounded-none mb-6">
                                                     <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                                                     <p className="text-sm font-semibold text-red-600">{error}</p>
                                                 </div>
@@ -435,7 +435,7 @@ export default function ProfilePage() {
                                                             disabled={saveLoading}
                                                             required
                                                             placeholder="Your full name"
-                                                            className="block w-full pl-11 pr-4 py-3.5 bg-slate-55 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all disabled:opacity-50"
+                                                            className="block w-full pl-11 pr-4 py-3.5 bg-slate-55 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-none text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all disabled:opacity-50"
                                                         />
                                                     </div>
                                                 </div>
@@ -455,7 +455,7 @@ export default function ProfilePage() {
                                                             onChange={(e) => setPhone(e.target.value)}
                                                             disabled={saveLoading}
                                                             placeholder="+947XXXXXXXX or 07XXXXXXXX"
-                                                            className="block w-full pl-11 pr-4 py-3.5 bg-slate-55 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-2xl text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all disabled:opacity-50"
+                                                            className="block w-full pl-11 pr-4 py-3.5 bg-slate-55 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-none text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all disabled:opacity-50"
                                                         />
                                                     </div>
                                                 </div>
@@ -472,7 +472,7 @@ export default function ProfilePage() {
                                                             type="email"
                                                             value={currentEmail}
                                                             disabled
-                                                            className="block w-full pl-11 pr-4 py-3.5 bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 rounded-2xl text-sm font-semibold text-slate-500 cursor-not-allowed"
+                                                            className="block w-full pl-11 pr-4 py-3.5 bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 rounded-none text-sm font-semibold text-slate-500 cursor-not-allowed"
                                                         />
                                                     </div>
                                                 </div>
@@ -481,7 +481,7 @@ export default function ProfilePage() {
                                                     <button
                                                         type="submit"
                                                         disabled={saveLoading}
-                                                        className={`relative overflow-hidden inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r ${meta.gradient} shadow-lg hover:scale-[1.02] active:scale-95 transition-all`}
+                                                        className={`relative overflow-hidden inline-flex items-center gap-2 px-6 py-3 rounded-none text-sm font-bold text-white bg-card ${meta.gradient} border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all`}
                                                     >
                                                         {saveLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                                         Save Changes
@@ -490,7 +490,7 @@ export default function ProfilePage() {
                                                         type="button"
                                                         onClick={() => { setIsEditing(false); setDisplayName(currentName); setError(null); }}
                                                         disabled={saveLoading}
-                                                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-slate-650 border border-slate-200 dark:border-white/10 bg-card hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+                                                        className="inline-flex items-center gap-2 px-6 py-3 rounded-none text-sm font-bold text-slate-650 border border-slate-200 dark:border-white/10 bg-card hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
                                                     >
                                                         <X className="w-4 h-4" />
                                                         Cancel
@@ -503,9 +503,9 @@ export default function ProfilePage() {
 
                                 {/* BOTTOM ROW: Security + Quick Links */}
                                 <div className="anim-up-3 grid md:grid-cols-2 gap-6">
-                                    <div className="bg-card border border-slate-100 dark:border-white/5 rounded-3xl shadow-sm overflow-hidden">
+                                    <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none shadow-sm overflow-hidden">
                                         <div className="px-6 pt-6 pb-2 flex items-center gap-3 mb-4">
-                                            <div className="w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center shadow-md">
+                                            <div className="w-10 h-10 rounded-none bg-slate-900 flex items-center justify-center shadow-md">
                                                 <Lock className="w-4 h-4 text-white" />
                                             </div>
                                             <div>
@@ -515,31 +515,31 @@ export default function ProfilePage() {
                                         </div>
 
                                         <div className="px-6 pb-6 space-y-3">
-                                            <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl">
+                                            <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-none">
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-2.5 h-2.5 rounded-full ${user?.emailVerified ? "bg-emerald-400" : "bg-amber-400"}`} />
+                                                    <div className={`w-2.5 h-2.5 rounded-none ${user?.emailVerified ? "bg-emerald-400" : "bg-amber-400"}`} />
                                                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-350">Email Verified</span>
                                                 </div>
-                                                <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${user?.emailVerified ? "bg-emerald-100/80 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-amber-100/80 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400"}`}>
+                                                <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-none ${user?.emailVerified ? "bg-emerald-100/80 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-amber-100/80 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400"}`}>
                                                     {user?.emailVerified ? "Verified" : "Pending"}
                                                 </span>
                                             </div>
 
-                                            <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl">
+                                            <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-none">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+                                                    <div className="w-2.5 h-2.5 rounded-none bg-blue-400" />
                                                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-350">Account Type</span>
                                                 </div>
-                                                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-100/80 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
+                                                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-none bg-blue-100/80 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
                                                     Institutional
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-card border border-slate-100 dark:border-white/5 rounded-3xl shadow-sm overflow-hidden">
+                                    <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none shadow-sm overflow-hidden">
                                         <div className="px-6 pt-6 pb-2 flex items-center gap-3 mb-4">
-                                            <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center shadow-md`}>
+                                            <div className={`w-10 h-10 rounded-none bg-card ${meta.gradient} flex items-center justify-center shadow-md`}>
                                                 <Sparkles className="w-4 h-4 text-white" />
                                             </div>
                                             <div>
@@ -557,7 +557,7 @@ export default function ProfilePage() {
                                                 <Link
                                                     key={link.href}
                                                     href={link.href}
-                                                    className="card-hover flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 hover:border-brand-primary/30 rounded-2xl group"
+                                                    className="card-hover flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 hover:border-brand-primary/30 rounded-none group"
                                                 >
                                                     <div>
                                                         <p className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-brand-primary transition-colors">{link.label}</p>
@@ -576,7 +576,7 @@ export default function ProfilePage() {
                         {activeTab === "preferences" && (
                             <div className="anim-up-2 space-y-6">
                                 {prefLoading ? (
-                                    <div className="bg-card border border-slate-100 dark:border-white/5 rounded-3xl p-16 flex flex-col items-center justify-center gap-4">
+                                    <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none p-16 flex flex-col items-center justify-center gap-4">
                                         <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
                                         <p className="text-slate-400 text-sm font-semibold">Retrieving your notification settings…</p>
                                     </div>
@@ -585,9 +585,9 @@ export default function ProfilePage() {
                                         <div className="grid md:grid-cols-2 gap-6">
                                             
                                             {/* Email settings card */}
-                                            <div className="bg-card border border-slate-100 dark:border-white/5 rounded-3xl shadow-sm p-6 space-y-6">
+                                            <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none shadow-sm p-6 space-y-6">
                                                 <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-white/5">
-                                                    <div className="w-9 h-9 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center">
+                                                    <div className="w-9 h-9 rounded-none bg-brand-primary/10 text-brand-primary flex items-center justify-center">
                                                         <Mail className="w-4 h-4" />
                                                     </div>
                                                     <div>
@@ -627,9 +627,9 @@ export default function ProfilePage() {
                                             </div>
 
                                             {/* Push / Web socket settings card */}
-                                            <div className="bg-card border border-slate-100 dark:border-white/5 rounded-3xl shadow-sm p-6 space-y-6">
+                                            <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none shadow-sm p-6 space-y-6">
                                                 <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-white/5">
-                                                    <div className="w-9 h-9 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center">
+                                                    <div className="w-9 h-9 rounded-none bg-brand-primary/10 text-brand-primary flex items-center justify-center">
                                                         <Smartphone className="w-4 h-4" />
                                                     </div>
                                                     <div>
@@ -671,7 +671,7 @@ export default function ProfilePage() {
                                         </div>
 
                                         {/* Actions panel */}
-                                        <div className="bg-card border border-slate-100 dark:border-white/5 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                        <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
                                                     <Globe className="w-4 h-4" />
@@ -684,7 +684,7 @@ export default function ProfilePage() {
                                             <button
                                                 onClick={handleSavePreferences}
                                                 disabled={prefSaving}
-                                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-bold text-white bg-brand-primary hover:bg-brand-secondary shadow-lg shadow-brand-primary/20 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-none text-sm font-bold text-white bg-brand-primary hover:bg-brand-secondary border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-brand-primary/20 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                             >
                                                 {prefSaving ? (
                                                     <>

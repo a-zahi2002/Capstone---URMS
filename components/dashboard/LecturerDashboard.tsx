@@ -168,9 +168,9 @@ export default function LecturerDashboard() {
             {/* ── Welcome Header ── */}
             <motion.header
                 variants={fadeInUp}
-                className="bg-gradient-to-r from-emerald-600/10 to-teal-600/5 dark:from-emerald-900/30 dark:to-teal-900/15 p-8 rounded-3xl border border-emerald-200 dark:border-emerald-500/20 relative overflow-hidden"
+                className="bg-card   dark: dark: p-8 rounded-none border border-emerald-200 dark:border-emerald-500/20 relative overflow-hidden"
             >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-none" />
                 <h1 className="text-3xl font-black text-foreground tracking-tight relative z-10">
                     {activeTab === "approvals" ? "Approval Queue" : "Teacher Portal"}
                 </h1>
@@ -199,8 +199,8 @@ export default function LecturerDashboard() {
                             { label: "Students Active", value: studentsActiveCount, icon: Users, color: "purple" },
                         ].map(({ label, value, icon: Icon, color, link }) => {
                             const card = (
-                                <div className="bg-card border border-slate-200 dark:border-border rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-emerald-500/30 transition-all h-full">
-                                    <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 flex items-center justify-center mb-3`}>
+                                <div className="bg-card border border-slate-200 dark:border-border rounded-none p-5 shadow-sm hover:shadow-md hover:border-emerald-500/30 transition-all h-full">
+                                    <div className={`w-10 h-10 rounded-none bg-${color}-500/10 flex items-center justify-center mb-3`}>
                                         <Icon className={`w-5 h-5 text-${color}-500`} />
                                     </div>
                                     <p className="text-[10px] font-black text-slate-500 dark:text-foreground/45 uppercase tracking-widest">{label}</p>
@@ -220,7 +220,7 @@ export default function LecturerDashboard() {
                     {/* ── Main Content (Overview mode) ── */}
                     <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Summary Approval Card */}
-                        <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                        <div className="bg-card border border-slate-200 dark:border-border rounded-none p-6 shadow-sm flex flex-col justify-between">
                             <div>
                                 <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                                     <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Pending Approvals
@@ -231,14 +231,14 @@ export default function LecturerDashboard() {
                             </div>
                             <Link
                                 href="/dashboard?tab=approvals"
-                                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-600/10"
+                                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-none bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500 transition-all border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-emerald-600/10"
                             >
                                 Open Approval Queue <ArrowRight className="w-4 h-4" />
                             </Link>
                         </div>
 
                         {/* Upcoming Classes */}
-                        <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm">
+                        <div className="bg-card border border-slate-200 dark:border-border rounded-none p-6 shadow-sm">
                             <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                                 <BookOpen className="w-5 h-5 text-emerald-500" /> My Upcoming Classes
                             </h3>
@@ -248,7 +248,7 @@ export default function LecturerDashboard() {
                                     { month: "Oct", day: "14", title: "Advanced Physics Lab", location: "Lab Block C", time: "2:00 PM" },
                                     { month: "Oct", day: "16", title: "Seminar: Particle Theory", location: "Room 205", time: "11:00 AM" },
                                 ].map((cls, idx) => (
-                                    <div key={idx} className="flex items-center gap-4 p-3 rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03]">
+                                    <div key={idx} className="flex items-center gap-4 p-3 rounded-none border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03]">
                                         <div className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold p-3 rounded-lg text-center leading-tight border border-emerald-500/20 shrink-0">
                                             <span className="block text-xs uppercase tracking-wider">{cls.month}</span>
                                             <span className="block text-xl">{cls.day}</span>
@@ -262,7 +262,7 @@ export default function LecturerDashboard() {
                             </div>
                             <Link
                                 href="/bookings?view=all"
-                                className="mt-5 w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03] text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors"
+                                className="mt-5 w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-none border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03] text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors"
                             >
                                 View Full Schedule <ArrowRight className="w-4 h-4" />
                             </Link>
@@ -272,7 +272,7 @@ export default function LecturerDashboard() {
             ) : (
                 /* ── Approval Queue view (takes full width) ── */
                 <motion.div variants={fadeInUp} className="w-full">
-                    <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm flex flex-col w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="bg-card border border-slate-200 dark:border-border rounded-none p-6 shadow-sm flex flex-col w-full animate-in fade-in slide-in- duration-300">
                         <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                             <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Pending Requests ({pendingBookings.length})
                         </h3>
@@ -296,7 +296,7 @@ export default function LecturerDashboard() {
                                     return (
                                         <div
                                             key={booking.id}
-                                            className="p-4 border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-sm transition-all"
+                                            className="p-4 border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/5 rounded-none flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-sm transition-all"
                                         >
                                             <div className="space-y-1">
                                                 <p className="font-bold text-foreground text-sm">{booking.resources?.name || "Resource"}</p>
@@ -341,8 +341,8 @@ export default function LecturerDashboard() {
             {/* ── Rejection Reason Modal ── */}
             {rejectingBooking && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRejectingBooking(null)} />
-                    <div className="relative w-full max-w-md bg-card dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden text-foreground">
+                    <div className="absolute inset-0 bg-black/60 " onClick={() => setRejectingBooking(null)} />
+                    <div className="relative w-full max-w-md bg-card dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-none p-6 border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] overflow-hidden text-foreground">
                         <h3 className="text-xl font-black mb-2 flex items-center gap-2">
                             <ShieldAlert className="w-5 h-5 text-red-500" /> Decline Booking Request
                         </h3>
@@ -362,21 +362,21 @@ export default function LecturerDashboard() {
                                     placeholder="e.g. The lab is reserved for scheduled examinations during this hour."
                                     required
                                     rows={3}
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-red-500/10 transition-all resize-none text-foreground"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 rounded-none text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-red-500/10 transition-all resize-none text-foreground"
                                 />
                             </div>
                             <div className="flex justify-end gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setRejectingBooking(null)}
-                                    className="px-5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                                    className="px-5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-none text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={actionLoading === rejectingBooking.id}
-                                    className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-red-600/10 disabled:opacity-50"
+                                    className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-none text-xs font-bold transition-all border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-red-600/10 disabled:opacity-50"
                                 >
                                     {actionLoading === rejectingBooking.id ? "Declining..." : "Decline Booking"}
                                 </button>

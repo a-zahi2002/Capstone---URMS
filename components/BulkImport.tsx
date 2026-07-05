@@ -156,9 +156,9 @@ export default function BulkImport({ isOpen, onClose, onSuccess }: BulkImportPro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={closeAndReset} />
+      <div className="absolute inset-0 bg-slate-900/50 " onClick={closeAndReset} />
       
-      <div className="relative bg-white w-full max-w-3xl rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
+      <div className="relative bg-white w-full max-w-3xl rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <h2 className="text-2xl font-bold text-[#1E3A8A]">Bulk Import Resources</h2>
           <button onClick={closeAndReset} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -178,10 +178,10 @@ export default function BulkImport({ isOpen, onClose, onSuccess }: BulkImportPro
               {/* Upload Dropzone */}
               {!file && (
                 <div 
-                  className="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-2xl p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors group"
+                  className="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-none p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors group"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <div className="w-16 h-16 bg-white rounded-none shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <UploadCloud className="w-8 h-8 text-blue-500" />
                   </div>
                   <h3 className="text-lg font-bold text-slate-800 mb-1">Upload CSV or Excel File</h3>
@@ -201,7 +201,7 @@ export default function BulkImport({ isOpen, onClose, onSuccess }: BulkImportPro
               {/* File Info & Errors */}
               {file && (
                 <div className="mb-6">
-                  <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4">
+                  <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-none p-4 mb-4">
                     <div className="flex items-center gap-3">
                       <FileSpreadsheet className="w-6 h-6 text-blue-600" />
                       <div>
@@ -218,7 +218,7 @@ export default function BulkImport({ isOpen, onClose, onSuccess }: BulkImportPro
                   </div>
 
                   {errors.length > 0 && (
-                    <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-4">
+                    <div className="bg-red-50 border border-red-100 rounded-none p-4 mb-4">
                       <div className="flex gap-2">
                         <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
                         <div>
@@ -240,11 +240,11 @@ export default function BulkImport({ isOpen, onClose, onSuccess }: BulkImportPro
                 <div>
                   <h3 className="font-bold text-slate-800 mb-3 flex items-center justify-between">
                     Data Preview 
-                    <span className="text-xs font-medium bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full">
+                    <span className="text-xs font-medium bg-blue-100 text-blue-700 px-2.5 py-1 rounded-none">
                       {parsedData.length} records ready
                     </span>
                   </h3>
-                  <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="border border-slate-200 rounded-none overflow-hidden">
                     <div className="overflow-auto max-h-60">
                       <table className="w-full text-sm text-left">
                         <thead className="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0">
@@ -264,7 +264,7 @@ export default function BulkImport({ isOpen, onClose, onSuccess }: BulkImportPro
                               <td className="px-4 py-3">{row.location}</td>
                               <td className="px-4 py-3 text-center">{row.capacity}</td>
                               <td className="px-4 py-3">
-                                <span className={`px-2 py-1 text-xs rounded-full font-semibold ${row.availability_status === 'Available' ? 'bg-emerald-100 text-emerald-700' : row.availability_status === 'Booked' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
+                                <span className={`px-2 py-1 text-xs rounded-none font-semibold ${row.availability_status === 'Available' ? 'bg-emerald-100 text-emerald-700' : row.availability_status === 'Booked' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
                                   {row.availability_status}
                                 </span>
                               </td>
@@ -288,18 +288,18 @@ export default function BulkImport({ isOpen, onClose, onSuccess }: BulkImportPro
           <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
             <button 
               onClick={closeAndReset}
-              className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
+              className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-none hover:bg-slate-100 transition-colors"
             >
               Cancel
             </button>
             <button 
               disabled={parsedData.length === 0 || errors.length > 0 || isLoading}
               onClick={handleImport}
-              className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-none hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {isLoading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-none animate-spin" />
                   Importing...
                 </>
               ) : (

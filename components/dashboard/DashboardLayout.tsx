@@ -57,12 +57,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* ── Main content area ── */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {/* ── Top bar ── */}
-                <header className="sticky top-0 z-20 h-14 bg-white/80 dark:bg-[#0c0a14]/80 backdrop-blur-lg border-b border-slate-200/80 dark:border-white/[0.06] flex items-center justify-between px-4 lg:px-6 shrink-0">
+                <header className="sticky top-0 z-20 h-14 bg-white/80 dark:bg-[#0c0a14]/80  border-b border-slate-200/80 dark:border-white/[0.06] flex items-center justify-between px-4 lg:px-6 shrink-0">
                     {/* Left: mobile menu + breadcrumb */}
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setMobileOpen(true)}
-                            className="lg:hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                            className="lg:hidden p-2 rounded-none hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
                             aria-label="Open sidebar"
                         >
                             <Menu className="w-5 h-5 text-slate-600 dark:text-foreground/60" />
