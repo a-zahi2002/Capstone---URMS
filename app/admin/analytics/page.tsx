@@ -226,9 +226,9 @@ export default function AnalyticsDashboard() {
                 <div className="flex flex-col items-center gap-6">
                     <div className="relative flex justify-center items-center">
                         <div className="absolute animate-ping w-16 h-16 rounded-none bg-blue-500/20" />
-                        <div className="animate-spin rounded-none h-12 w-12 border-[3px] border-slate-200 dark:border-border border-t-blue-500 relative z-10" />
+                        <div className="animate-spin rounded-none h-12 w-12 border-[3px] border-[#E2E8F0] dark:border-border border-t-[#0EA5E9] relative z-10" />
                     </div>
-                    <p className="text-blue-500 dark:text-blue-400 font-black tracking-widest text-[10px] uppercase animate-pulse">Initializing Analytics</p>
+                    <p className="text-[#0EA5E9] dark:text-sky-400 font-black tracking-widest text-[10px] uppercase animate-pulse">Initializing Analytics</p>
                 </div>
             </div>
         );
@@ -320,9 +320,9 @@ export default function AnalyticsDashboard() {
                                 <ArrowLeft className="w-5 h-5 text-slate-700 dark:text-foreground/70" />
                             </Link>
                             <div>
-                                <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-none px-3 py-1 mb-2">
-                                    <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                                    <span className="text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider">Command Center</span>
+                                <div className="inline-flex items-center gap-2 bg-[#F0F9FF] border border-[#0EA5E9]/20 rounded-none px-3 py-1 mb-2">
+                                    <Sparkles className="w-3.5 h-3.5 text-[#0EA5E9]" />
+                                    <span className="text-[#0EA5E9] text-[10px] font-black uppercase tracking-wider">Command Center</span>
                                 </div>
                                 <h1 className="text-4xl font-black text-foreground tracking-tight">
                                     Analytics 
@@ -342,7 +342,7 @@ export default function AnalyticsDashboard() {
                                     <button 
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id as any)}
-                                        className={`px-5 py-2.5 rounded-none text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-blue-600 text-white border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-blue-500/25' : 'text-slate-500 dark:text-foreground/40 hover:bg-slate-100 dark:bg-foreground/5 hover:text-foreground'}`}
+                                        className={`px-5 py-2.5 rounded-none text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-[#0EA5E9] text-white shadow-sm shadow-sky-500/20' : 'text-slate-500 dark:text-foreground/40 hover:bg-slate-100 dark:bg-foreground/5 hover:text-foreground'}`}
                                     >
                                         {tab.label}
                                     </button>

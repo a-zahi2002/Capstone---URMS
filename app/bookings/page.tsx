@@ -516,26 +516,38 @@ function BookingsPageContent() {
 
     return (
         <ProtectedRoute>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-foreground">
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-                    <div>
-                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
-                            {view === "my" || view === "status" ? "My Bookings" : "Resource Bookings"}
-                        </h1>
-                        <p className="text-slate-500 dark:text-foreground/50 font-medium">
-                            {view === "my" || view === "status"
-                                ? "Manage, track, and edit your personal resource reservations."
-                                : "Manage and monitor facility schedules across all university faculties."}
-                        </p>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-foreground">
+
+                {/* ── Sky Gradient Header ── */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#0284C7] p-6 md:p-8 text-white mb-8 shadow-lg shadow-sky-500/20">
+                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
+                    <div className="absolute -bottom-8 left-16 w-28 h-28 rounded-full bg-[#0D9488]/20 pointer-events-none" />
+
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider">
+                                    {view === "my" || view === "status" ? "My Reservations" : "All Bookings"}
+                                </span>
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                                {view === "my" || view === "status" ? "My Bookings" : "Resource Bookings"}
+                            </h1>
+                            <p className="mt-1.5 text-sky-100 text-sm font-medium">
+                                {view === "my" || view === "status"
+                                    ? "Manage, track, and edit your personal resource reservations."
+                                    : "Manage and monitor facility schedules across all university faculties."}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="inline-flex items-center gap-2 bg-white text-[#0EA5E9] font-semibold px-5 py-2.5 rounded-xl hover:bg-sky-50 active:scale-95 shadow-md transition-all whitespace-nowrap shrink-0"
+                        >
+                            <Plus className="w-4 h-4" />
+                            New Booking
+                        </button>
                     </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="inline-flex items-center justify-center gap-2 bg-brand-primary text-white font-bold px-6 py-3 rounded-none hover:bg-brand-secondary transition-all border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] active:scale-95 whitespace-nowrap"
-                    >
-                        <Plus className="w-5 h-5" />
-                        New Booking
-                    </button>
-                </header>
+                </div>
 
                 {combinedError && (
                     <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-none text-sm font-semibold">
@@ -579,18 +591,18 @@ function BookingsPageContent() {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setCalendarView("week")}
-                                        className={`px-3 py-2 border rounded-none text-xs font-bold transition-colors ${calendarView === "week"
-                                            ? "bg-brand-primary text-white border-brand-primary"
-                                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5"
+                                        className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${calendarView === "week"
+                                            ? "bg-[#0EA5E9] text-white shadow-sm"
+                                            : "border border-[#E2E8F0] dark:border-white/10 text-[#64748B] dark:text-foreground/60 hover:bg-[#F0F9FF] dark:hover:bg-white/5"
                                             }`}
                                     >
                                         Week
                                     </button>
                                     <button
                                         onClick={() => setCalendarView("month")}
-                                        className={`px-3 py-2 border rounded-none text-xs font-bold transition-colors ${calendarView === "month"
-                                            ? "bg-brand-primary text-white border-brand-primary"
-                                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5"
+                                        className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${calendarView === "month"
+                                            ? "bg-[#0EA5E9] text-white shadow-sm"
+                                            : "border border-[#E2E8F0] dark:border-white/10 text-[#64748B] dark:text-foreground/60 hover:bg-[#F0F9FF] dark:hover:bg-white/5"
                                             }`}
                                     >
                                         Month
