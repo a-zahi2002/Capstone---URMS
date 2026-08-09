@@ -254,79 +254,117 @@ export default function ProfilePage() {
 
     return (
         <ProtectedRoute>
-            <div className="min-h-screen bg-slate-50 dark:bg-background/20 overflow-x-hidden">
+            <div className="min-h-screen bg-[#F8FAFC] overflow-x-hidden">
 
                 <style>{`
-                    @keyframes slide-up   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+                    @keyframes slide-up   { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
                     @keyframes fade-in    { from{opacity:0} to{opacity:1} }
-                    @keyframes pulse-dot  { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.25);opacity:0.7} }
-                    .anim-up-1  { animation: slide-up 0.45s ease 0.05s both; }
-                    .anim-up-2  { animation: slide-up 0.45s ease 0.12s both; }
-                    .anim-up-3  { animation: slide-up 0.45s ease 0.2s both; }
-                    .anim-up-4  { animation: slide-up 0.45s ease 0.28s both; }
-                    .anim-fade  { animation: fade-in  0.5s ease both; }
-                    .card-hover { transition: all 0.25s cubic-bezier(.4,0,.2,1); }
-                    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-                    .online-dot { animation: pulse-dot 2s ease-in-out infinite; }
+                    @keyframes pulse-ring { 0%,100%{transform:scale(1);opacity:0.6} 50%{transform:scale(1.12);opacity:0} }
+                    @keyframes online-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.5)} 70%{box-shadow:0 0 0 6px rgba(16,185,129,0)} }
+                    .anim-1 { animation: slide-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+                    .anim-2 { animation: slide-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.12s both; }
+                    .anim-3 { animation: slide-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.2s both; }
+                    .anim-4 { animation: slide-up 0.5s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
+                    .anim-fade { animation: fade-in 0.4s ease both; }
+                    .ring-pulse::before { content:''; position:absolute; inset:-4px; border-radius:50%; border:2px solid; animation: pulse-ring 2.5s ease-in-out infinite; }
+                    .online-dot { animation: online-pulse 2s ease-in-out infinite; }
+                    .card-lift { transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
+                    .card-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(14,165,233,0.10); }
+                    .tab-underline { position:absolute; bottom:-1px; left:0; right:0; height:2px; border-radius:2px; background:linear-gradient(90deg,#0EA5E9,#0D9488); }
+                    .input-field {
+                        width:100%; padding: 0.875rem 1rem 0.875rem 2.75rem;
+                        background:#fff; border:1.5px solid #E2E8F0; border-radius:12px;
+                        font-size:0.875rem; font-weight:600; color:#0F172A;
+                        transition: border-color 0.2s, box-shadow 0.2s;
+                        outline:none;
+                    }
+                    .input-field:focus { border-color:#0EA5E9; box-shadow:0 0 0 3px rgba(14,165,233,0.12); }
+                    .input-field:disabled { background:#F8FAFC; color:#94A3B8; cursor:not-allowed; }
+                    .toggle-track {
+                        position:relative; display:inline-flex; align-items:center;
+                        width:46px; height:26px; border-radius:99px; cursor:pointer;
+                        transition: background 0.25s ease; border:none; outline:none;
+                        flex-shrink:0;
+                    }
+                    .toggle-thumb {
+                        position:absolute; left:3px; width:20px; height:20px;
+                        background:#fff; border-radius:50%;
+                        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+                        transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+                    }
                 `}</style>
 
                 {authLoading ? (
                     <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-                        <div className="w-16 h-16 rounded-none bg-brand-primary/5 border border-brand-primary/10 flex items-center justify-center shadow-md">
-                            <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
+                        <div className="w-16 h-16 rounded-2xl bg-[#F0F9FF] border border-[#BAE6FD] flex items-center justify-center shadow-md">
+                            <Loader2 className="w-7 h-7 text-[#0EA5E9] animate-spin" />
                         </div>
-                        <p className="text-slate-400 font-semibold text-sm">Loading your profile…</p>
+                        <p className="text-[#64748B] font-semibold text-sm">Loading your profile…</p>
                     </div>
 
                 ) : !user ? (
                     <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-                        <div className="w-16 h-16 rounded-none bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 flex items-center justify-center shadow-md">
-                            <AlertCircle className="w-8 h-8 text-red-400" />
+                        <div className="w-16 h-16 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center shadow-md">
+                            <AlertCircle className="w-7 h-7 text-red-400" />
                         </div>
-                        <p className="text-slate-700 dark:text-white/80 font-bold">Not signed in</p>
-                        <p className="text-slate-400 text-sm">Please sign in to view your profile.</p>
+                        <p className="text-[#0F172A] font-bold">Not signed in</p>
+                        <p className="text-[#64748B] text-sm">Please sign in to view your profile.</p>
                     </div>
 
                 ) : (
-                    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+                    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
-                        {/* HERO BANNER CARD */}
-                        <div className="anim-up-1 relative overflow-hidden rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-slate-100 dark:shadow-none border border-slate-100 dark:border-white/5">
-                            {/* Gradient banner top */}
-                            <div className={`h-36 bg-card ${meta.gradient} relative overflow-hidden`}>
-                                <div className="absolute -top-8 -right-8 w-48 h-48 bg-white/10 rounded-none" />
-                                <div className="absolute -bottom-12 -left-8 w-56 h-56 bg-white/10 rounded-none" />
-                                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+                        {/* ── HERO CARD ── */}
+                        <div className="anim-1 relative overflow-hidden rounded-2xl bg-white border border-[#E2E8F0] shadow-sm">
+                            {/* Banner gradient */}
+                            <div className="h-40 relative overflow-hidden"
+                                style={{ background: "linear-gradient(135deg, #0EA5E9 0%, #0D9488 50%, #0284C7 100%)" }}>
+                                {/* Decorative blobs */}
+                                <div className="absolute -top-10 -right-10 w-52 h-52 rounded-full bg-white/10" />
+                                <div className="absolute -bottom-16 -left-6 w-48 h-48 rounded-full bg-white/10" />
+                                <div className="absolute top-4 right-4 w-24 h-24 rounded-full bg-white/5" />
+                                {/* Dot grid */}
+                                <div className="absolute inset-0 opacity-10"
+                                    style={{ backgroundImage:"radial-gradient(circle, white 1.5px, transparent 1.5px)", backgroundSize:"24px 24px" }} />
+                                {/* Role badge top-right */}
+                                <div className="absolute top-4 left-6 flex items-center gap-2">
+                                    <span className="text-xl">{meta.icon}</span>
+                                    <span className="text-xs font-bold text-white/80 uppercase tracking-widest">{meta.label} Account</span>
+                                </div>
                             </div>
 
-                            {/* White body */}
-                            <div className="bg-card px-8 pb-8">
-                                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-14 mb-7">
-                                    <div className="flex items-end gap-5">
-                                        <div className={`relative p-1 rounded-none bg-card ${meta.gradient} border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]`}>
-                                            <div className="w-24 h-24 rounded-[20px] bg-card flex items-center justify-center text-3xl font-black text-slate-800 dark:text-white">
-                                                {initials}
-                                            </div>
-                                            <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-none bg-emerald-400 border-2 border-white dark:border-slate-900 shadow online-dot" />
-                                        </div>
+                            {/* Avatar + name row */}
+                            <div className="px-6 sm:px-8 pb-6">
+                                <div className="relative -mt-12 mb-4 w-fit">
+                                    <div className="w-24 h-24 rounded-2xl bg-white border-4 border-white shadow-xl flex items-center justify-center"
+                                        style={{ background: "linear-gradient(135deg, #0EA5E9, #0D9488)" }}>
+                                        <span className="text-3xl font-black text-white">{initials}</span>
+                                    </div>
+                                    {/* Online dot */}
+                                    <div className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-400 border-2 border-white shadow-sm online-dot" />
+                                </div>
 
-                                        <div className="pb-2">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">{currentName}</h1>
-                                                <span className="text-lg">{meta.icon}</span>
-                                            </div>
-                                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{currentEmail}</p>
-                                            <span className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-none text-xs font-bold border ${meta.badge} ${meta.badgeText}`}>
-                                                <BadgeCheck className="w-3.5 h-3.5" />
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+                                    <div className="pb-1 max-w-full">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h1 className="text-xl font-black text-[#0F172A] leading-tight">{currentName}</h1>
+                                            <BadgeCheck className="w-4.5 h-4.5 text-[#0EA5E9] shrink-0" />
+                                        </div>
+                                        <p className="text-[#64748B] text-sm break-all">{currentEmail}</p>
+                                        <div className="mt-2.5">
+                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${meta.badge} ${meta.badgeText}`}>
+                                                <BadgeCheck className="w-3 h-3" />
                                                 {meta.label}
                                             </span>
                                         </div>
                                     </div>
 
+                                    {/* Edit button */}
                                     {activeTab === "profile" && !isEditing && (
                                         <button
                                             onClick={() => setIsEditing(true)}
-                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-none text-sm font-bold text-white bg-card ${meta.gradient} shadow-md hover:scale-[1.02] active:scale-95 transition-all duration-200`}
+                                            className="shrink-0 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 cursor-pointer h-fit"
+                                            style={{ background: "linear-gradient(135deg, #0EA5E9, #0D9488)", boxShadow: "0 4px 14px rgba(14,165,233,0.25)" }}
                                         >
                                             <Edit2 className="w-4 h-4" />
                                             Edit Profile
@@ -334,15 +372,22 @@ export default function ProfilePage() {
                                     )}
                                 </div>
 
+                                {/* Info chips row */}
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                                    {infoItems.map((item, i) => (
-                                        <div key={i} className={`card-hover flex items-center gap-3 p-4 rounded-none border ${item.border} ${item.bg}`}>
-                                            <div className={`shrink-0 w-9 h-9 rounded-none bg-card border border-slate-200/40 dark:border-white/5 flex items-center justify-center shadow-sm ${item.color}`}>
+                                    {[
+                                        { icon: <Mail className="w-4 h-4" />,     label: "Email",        value: currentEmail, accent: "#0EA5E9", bg: "#F0F9FF" },
+                                        { icon: <Shield className="w-4 h-4" />,   label: "Role",         value: meta.label,   accent: "#8B5CF6", bg: "#F5F3FF" },
+                                        { icon: <Calendar className="w-4 h-4" />, label: "Member Since", value: joinDate,      accent: "#0D9488", bg: "#F0FDFA" },
+                                        { icon: <Building2 className="w-4 h-4" />,label: "Institution",  value: "SUSL",        accent: "#F59E0B", bg: "#FFFBEB" },
+                                    ].map((item, i) => (
+                                        <div key={i} className="card-lift flex items-center gap-3 p-3.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]">
+                                            <div className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
+                                                style={{ background: item.bg, color: item.accent }}>
                                                 {item.icon}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">{item.label}</p>
-                                                <p className="text-sm font-bold text-slate-800 dark:text-white truncate mt-0.5">{item.value}</p>
+                                                <p className="text-[9px] font-bold uppercase tracking-widest text-[#94A3B8]">{item.label}</p>
+                                                <p className="text-[12px] font-bold text-[#0F172A] truncate mt-0.5">{item.value}</p>
                                             </div>
                                         </div>
                                     ))}
@@ -350,138 +395,123 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        {/* TAB BAR SWITCHER */}
-                        <div className="anim-up-2 flex border-b border-slate-200 dark:border-white/5 pb-px gap-6">
-                            <button
-                                onClick={() => setActiveTab("profile")}
-                                className={`pb-4 text-xs font-black uppercase tracking-wider transition-all relative ${
-                                    activeTab === "profile" 
-                                        ? "text-brand-primary" 
-                                        : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                                }`}
-                            >
-                                General Profile
-                                {activeTab === "profile" && (
-                                    <motion.div layoutId="profileActiveTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary" />
-                                )}
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setActiveTab("preferences");
-                                    setSuccess(null);
-                                    setError(null);
-                                }}
-                                className={`pb-4 text-xs font-black uppercase tracking-wider transition-all relative flex items-center gap-1.5 ${
-                                    activeTab === "preferences" 
-                                        ? "text-brand-primary" 
-                                        : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                                }`}
-                            >
-                                <BellRing className="w-3.5 h-3.5" />
-                                Notification Settings
-                                {activeTab === "preferences" && (
-                                    <motion.div layoutId="profileActiveTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-primary" />
-                                )}
-                            </button>
+                        {/* ── TAB BAR ── */}
+                        <div className="anim-2 flex items-center gap-1 bg-white border border-[#E2E8F0] rounded-2xl p-1.5 shadow-sm">
+                            {[
+                                { key: "profile", label: "General Profile", icon: <UserIcon className="w-3.5 h-3.5" /> },
+                                { key: "preferences", label: "Notifications", icon: <BellRing className="w-3.5 h-3.5" /> },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.key}
+                                    onClick={() => { setActiveTab(tab.key as any); setSuccess(null); setError(null); }}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                                        activeTab === tab.key
+                                            ? "text-white shadow-md"
+                                            : "text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC]"
+                                    }`}
+                                    style={activeTab === tab.key ? { background: "linear-gradient(135deg, #0EA5E9, #0D9488)" } : {}}
+                                >
+                                    {tab.icon}
+                                    {tab.label}
+                                </button>
+                            ))}
                         </div>
 
-                        {/* Feedback Banner */}
+                        {/* ── Feedback Banner ── */}
                         {success && (
-                            <div className="anim-fade flex items-center gap-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-250 dark:border-emerald-500/20 p-4 rounded-none shadow-sm">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{success}</p>
+                            <div className="anim-fade flex items-center gap-3 bg-[#F0FDFA] border border-[#99F6E4] p-4 rounded-2xl shadow-sm">
+                                <CheckCircle2 className="w-5 h-5 text-[#0D9488] shrink-0" />
+                                <p className="text-sm font-semibold text-[#0F766E]">{success}</p>
+                            </div>
+                        )}
+                        {error && (
+                            <div className="anim-fade flex items-center gap-3 bg-red-50 border border-red-200 p-4 rounded-2xl shadow-sm">
+                                <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                                <p className="text-sm font-semibold text-red-600">{error}</p>
                             </div>
                         )}
 
-                        {/* ─── TAB CONTENT 1: PROFILE INFO ─── */}
+                        {/* ─── TAB 1: PROFILE ─── */}
                         {activeTab === "profile" && (
-                            <div className="space-y-6">
-                                {/* EDIT FORM */}
+                            <div className="anim-3 space-y-5">
+
+                                {/* Edit Form */}
                                 {isEditing && (
-                                    <div className="anim-up-2 bg-card border border-slate-100 dark:border-white/5 rounded-none shadow-sm overflow-hidden">
-                                        <div className={`h-1 bg-card ${meta.gradient}`} />
-                                        <div className="p-8">
-                                            <div className="flex items-center gap-3 mb-7">
-                                                <div className={`w-10 h-10 rounded-none bg-card ${meta.gradient} flex items-center justify-center shadow-md`}>
-                                                    <Edit2 className="w-4 h-4 text-white" />
+                                    <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden">
+                                        {/* Top accent bar */}
+                                        <div className="h-1 w-full" style={{ background: "linear-gradient(90deg, #0EA5E9, #0D9488)" }} />
+                                        <div className="p-6 sm:p-8">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
+                                                    style={{ background: "linear-gradient(135deg, #0EA5E9, #0D9488)" }}>
+                                                    <Edit2 className="w-4 h-4" />
                                                 </div>
                                                 <div>
-                                                    <h2 className="text-lg font-black text-slate-900 dark:text-white">Edit Information</h2>
-                                                    <p className="text-xs text-slate-450">Update your display name</p>
+                                                    <h2 className="text-base font-bold text-[#0F172A]">Edit Information</h2>
+                                                    <p className="text-xs text-[#64748B]">Update your display name and contact details</p>
                                                 </div>
                                             </div>
 
-                                            {error && (
-                                                <div className="flex items-center gap-3 bg-red-50 border border-red-200 p-4 rounded-none mb-6">
-                                                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-                                                    <p className="text-sm font-semibold text-red-600">{error}</p>
-                                                </div>
-                                            )}
-
                                             <form onSubmit={handleSaveProfile} className="space-y-5 max-w-lg">
+                                                {/* Full Name */}
                                                 <div>
-                                                    <label htmlFor="displayName" className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                                                    <label htmlFor="displayName" className="block text-[10px] font-black uppercase tracking-widest text-[#94A3B8] mb-2">
                                                         Full Name
                                                     </label>
                                                     <div className="relative">
-                                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                            <UserIcon className="h-4 w-4 text-slate-400" />
+                                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                                            <UserIcon className="h-4 w-4 text-[#94A3B8]" />
                                                         </div>
                                                         <input
-                                                            id="displayName"
-                                                            type="text"
+                                                            id="displayName" type="text"
                                                             value={displayName}
                                                             onChange={(e) => setDisplayName(e.target.value)}
-                                                            disabled={saveLoading}
-                                                            required
+                                                            disabled={saveLoading} required
                                                             placeholder="Your full name"
-                                                            className="block w-full pl-11 pr-4 py-3.5 bg-slate-55 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-none text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all disabled:opacity-50"
+                                                            className="input-field"
                                                         />
                                                     </div>
                                                 </div>
 
+                                                {/* Phone */}
                                                 <div>
-                                                    <label htmlFor="phone" className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-                                                        Phone Number (for Critical SMS Alerts)
+                                                    <label htmlFor="phone" className="block text-[10px] font-black uppercase tracking-widest text-[#94A3B8] mb-2">
+                                                        Phone Number <span className="normal-case font-medium">(for SMS alerts)</span>
                                                     </label>
                                                     <div className="relative">
-                                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                            <Smartphone className="h-4 w-4 text-slate-400" />
+                                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                                            <Smartphone className="h-4 w-4 text-[#94A3B8]" />
                                                         </div>
                                                         <input
-                                                            id="phone"
-                                                            type="text"
+                                                            id="phone" type="text"
                                                             value={phone}
                                                             onChange={(e) => setPhone(e.target.value)}
                                                             disabled={saveLoading}
-                                                            placeholder="+947XXXXXXXX or 07XXXXXXXX"
-                                                            className="block w-full pl-11 pr-4 py-3.5 bg-slate-55 dark:bg-white/5 border border-slate-200/50 dark:border-white/5 rounded-none text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all disabled:opacity-50"
+                                                            placeholder="+947XXXXXXXX"
+                                                            className="input-field"
                                                         />
                                                     </div>
                                                 </div>
 
+                                                {/* Email (read-only) */}
                                                 <div className="opacity-60 pointer-events-none">
-                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                                                    <label className="block text-[10px] font-black uppercase tracking-widest text-[#94A3B8] mb-2">
                                                         Email Address <span className="normal-case font-medium">(read-only)</span>
                                                     </label>
                                                     <div className="relative">
-                                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                            <Mail className="h-4 w-4 text-slate-400" />
+                                                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                                            <Mail className="h-4 w-4 text-[#94A3B8]" />
                                                         </div>
-                                                        <input
-                                                            type="email"
-                                                            value={currentEmail}
-                                                            disabled
-                                                            className="block w-full pl-11 pr-4 py-3.5 bg-slate-100 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 rounded-none text-sm font-semibold text-slate-500 cursor-not-allowed"
-                                                        />
+                                                        <input type="email" value={currentEmail} disabled className="input-field" />
                                                     </div>
                                                 </div>
 
-                                                <div className="flex gap-3 pt-2">
+                                                {/* Actions */}
+                                                <div className="flex gap-3 pt-1">
                                                     <button
-                                                        type="submit"
-                                                        disabled={saveLoading}
-                                                        className={`relative overflow-hidden inline-flex items-center gap-2 px-6 py-3 rounded-none text-sm font-bold text-white bg-card ${meta.gradient} border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all`}
+                                                        type="submit" disabled={saveLoading}
+                                                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white shadow-md hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                                                        style={{ background: "linear-gradient(135deg, #0EA5E9, #0D9488)", boxShadow: "0 4px 14px rgba(14,165,233,0.25)" }}
                                                     >
                                                         {saveLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                                         Save Changes
@@ -490,7 +520,7 @@ export default function ProfilePage() {
                                                         type="button"
                                                         onClick={() => { setIsEditing(false); setDisplayName(currentName); setError(null); }}
                                                         disabled={saveLoading}
-                                                        className="inline-flex items-center gap-2 px-6 py-3 rounded-none text-sm font-bold text-slate-650 border border-slate-200 dark:border-white/10 bg-card hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+                                                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-[#64748B] bg-[#F8FAFC] border border-[#E2E8F0] hover:bg-[#F0F9FF] hover:border-[#0EA5E9]/40 transition-all cursor-pointer"
                                                     >
                                                         <X className="w-4 h-4" />
                                                         Cancel
@@ -501,69 +531,89 @@ export default function ProfilePage() {
                                     </div>
                                 )}
 
-                                {/* BOTTOM ROW: Security + Quick Links */}
-                                <div className="anim-up-3 grid md:grid-cols-2 gap-6">
-                                    <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none shadow-sm overflow-hidden">
-                                        <div className="px-6 pt-6 pb-2 flex items-center gap-3 mb-4">
-                                            <div className="w-10 h-10 rounded-none bg-slate-900 flex items-center justify-center shadow-md">
+                                {/* Security + Quick Links */}
+                                <div className="grid md:grid-cols-2 gap-5">
+                                    {/* Security Status */}
+                                    <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden">
+                                        <div className="px-6 pt-6 pb-4 flex items-center gap-3 border-b border-[#F1F5F9]">
+                                            <div className="w-10 h-10 rounded-xl bg-[#0F172A] flex items-center justify-center shadow-md">
                                                 <Lock className="w-4 h-4 text-white" />
                                             </div>
                                             <div>
-                                                <h3 className="text-base font-black text-slate-900 dark:text-white">Security Status</h3>
-                                                <p className="text-xs text-slate-405">Account protection overview</p>
+                                                <h3 className="text-sm font-bold text-[#0F172A]">Security Status</h3>
+                                                <p className="text-xs text-[#64748B]">Account protection overview</p>
                                             </div>
                                         </div>
-
-                                        <div className="px-6 pb-6 space-y-3">
-                                            <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-none">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-2.5 h-2.5 rounded-none ${user?.emailVerified ? "bg-emerald-400" : "bg-amber-400"}`} />
-                                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-350">Email Verified</span>
+                                        <div className="px-6 py-4 space-y-3">
+                                            {[
+                                                {
+                                                    label: "Email Verified",
+                                                    ok: user?.emailVerified,
+                                                    trueText: "Verified",
+                                                    falseText: "Pending",
+                                                },
+                                                {
+                                                    label: "Account Type",
+                                                    ok: true,
+                                                    trueText: "Institutional",
+                                                    falseText: "—",
+                                                },
+                                            ].map((row, i) => (
+                                                <div key={i} className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <div className={`w-2 h-2 rounded-full ${row.ok ? "bg-emerald-400" : "bg-amber-400"}`} />
+                                                        <span className="text-sm font-semibold text-[#0F172A]">{row.label}</span>
+                                                    </div>
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${row.ok ? "bg-[#F0FDFA] text-[#0D9488]" : "bg-amber-50 text-amber-600"}`}>
+                                                        {row.ok ? row.trueText : row.falseText}
+                                                    </span>
                                                 </div>
-                                                <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-none ${user?.emailVerified ? "bg-emerald-100/80 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-amber-100/80 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400"}`}>
-                                                    {user?.emailVerified ? "Verified" : "Pending"}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-none">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-2.5 h-2.5 rounded-none bg-blue-400" />
-                                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-350">Account Type</span>
+                                            ))}
+                                            <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+                                                <div className="flex items-center gap-2.5">
+                                                    <KeyRound className="w-4 h-4 text-[#64748B]" />
+                                                    <span className="text-sm font-semibold text-[#0F172A]">Password</span>
                                                 </div>
-                                                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-none bg-blue-100/80 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
-                                                    Institutional
-                                                </span>
+                                                <button className="text-[11px] font-bold text-[#0EA5E9] hover:text-[#0284C7] transition-colors cursor-pointer flex items-center gap-1">
+                                                    Change <ChevronRight className="w-3 h-3" />
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none shadow-sm overflow-hidden">
-                                        <div className="px-6 pt-6 pb-2 flex items-center gap-3 mb-4">
-                                            <div className={`w-10 h-10 rounded-none bg-card ${meta.gradient} flex items-center justify-center shadow-md`}>
+                                    {/* Quick Access */}
+                                    <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden">
+                                        <div className="px-6 pt-6 pb-4 flex items-center gap-3 border-b border-[#F1F5F9]">
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
+                                                style={{ background: "linear-gradient(135deg, #0EA5E9, #0D9488)" }}>
                                                 <Sparkles className="w-4 h-4 text-white" />
                                             </div>
                                             <div>
-                                                <h3 className="text-base font-black text-slate-900 dark:text-white">Quick Access</h3>
-                                                <p className="text-xs text-slate-405">Navigate to your key pages</p>
+                                                <h3 className="text-sm font-bold text-[#0F172A]">Quick Access</h3>
+                                                <p className="text-xs text-[#64748B]">Jump to your key pages</p>
                                             </div>
                                         </div>
-
-                                        <div className="px-6 pb-6 space-y-2">
+                                        <div className="px-6 py-4 space-y-2">
                                             {[
-                                                { label: "My Bookings",       href: "/bookings",    desc: "View & manage reservations" },
-                                                { label: "Browse Resources",  href: "/resources",   desc: "Labs, equipment & rooms"    },
-                                                { label: "Dashboard",         href: "/dashboard",   desc: "Overview & analytics"       },
+                                                { label: "My Bookings",      href: "/bookings",   desc: "View & manage reservations",   icon: <Calendar className="w-4 h-4" /> },
+                                                { label: "Browse Resources", href: "/resources",  desc: "Labs, equipment & rooms",      icon: <Building2 className="w-4 h-4" /> },
+                                                { label: "Dashboard",        href: "/dashboard",  desc: "Overview & analytics",         icon: <Sparkles className="w-4 h-4" /> },
                                             ].map((link) => (
                                                 <Link
                                                     key={link.href}
                                                     href={link.href}
-                                                    className="card-hover flex items-center justify-between p-4 bg-slate-50/50 dark:bg-white/5 border border-slate-100 dark:border-white/5 hover:border-brand-primary/30 rounded-none group"
+                                                    className="card-lift flex items-center justify-between p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] hover:border-[#BAE6FD] hover:bg-[#F0F9FF] group"
                                                 >
-                                                    <div>
-                                                        <p className="text-sm font-bold text-slate-800 dark:text-white group-hover:text-brand-primary transition-colors">{link.label}</p>
-                                                        <p className="text-xs text-slate-400 mt-0.5">{link.desc}</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0EA5E9] bg-[#E0F2FE]">
+                                                            {link.icon}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-[#0F172A] group-hover:text-[#0EA5E9] transition-colors">{link.label}</p>
+                                                            <p className="text-xs text-[#64748B] mt-0.5">{link.desc}</p>
+                                                        </div>
                                                     </div>
-                                                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-primary group-hover:translate-x-1 transition-all" />
+                                                    <ChevronRight className="w-4 h-4 text-[#CBD5E1] group-hover:text-[#0EA5E9] group-hover:translate-x-1 transition-all" />
                                                 </Link>
                                             ))}
                                         </div>
@@ -572,130 +622,110 @@ export default function ProfilePage() {
                             </div>
                         )}
 
-                        {/* ─── TAB CONTENT 2: NOTIFICATION PREFERENCES ─── */}
+                        {/* ─── TAB 2: NOTIFICATION PREFERENCES ─── */}
                         {activeTab === "preferences" && (
-                            <div className="anim-up-2 space-y-6">
+                            <div className="anim-3 space-y-5">
                                 {prefLoading ? (
-                                    <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none p-16 flex flex-col items-center justify-center gap-4">
-                                        <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
-                                        <p className="text-slate-400 text-sm font-semibold">Retrieving your notification settings…</p>
+                                    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-16 flex flex-col items-center gap-4">
+                                        <Loader2 className="w-8 h-8 text-[#0EA5E9] animate-spin" />
+                                        <p className="text-[#64748B] text-sm font-semibold">Retrieving your notification settings…</p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-6">
-                                        <div className="grid md:grid-cols-2 gap-6">
-                                            
-                                            {/* Email settings card */}
-                                            <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none shadow-sm p-6 space-y-6">
-                                                <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-white/5">
-                                                    <div className="w-9 h-9 rounded-none bg-brand-primary/10 text-brand-primary flex items-center justify-center">
-                                                        <Mail className="w-4 h-4" />
+                                    <div className="space-y-5">
+                                        <div className="grid md:grid-cols-2 gap-5">
+                                            {/* Email Notifications */}
+                                            <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm p-6">
+                                                <div className="flex items-center gap-3 pb-4 mb-4 border-b border-[#F1F5F9]">
+                                                    <div className="w-9 h-9 rounded-xl bg-[#F0F9FF] flex items-center justify-center">
+                                                        <Mail className="w-4 h-4 text-[#0EA5E9]" />
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-base font-black text-slate-900 dark:text-white">Email Notifications</h3>
-                                                        <p className="text-xs text-slate-400">Settings sent directly to {currentEmail}</p>
+                                                        <h3 className="text-sm font-bold text-[#0F172A]">Email Notifications</h3>
+                                                        <p className="text-xs text-[#64748B] truncate">Sent to {currentEmail}</p>
                                                     </div>
                                                 </div>
-
-                                                <div className="space-y-5">
-                                                    {/* Booking toggle */}
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="space-y-0.5">
-                                                            <p className="text-sm font-bold text-slate-800 dark:text-white">Booking Requests & Approvals</p>
-                                                            <p className="text-xs text-slate-400 leading-normal">Get notified when a booking is created, approved, or rejected.</p>
+                                                <div className="space-y-4">
+                                                    {[
+                                                        { label: "Booking Requests & Approvals", desc: "Notified when a booking is created, approved, or rejected.", checked: emailBookings, onChange: setEmailBookings },
+                                                        { label: "Maintenance Ticket Updates",   desc: "Alerts on room repairs, hardware downtime or completions.",  checked: emailMaint,    onChange: setEmailMaint    },
+                                                        { label: "System Security & Alerts",     desc: "Critical security updates and administrative notifications.", checked: emailSystem,   onChange: setEmailSystem   },
+                                                    ].map((row, i) => (
+                                                        <div key={i} className="flex items-start justify-between gap-4 p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+                                                            <div className="space-y-0.5">
+                                                                <p className="text-sm font-semibold text-[#0F172A]">{row.label}</p>
+                                                                <p className="text-xs text-[#64748B] leading-normal">{row.desc}</p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => row.onChange(!row.checked)}
+                                                                className="toggle-track shrink-0 mt-0.5"
+                                                                style={{ background: row.checked ? "linear-gradient(135deg,#0EA5E9,#0D9488)" : "#E2E8F0" }}
+                                                                aria-pressed={row.checked}
+                                                            >
+                                                                <span className="toggle-thumb" style={{ transform: row.checked ? "translateX(20px)" : "translateX(0)" }} />
+                                                            </button>
                                                         </div>
-                                                        <ToggleSwitch checked={emailBookings} onChange={setEmailBookings} />
-                                                    </div>
-
-                                                    {/* Maintenance toggle */}
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="space-y-0.5">
-                                                            <p className="text-sm font-bold text-slate-800 dark:text-white">Maintenance Ticket Updates</p>
-                                                            <p className="text-xs text-slate-400 leading-normal">Alerts on room repairs, hardware downtime, or status completions.</p>
-                                                        </div>
-                                                        <ToggleSwitch checked={emailMaint} onChange={setEmailMaint} />
-                                                    </div>
-
-                                                    {/* System news toggle */}
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="space-y-0.5">
-                                                            <p className="text-sm font-bold text-slate-800 dark:text-white">System Security & Alerts</p>
-                                                            <p className="text-xs text-slate-400 leading-normal">Receive critical security updates and administrative notifications.</p>
-                                                        </div>
-                                                        <ToggleSwitch checked={emailSystem} onChange={setEmailSystem} />
-                                                    </div>
+                                                    ))}
                                                 </div>
                                             </div>
 
-                                            {/* Push / Web socket settings card */}
-                                            <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none shadow-sm p-6 space-y-6">
-                                                <div className="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-white/5">
-                                                    <div className="w-9 h-9 rounded-none bg-brand-primary/10 text-brand-primary flex items-center justify-center">
-                                                        <Smartphone className="w-4 h-4" />
+                                            {/* Push / In-App Notifications */}
+                                            <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm p-6">
+                                                <div className="flex items-center gap-3 pb-4 mb-4 border-b border-[#F1F5F9]">
+                                                    <div className="w-9 h-9 rounded-xl bg-[#F0FDFA] flex items-center justify-center">
+                                                        <Smartphone className="w-4 h-4 text-[#0D9488]" />
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-base font-black text-slate-900 dark:text-white">In-App & Push Notifications</h3>
-                                                        <p className="text-xs text-slate-400">Settings for real-time dashboard updates</p>
+                                                        <h3 className="text-sm font-bold text-[#0F172A]">In-App & Push</h3>
+                                                        <p className="text-xs text-[#64748B]">Real-time dashboard updates</p>
                                                     </div>
                                                 </div>
-
-                                                <div className="space-y-5">
-                                                    {/* Push Booking toggle */}
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="space-y-0.5">
-                                                            <p className="text-sm font-bold text-slate-800 dark:text-white">Real-Time Booking Status</p>
-                                                            <p className="text-xs text-slate-400 leading-normal">Show popup banner alerts instantly when booking logs change status.</p>
+                                                <div className="space-y-4">
+                                                    {[
+                                                        { label: "Real-Time Booking Status",         desc: "Popup banner alerts when booking status changes.",            checked: pushBookings, onChange: setPushBookings },
+                                                        { label: "Immediate Maintenance Allocations", desc: "Instant alerts when assigned to resolve hardware issues.",    checked: pushMaint,    onChange: setPushMaint    },
+                                                        { label: "Live System Broadcaster",           desc: "Broadcast pings when administrators emit system alerts.",    checked: pushSystem,   onChange: setPushSystem   },
+                                                    ].map((row, i) => (
+                                                        <div key={i} className="flex items-start justify-between gap-4 p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+                                                            <div className="space-y-0.5">
+                                                                <p className="text-sm font-semibold text-[#0F172A]">{row.label}</p>
+                                                                <p className="text-xs text-[#64748B] leading-normal">{row.desc}</p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => row.onChange(!row.checked)}
+                                                                className="toggle-track shrink-0 mt-0.5"
+                                                                style={{ background: row.checked ? "linear-gradient(135deg,#0EA5E9,#0D9488)" : "#E2E8F0" }}
+                                                                aria-pressed={row.checked}
+                                                            >
+                                                                <span className="toggle-thumb" style={{ transform: row.checked ? "translateX(20px)" : "translateX(0)" }} />
+                                                            </button>
                                                         </div>
-                                                        <ToggleSwitch checked={pushBookings} onChange={setPushBookings} />
-                                                    </div>
-
-                                                    {/* Push Maintenance toggle */}
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="space-y-0.5">
-                                                            <p className="text-sm font-bold text-slate-800 dark:text-white">Immediate Maintenance Allocations</p>
-                                                            <p className="text-xs text-slate-400 leading-normal">Get instant alerts when assigned to resolve open hardware issues.</p>
-                                                        </div>
-                                                        <ToggleSwitch checked={pushMaint} onChange={setPushMaint} />
-                                                    </div>
-
-                                                    {/* Push System toggle */}
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="space-y-0.5">
-                                                            <p className="text-sm font-bold text-slate-800 dark:text-white">Live System Broadcaster</p>
-                                                            <p className="text-xs text-slate-400 leading-normal">Receive immediate broadcast pings when administrators emit alerts.</p>
-                                                        </div>
-                                                        <ToggleSwitch checked={pushSystem} onChange={setPushSystem} />
-                                                    </div>
+                                                    ))}
                                                 </div>
                                             </div>
-
                                         </div>
 
-                                        {/* Actions panel */}
-                                        <div className="bg-card border border-slate-100 dark:border-white/5 rounded-none p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                        {/* Save footer */}
+                                        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                                                    <Globe className="w-4 h-4" />
+                                                <div className="w-9 h-9 rounded-xl bg-[#F0FDFA] flex items-center justify-center">
+                                                    <Globe className="w-4 h-4 text-[#0D9488]" />
                                                 </div>
-                                                <p className="text-xs text-slate-400 leading-relaxed max-w-md">
-                                                    Your notification preferences are synchronized securely with the UniLink database. Updates take effect immediately.
+                                                <p className="text-xs text-[#64748B] leading-relaxed max-w-md">
+                                                    Preferences are synced securely with the UniLink database and take effect immediately.
                                                 </p>
                                             </div>
-                                            
                                             <button
                                                 onClick={handleSavePreferences}
                                                 disabled={prefSaving}
-                                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-none text-sm font-bold text-white bg-brand-primary hover:bg-brand-secondary border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-brand-primary/20 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold text-white shadow-md hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                                                style={{ background: "linear-gradient(135deg, #0EA5E9, #0D9488)", boxShadow: "0 4px 14px rgba(14,165,233,0.25)" }}
                                             >
                                                 {prefSaving ? (
-                                                    <>
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                        Saving settings…
-                                                    </>
+                                                    <><Loader2 className="w-4 h-4 animate-spin" />Saving…</>
                                                 ) : (
-                                                    <>
-                                                        <Save className="w-4 h-4" />
-                                                        Save Preferences
-                                                    </>
+                                                    <><Save className="w-4 h-4" />Save Preferences</>
                                                 )}
                                             </button>
                                         </div>
@@ -704,9 +734,9 @@ export default function ProfilePage() {
                             </div>
                         )}
 
-                        {/* Footer branding details */}
-                        <div className="anim-up-4 text-center py-4">
-                            <p className="text-xs text-slate-400">UniLink · University Resource Management System · SUSL © {new Date().getFullYear()}</p>
+                        {/* Footer */}
+                        <div className="anim-4 text-center py-4">
+                            <p className="text-xs text-[#94A3B8]">UniLink · University Resource Management System · SUSL © {new Date().getFullYear()}</p>
                         </div>
 
                     </div>
@@ -715,3 +745,4 @@ export default function ProfilePage() {
         </ProtectedRoute>
     );
 }
+

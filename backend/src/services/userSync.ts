@@ -84,7 +84,7 @@ export async function syncSingleUser(uid: string): Promise<SyncedUser | null> {
                 email: emailLower,
                 role,
                 department,
-                approval_status: 'Pending',
+                approval_status: role === 'student' ? 'Approved' : 'Pending',
                 created_at: createdAt
             };
 
@@ -191,7 +191,7 @@ export async function syncAllUsers(): Promise<SyncedUser[]> {
                     email: emailLower,
                     role,
                     department,
-                    approval_status: 'Pending',
+                    approval_status: role === 'student' ? 'Approved' : 'Pending',
                     created_at: createdAt
                 };
 

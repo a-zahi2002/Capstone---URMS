@@ -6,6 +6,7 @@ import Footer from "./Footer";
 import { usePathname } from "next/navigation";
 import ProtectedRoute from "./ProtectedRoute";
 import DashboardLayout from "./dashboard/DashboardLayout";
+import PageLoader from "./PageLoader";
 
 interface LayoutShellProps {
   children: React.ReactNode;
@@ -36,6 +37,7 @@ export default function LayoutShell({ children }: LayoutShellProps) {
 
   return (
     <>
+      <PageLoader />
       {!skipGlobalNav && <Navbar />}
       <main className="flex-grow flex flex-col">
         {isDashboardPage ? (
