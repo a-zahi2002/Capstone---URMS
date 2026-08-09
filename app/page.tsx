@@ -530,71 +530,122 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── ACCESS TIERS / PRICING ── */}
-      <section id="tiers" className="bg-slate-50 py-20 border-t border-slate-200/80">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#0EA5E9]">Clear Allocations</p>
-            <h2 className="mt-1 text-3xl font-extrabold text-[#0F172A] sm:text-4xl">
-              Campus Access Levels
-            </h2>
-            <p className="mt-3 text-sm text-slate-600">
-              Structured reservation quotas designed for balanced resource distribution.
+      {/* ── PORTAL ACCESS ── */}
+<section className="py-20">
+  <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    
+    {/* Section Header */}
+    <div className="mx-auto max-w-2xl text-center">
+      <span className="text-xs font-bold uppercase tracking-widest text-[#0D9488]">
+        Portal Access
+      </span>
+
+      <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[#0F172A] sm:text-4xl">
+        Choose Your Portal
+      </h2>
+
+      <p className="mt-4 text-sm leading-6 text-slate-500">
+        Access the UniLink Resource Management System through the portal
+        designed for your role and responsibilities.
+      </p>
+    </div>
+
+    {/* Portal Cards */}
+    <div className="mt-12 grid gap-8 lg:grid-cols-3 lg:items-center">
+      {[
+        {
+          name: "Student Portal",
+          desc: "For students to access and reserve university resources.",
+          features: [
+            "View available resources",
+            "Make resource reservations",
+            "Track reservation status",
+            "View booking history",
+            "Manage personal profile",
+          ],
+          cta: "Access Student Portal",
+          popular: false,
+        },
+        {
+          name: "Academic Portal",
+          desc: "For academic staff to manage and coordinate university resources.",
+          features: [
+            "Manage academic resources",
+            "Review resource reservations",
+            "Approve or reject requests",
+            "Monitor resource availability",
+            "Manage academic schedules",
+          ],
+          cta: "Access Academic Portal",
+          popular: true,
+        },
+        {
+          name: "Maintenance Portal",
+          desc: "For maintenance teams to monitor and manage resource issues.",
+          features: [
+            "View maintenance requests",
+            "Track reported issues",
+            "Manage maintenance tasks",
+            "Update repair status",
+            "Monitor resource conditions",
+          ],
+          cta: "Access Maintenance Portal",
+          popular: false,
+        },
+      ].map((portal, idx) => (
+        <div
+          key={idx}
+          className={`relative flex flex-col justify-between rounded-3xl border p-8 bg-white transition-all ${
+            portal.popular
+              ? "border-[#0D9488] shadow-xl ring-2 ring-[#0D9488]/20 lg:-translate-y-2"
+              : "border-slate-200 shadow-sm"
+          }`}
+        >
+          {portal.popular && (
+            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#0D9488] px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+              Recommended
+            </span>
+          )}
+
+          <div>
+            <h3 className="text-lg font-bold text-[#0F172A]">
+              {portal.name}
+            </h3>
+
+            <p className="mt-1 text-xs text-slate-500">
+              {portal.desc}
             </p>
+
+            <ul className="mt-8 space-y-3 border-t border-slate-100 pt-6">
+              {portal.features.map((feat, fIdx) => (
+                <li
+                  key={fIdx}
+                  className="flex items-center gap-2.5 text-xs text-slate-600"
+                >
+                  <Check className="h-4 w-4 shrink-0 text-[#0D9488]" />
+                  <span>{feat}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-3 lg:items-center">
-            {PRICING_TIERS.map((tier, idx) => (
-              <div
-                key={idx}
-                className={`relative flex flex-col justify-between rounded-3xl border p-8 bg-white transition-all ${
-                  tier.popular
-                    ? "border-[#0D9488] shadow-xl ring-2 ring-[#0D9488]/20 lg:-translate-y-2"
-                    : "border-slate-200 shadow-sm"
-                }`}
-              >
-                {tier.popular && (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#0D9488] px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-                    Most Popular
-                  </span>
-                )}
-
-                <div>
-                  <h3 className="text-lg font-bold text-[#0F172A]">{tier.name}</h3>
-                  <p className="mt-1 text-xs text-slate-500">{tier.desc}</p>
-
-                  <div className="mt-6 flex items-baseline gap-1">
-                    <span className="text-3xl font-extrabold text-[#0F172A]">{tier.price}</span>
-                    <span className="text-xs text-slate-400">/ {tier.period}</span>
-                  </div>
-
-                  <ul className="mt-8 space-y-3 border-t border-slate-100 pt-6">
-                    {tier.features.map((feat, fIdx) => (
-                      <li key={fIdx} className="flex items-center gap-2.5 text-xs text-slate-600">
-                        <Check className="h-4 w-4 text-[#0D9488] shrink-0" />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mt-8 pt-4">
-                  <Link
-                    href="/login"
-                    className={`block w-full rounded-full py-3 text-center text-xs font-bold transition-all ${
-                      tier.popular
-                        ? "bg-[#0D9488] text-white shadow-md shadow-teal-200 hover:bg-[#0F766E]"
-                        : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                    }`}
-                  >
-                    {tier.cta}
-                  </Link>
-                </div>
-              </div>
-            ))}
+          <div className="mt-8 pt-4">
+            <Link
+              href="/login"
+              className={`block w-full rounded-full py-3 text-center text-xs font-bold transition-all ${
+                portal.popular
+                  ? "bg-[#0D9488] text-white shadow-md shadow-teal-200 hover:bg-[#0F766E]"
+                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              {portal.cta}
+            </Link>
           </div>
         </div>
-      </section>
+      ))}
+    </div>
+  </div>
+</section>
 
       {/* ── INQUIRY & CONTACT SECTION ── */}
       <section className="py-20 bg-white">
