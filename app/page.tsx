@@ -604,9 +604,9 @@ export default function LandingPage() {
               {/* Contact Info */}
               <div className="lg:col-span-5">
                 <p className="text-xs font-bold uppercase tracking-wider text-sky-400">Direct Support</p>
-                <h2 color="white" className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
-                  Let's Build Something Great Together
-                </h2>
+                <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+  Let's Build Something Great Together
+</h2>
                 <p className="mt-4 text-sm text-slate-300 leading-relaxed">
                   Have questions regarding faculty resource integration, custom lab setups, or system access? Reach out to the IT administration team.
                 </p>
