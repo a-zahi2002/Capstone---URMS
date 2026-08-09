@@ -118,18 +118,18 @@ const normalizeBookingStatus = (status: string) => {
 
 const getBookingStatusClasses = (statusLabel: string) => {
     if (statusLabel === "Confirmed") {
-        return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20";
+        return "bg-[#CCFBF1] text-[#0D9488] border border-teal-200 dark:bg-teal-500/10 dark:text-teal-300 dark:border-teal-500/20";
     }
     if (statusLabel === "Pending") {
-        return "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20";
+        return "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20";
     }
     if (statusLabel === "Cancelled") {
-        return "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20";
+        return "bg-red-50 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/20";
     }
     if (statusLabel === "Rejected") {
-        return "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-500/20";
+        return "bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/20";
     }
-    return "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-foreground/60 border border-slate-200 dark:border-white/10";
+    return "bg-[#F0F9FF] text-[#0EA5E9] border border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20";
 };
 
 export default function PersonalBookingDashboard({
@@ -300,58 +300,58 @@ export default function PersonalBookingDashboard({
     const totalPages = Math.ceil(sortedBookings.length / pageSize) || 1;
 
     return (
-        <div className="space-y-8 text-foreground">
+        <div className="space-y-6 text-foreground">
             {/* ── Stats Cards Grid ── */}
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
-                    { label: "Total Bookings", value: stats.total, icon: CalendarDays, color: "text-blue-500", bg: "bg-blue-500/10" },
-                    { label: "Active Now", value: stats.active, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-                    { label: "Upcoming", value: stats.upcoming, icon: ClockIcon, color: "text-amber-500", bg: "bg-amber-500/10" },
-                    { label: "Completed", value: stats.completed, icon: CheckCircle2, color: "text-purple-500", bg: "bg-purple-500/10" },
-                    { label: "Cancelled / Declined", value: stats.cancelledRejected, icon: XCircle, color: "text-rose-500", bg: "bg-rose-500/10" },
+                    { label: "Total Bookings", value: stats.total, icon: CalendarDays, bg: "#F0F9FF", fg: "#0EA5E9" },
+                    { label: "Active Now", value: stats.active, icon: CheckCircle2, bg: "#CCFBF1", fg: "#0D9488" },
+                    { label: "Upcoming", value: stats.upcoming, icon: ClockIcon, bg: "#FFFBEB", fg: "#D97706" },
+                    { label: "Completed", value: stats.completed, icon: CheckCircle2, bg: "#F5F3FF", fg: "#7C3AED" },
+                    { label: "Cancelled / Declined", value: stats.cancelledRejected, icon: XCircle, bg: "#FFF1F2", fg: "#E11D48" },
                 ].map((stat, i) => (
                     <motion.div
                         key={stat.label}
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.35, delay: i * 0.05 }}
-                        className="bg-card border border-slate-200 dark:border-white/[0.06] rounded-none p-5 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all"
+                        className="bg-white dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-700 rounded-xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                     >
-                        <div className={`w-10 h-10 rounded-none ${stat.bg} flex items-center justify-center mb-3`}>
-                            <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: stat.bg }}>
+                            <stat.icon className="w-5 h-5" style={{ color: stat.fg }} />
                         </div>
-                        <p className="text-[10px] font-black text-slate-500 dark:text-foreground/40 uppercase tracking-widest leading-none mb-1">
+                        <p className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-wider leading-none mb-1">
                             {stat.label}
                         </p>
-                        <p className="text-3xl font-black text-foreground">{loadingBookings ? "—" : stat.value}</p>
+                        <p className="text-3xl font-bold text-[#0F172A] dark:text-white">{loadingBookings ? "—" : stat.value}</p>
                     </motion.div>
                 ))}
             </div>
 
             {/* ── Toolbar & Filters ── */}
-            <div className="bg-white dark:bg-slate-900/60 p-5 rounded-none border border-slate-100 dark:border-white/[0.06] shadow-sm space-y-4">
+            <div className="bg-white dark:bg-slate-800/60 p-5 rounded-xl border border-[#E2E8F0] dark:border-slate-700 shadow-sm space-y-4">
                 <div className="flex flex-col lg:flex-row gap-4">
                     {/* Search Input */}
                     <div className="relative flex-1 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-brand-primary transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-[#64748B] group-focus-within:text-[#0EA5E9] transition-colors" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search by resource name, location, or type..."
-                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-[#0c0a14] border border-slate-200 dark:border-white/10 rounded-none text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
+                            className="w-full pl-11 pr-4 py-2.5 bg-[#F8FAFC] dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-600 rounded-lg text-sm font-medium text-[#0F172A] dark:text-white placeholder:text-[#94A3B8] focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/15 transition-all"
                         />
                     </div>
 
                     {/* Filter by Resource Type */}
                     <div className="flex flex-wrap sm:flex-nowrap gap-4">
                         <div className="flex items-center gap-2">
-                            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-                            <span className="text-xs font-bold text-slate-500 dark:text-foreground/45 uppercase tracking-wider whitespace-nowrap">Type:</span>
+                            <Filter className="w-4 h-4 text-[#64748B] shrink-0" />
+                            <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider whitespace-nowrap">Type:</span>
                             <select
                                 value={resourceTypeFilter}
                                 onChange={(e) => setResourceTypeFilter(e.target.value)}
-                                className="px-3 py-2 border border-slate-200 dark:border-white/10 rounded-none text-xs font-bold text-slate-700 dark:text-foreground/80 bg-slate-50 dark:bg-[#0c0a14] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-colors min-w-[120px]"
+                                className="px-3 py-2 border border-[#E2E8F0] dark:border-slate-600 rounded-lg text-xs font-semibold text-[#0F172A] dark:text-white bg-[#F8FAFC] dark:bg-slate-900 focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/15 transition-colors min-w-[120px]"
                             >
                                 {resourceTypes.map((type) => (
                                     <option key={type} value={type}>
@@ -363,12 +363,12 @@ export default function PersonalBookingDashboard({
 
                         {/* Sort Option */}
                         <div className="flex items-center gap-2">
-                            <ArrowUpDown className="w-4 h-4 text-slate-400 shrink-0" />
-                            <span className="text-xs font-bold text-slate-500 dark:text-foreground/45 uppercase tracking-wider whitespace-nowrap">Sort:</span>
+                            <ArrowUpDown className="w-4 h-4 text-[#64748B] shrink-0" />
+                            <span className="text-xs font-semibold text-[#64748B] uppercase tracking-wider whitespace-nowrap">Sort:</span>
                             <select
                                 value={sortOption}
                                 onChange={(e) => setSortOption(e.target.value)}
-                                className="px-3 py-2 border border-slate-200 dark:border-white/10 rounded-none text-xs font-bold text-slate-700 dark:text-foreground/80 bg-slate-50 dark:bg-[#0c0a14] focus:outline-none focus:ring-2 focus:ring-brand-primary transition-colors min-w-[150px]"
+                                className="px-3 py-2 border border-[#E2E8F0] dark:border-slate-600 rounded-lg text-xs font-semibold text-[#0F172A] dark:text-white bg-[#F8FAFC] dark:bg-slate-900 focus:outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/15 transition-colors min-w-[150px]"
                             >
                                 <option value="date-desc">Date (Newest First)</option>
                                 <option value="date-asc">Date (Oldest First)</option>
@@ -380,7 +380,7 @@ export default function PersonalBookingDashboard({
                 </div>
 
                 {/* Status Tabs */}
-                <div className="flex flex-wrap gap-2 border-t border-slate-100 dark:border-white/[0.04] pt-4">
+                <div className="flex flex-wrap gap-2 border-t border-[#E2E8F0] dark:border-slate-700 pt-4">
                     {[
                         { id: "All", label: "All Bookings" },
                         { id: "Active", label: "Active" },
@@ -393,10 +393,10 @@ export default function PersonalBookingDashboard({
                         <button
                             key={status.id}
                             onClick={() => setStatusFilter(status.id)}
-                            className={`px-4 py-2 rounded-none text-xs font-black transition-all ${
+                            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
                                 statusFilter === status.id
-                                    ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
-                                    : "bg-slate-50 dark:bg-white/5 text-slate-650 dark:text-foreground/60 hover:bg-slate-100 dark:hover:bg-white/10"
+                                    ? "bg-[#0EA5E9] text-white shadow-sm shadow-sky-500/20"
+                                    : "bg-[#F0F9FF] text-[#0EA5E9] hover:bg-[#E0F2FE] dark:bg-sky-500/10 dark:text-sky-300 dark:hover:bg-sky-500/20"
                             }`}
                         >
                             {status.label}

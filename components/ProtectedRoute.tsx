@@ -29,7 +29,7 @@ export default function ProtectedRoute({
     useEffect(() => {
         if (!loading && user && allowedRoles && allowedRoles.length > 0) {
             const userRole = profile?.role || "student";
-            const approvalStatus = profile?.approval_status || "Approved";
+            const approvalStatus = userRole === "student" ? "Approved" : (profile?.approval_status || "Approved");
             
             // Only redirect if they are approved (otherwise they stay on the approval screen)
             if (approvalStatus === "Approved" && !allowedRoles.includes(userRole)) {
@@ -53,9 +53,10 @@ export default function ProtectedRoute({
 
     if (!user) return null; // redirect in progress
 
-    // Intercept Pending or Rejected approval status
+    // Intercept Pending or Rejected approval status (Students do NOT require Admin Approval)
+    const userRole = profile?.role || "student";
     const approvalStatus = profile?.approval_status;
-    if (approvalStatus && approvalStatus !== "Approved") {
+    if (userRole !== "student" && approvalStatus && approvalStatus !== "Approved") {
         const isPending = approvalStatus === "Pending";
         
         return (

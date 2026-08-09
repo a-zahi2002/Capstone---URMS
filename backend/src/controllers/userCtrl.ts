@@ -172,13 +172,15 @@ export const selfRegister = async (req: Request, res: Response) => {
             .eq("id", uid)
             .maybeSingle();
 
+        const isStudent = normalizedRole === "student";
+
         const profileData: Record<string, unknown> = {
             id: uid,
             name: name.trim(),
             email: email.toLowerCase(),
             role: normalizedRole,
             department,
-            approval_status: "Pending",
+            approval_status: isStudent ? "Approved" : "Pending",
             ...(password_hash ? { password_hash } : {}),
         };
 
@@ -211,7 +213,9 @@ export const selfRegister = async (req: Request, res: Response) => {
 
         return res.status(201).json({
             status: "success",
-            message: "Registration submitted. Your account is pending admin approval.",
+            message: isStudent
+                ? "Registration successful. Account active."
+                : "Registration submitted. Your account is pending admin approval.",
         });
     } catch (error: any) {
         console.error("selfRegister error:", error);
