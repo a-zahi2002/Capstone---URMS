@@ -3,37 +3,55 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, X, ChevronDown, User, Sparkles, Bell } from "lucide-react";
+import {
+    LogOut,
+    Menu,
+    X,
+    ChevronDown,
+    User,
+    Bell,
+    Building2,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import GlobalSearch from "./GlobalSearch";
 import { ThemeToggle } from "./ThemeToggle";
 import NotificationBell from "./NotificationBell";
 
-/* ── role colours (flat high contrast) ── */
-const roleMeta: Record<string, { label: string; dot: string; badge: string; text: string }> = {
-    admin:       { label: "Administrator", dot: "bg-black dark:bg-white", badge: "bg-transparent border-foreground",  text: "text-foreground"  },
-    lecturer:    { label: "Lecturer",      dot: "bg-black dark:bg-white", badge: "bg-transparent border-foreground",  text: "text-foreground" },
-    student:     { label: "Student",       dot: "bg-black dark:bg-white", badge: "bg-transparent border-foreground",  text: "text-foreground"    },
-    maintenance: { label: "Maintenance",   dot: "bg-black dark:bg-white", badge: "bg-transparent border-foreground",  text: "text-foreground"   },
+/*
+ * URMS LIGHT BLUE DESIGN SYSTEM
+ * bg-base      : #F8FAFC  (Slate 50)
+ * surface      : #FFFFFF
+ * border       : #E2E8F0  (Slate 200)
+ * primary      : #0EA5E9  (Sky 500)
+ * primary-dark : #0284C7  (Sky 600)
+ * teal         : #0D9488  (Teal 600)
+ * teal-light   : #CCFBF1  (Teal 100)
+ * ink-main     : #0F172A  (Slate 900)
+ * ink-muted    : #64748B  (Slate 500)
+ */
+
+const roleMeta: Record<string, { label: string }> = {
+    admin:       { label: "Administrator" },
+    lecturer:    { label: "Lecturer"      },
+    student:     { label: "Student"       },
+    maintenance: { label: "Maintenance"   },
 };
 
 export default function Navbar() {
-    const pathname    = usePathname();
+    const pathname   = usePathname();
     const { user, profile, signOut } = useAuth();
     const [isOpen,   setIsOpen]   = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [userMenu, setUserMenu] = useState(false);
-    const [hovered,  setHovered]  = useState<string | null>(null);
     const userMenuRef = useRef<HTMLDivElement>(null);
-    const indicatorRef = useRef<HTMLSpanElement>(null);
-    const navRef       = useRef<HTMLDivElement>(null);
 
+    /* scroll shadow */
     useEffect(() => {
         const fn = () => setScrolled(window.scrollY > 4);
         window.addEventListener("scroll", fn, { passive: true });
         return () => window.removeEventListener("scroll", fn);
     }, []);
 
+    /* close dropdown on outside click */
     useEffect(() => {
         const fn = (e: MouseEvent) => {
             if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node))
@@ -43,8 +61,10 @@ export default function Navbar() {
         return () => document.removeEventListener("mousedown", fn);
     }, []);
 
+    /* close mobile drawer on route change */
     useEffect(() => { setIsOpen(false); }, [pathname]);
 
+    /* nav links by role */
     let navLinks: { name: string; href: string }[] = [];
     switch (profile?.role) {
         case "admin":
@@ -74,6 +94,7 @@ export default function Navbar() {
         default:
             navLinks = [
                 { name: "Home",      href: "/"          },
+                { name: "Explore",   href: "/explore"   },
                 { name: "Resources", href: "/resources" },
             ];
     }
@@ -83,149 +104,125 @@ export default function Navbar() {
         ? profile.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
         : user?.email?.[0].toUpperCase() ?? "U";
 
-    useEffect(() => {
-        const key   = hovered ?? pathname;
-        const el    = navRef.current?.querySelector<HTMLElement>(`[data-href="${key}"]`);
-        const bar   = indicatorRef.current;
-        if (!el || !bar || !navRef.current) return;
-        const navRect = navRef.current.getBoundingClientRect();
-        const rect    = el.getBoundingClientRect();
-        bar.style.left  = `${rect.left - navRect.left}px`;
-        bar.style.width = `${rect.width}px`;
-        bar.style.opacity = "1";
-    }, [hovered, pathname, navLinks]);
-
     return (
         <>
-            {/* ════════════════════ NAVBAR ════════════════════ */}
-            <nav className={`sticky top-0 z-50 w-full bg-background transition-all duration-0 border-b border-border`}>
-
-                <style>{`
-                    @keyframes fadeUp  { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-                    .nav-item-enter { animation: fadeUp 0.15s ease forwards; }
-                `}</style>
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center h-16 gap-4">
+            {/* ════════════════ NAVBAR ════════════════ */}
+            <nav
+                className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+                    scrolled
+                        ? "bg-white/95 backdrop-blur-md shadow-[0_1px_12px_0_rgba(14,165,233,0.08)] border-b border-[#E2E8F0]"
+                        : "bg-white/80 backdrop-blur-sm border-b border-[#E2E8F0]"
+                }`}
+            >
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center h-16 gap-6">
 
                         {/* ── LOGO ── */}
-                        <Link href="/" className="flex items-center gap-2.5 group shrink-0 mr-2">
-                            <div className="relative">
-                                <img
-                                    src="/urms-logo.png"
-                                    alt="URMS Logo"
-                                    className="relative w-8 h-8 object-contain drop-shadow-none grayscale group-hover:grayscale-0 transition-all duration-0"
-                                />
-                            </div>
-                            <span className="text-xl font-heading font-black tracking-tight text-foreground uppercase">
-                                Uni<span className="text-brand-primary">Link</span>
-                            </span>
+                        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
+                            <img src="/logo1.png" alt="UniLink URMS Logo" className="h-25 w-auto object-contain" />
+                            
                         </Link>
 
-                        {/* ── SEARCH ── */}
-                        <div className="flex-1 flex justify-center px-2 lg:px-6">
-                            <GlobalSearch />
-                        </div>
-
                         {/* ── DESKTOP LINKS ── */}
-                        <div
-                            ref={navRef}
-                            className="hidden md:flex items-center gap-1 relative"
-                            onMouseLeave={() => setHovered(null)}
-                        >
-                            <span
-                                ref={indicatorRef}
-                                className="absolute bottom-0 h-0.5 bg-brand-primary transition-all duration-150 ease-out opacity-0 pointer-events-none"
-                                style={{ left: 0, width: 0 }}
-                            />
-
+                        <div className="hidden md:flex items-center gap-1 flex-1">
                             {navLinks.map((link) => {
                                 const isActive = pathname === link.href;
                                 return (
                                     <Link
                                         key={link.href}
                                         href={link.href}
-                                        data-href={link.href}
-                                        onMouseEnter={() => setHovered(link.href)}
-                                        className={`relative px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors duration-0 ${
+                                        className={`relative px-3.5 py-2 text-[13px] font-medium rounded-lg transition-all duration-200 ${
                                             isActive
-                                                ? "text-brand-primary"
-                                                : "text-foreground hover:text-brand-primary"
+                                                ? "text-[#0EA5E9] bg-[#F0F9FF]"
+                                                : "text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC]"
                                         }`}
                                     >
                                         {link.name}
+                                        {isActive && (
+                                            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 h-0.5 w-4 rounded-full bg-[#0EA5E9]" />
+                                        )}
                                     </Link>
                                 );
                             })}
                         </div>
 
+                        {/* ── SPACER (pushes right area flush right on desktop) ── */}
+                        <div className="flex-1 md:hidden" />
+
                         {/* ── USER / AUTH AREA ── */}
                         <div className="hidden md:flex items-center gap-3 shrink-0">
                             {user && <NotificationBell />}
+
                             {user ? (
                                 <div className="relative" ref={userMenuRef}>
                                     <button
                                         onClick={() => setUserMenu(!userMenu)}
-                                        className={`flex items-center gap-2.5 pl-1 pr-3 py-1 border transition-all duration-0 rounded-none ${
+                                        className={`flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border transition-all duration-200 cursor-pointer ${
                                             userMenu
-                                                ? "border-brand-primary bg-brand-primary text-white"
-                                                : "border-border bg-background hover:border-foreground text-foreground"
+                                                ? "border-[#0EA5E9] bg-[#F0F9FF] shadow-sm"
+                                                : "border-[#E2E8F0] bg-white hover:border-[#0EA5E9]/40 hover:bg-[#F8FAFC]"
                                         }`}
                                     >
                                         {/* avatar */}
-                                        <div className={`w-7 h-7 flex items-center justify-center text-xs font-black shrink-0 ${userMenu ? "bg-white text-brand-primary" : "bg-foreground text-background"}`}>
+                                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#0D9488] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
                                             {initials}
                                         </div>
                                         <div className="text-left leading-none">
-                                            <p className="text-[10px] font-bold uppercase tracking-wider">
+                                            <p className="text-[12px] font-semibold text-[#0F172A]">
                                                 {profile?.name?.split(" ")[0] ?? "User"}
                                             </p>
+                                            {meta && (
+                                                <p className="text-[10px] text-[#64748B] mt-0.5">{meta.label}</p>
+                                            )}
                                         </div>
-                                        <ChevronDown className={`w-3 h-3 transition-transform duration-0 ${userMenu ? "rotate-180" : ""}`} />
+                                        <ChevronDown className={`w-3.5 h-3.5 text-[#64748B] transition-transform duration-200 ${userMenu ? "rotate-180" : ""}`} />
                                     </button>
 
                                     {/* ── DROPDOWN ── */}
                                     {userMenu && (
-                                        <div className="absolute right-0 mt-2 w-56 bg-background border border-border shadow-none overflow-hidden animate-in fade-in slide-in- duration-150 z-50">
-                                            <div className="px-4 py-3.5 bg-card border-b border-border">
+                                        <div className="absolute right-0 mt-2 w-60 bg-white border border-[#E2E8F0] rounded-2xl shadow-xl shadow-[#0EA5E9]/[0.06] overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            {/* header */}
+                                            <div className="px-4 py-3.5 bg-gradient-to-br from-[#F0F9FF] to-[#F0FDFA] border-b border-[#E2E8F0]">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 bg-foreground text-background flex items-center justify-center text-sm font-black shrink-0">
+                                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#0D9488] flex items-center justify-center text-sm font-bold text-white shrink-0">
                                                         {initials}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="text-xs font-bold text-foreground uppercase truncate">{profile?.name ?? "User"}</p>
-                                                        <p className="text-[10px] text-foreground/60 truncate">{user.email}</p>
+                                                        <p className="text-[12px] font-semibold text-[#0F172A] truncate">{profile?.name ?? "User"}</p>
+                                                        <p className="text-[10px] text-[#64748B] truncate">{user.email}</p>
                                                     </div>
                                                 </div>
                                                 {meta && (
-                                                    <span className={`inline-flex items-center gap-1.5 mt-3 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${meta.badge} ${meta.text}`}>
+                                                    <span className="inline-flex items-center gap-1.5 mt-2.5 px-2.5 py-0.5 text-[10px] font-semibold bg-[#CCFBF1] text-[#0D9488] rounded-full">
                                                         {meta.label}
                                                     </span>
                                                 )}
                                             </div>
 
-                                            <div className="p-2 space-y-1">
+                                            {/* menu items */}
+                                            <div className="p-1.5 space-y-0.5">
                                                 <Link
                                                     href="/profile"
                                                     onClick={() => setUserMenu(false)}
-                                                    className="flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wider text-foreground hover:bg-foreground hover:text-background transition-all group"
+                                                    className="flex items-center gap-3 px-3 py-2.5 text-[12px] font-medium text-[#0F172A] hover:bg-[#F0F9FF] rounded-xl transition-colors group"
                                                 >
-                                                    <User className="w-3.5 h-3.5" />
+                                                    <User className="w-4 h-4 text-[#64748B] group-hover:text-[#0EA5E9]" />
                                                     My Profile
                                                 </Link>
                                                 <Link
                                                     href="/notifications"
                                                     onClick={() => setUserMenu(false)}
-                                                    className="flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wider text-foreground hover:bg-foreground hover:text-background transition-all group"
+                                                    className="flex items-center gap-3 px-3 py-2.5 text-[12px] font-medium text-[#0F172A] hover:bg-[#F0F9FF] rounded-xl transition-colors group"
                                                 >
-                                                    <Bell className="w-3.5 h-3.5" />
+                                                    <Bell className="w-4 h-4 text-[#64748B] group-hover:text-[#0EA5E9]" />
                                                     Notifications
                                                 </Link>
+                                                <div className="my-1 mx-3 h-px bg-[#E2E8F0]" />
                                                 <button
                                                     onClick={() => { signOut(); setUserMenu(false); }}
-                                                    className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wider text-brand-primary border border-transparent hover:bg-brand-primary hover:text-white transition-all group"
+                                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-[12px] font-medium text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
                                                 >
-                                                    <LogOut className="w-3.5 h-3.5" />
+                                                    <LogOut className="w-4 h-4" />
                                                     Sign Out
                                                 </button>
                                             </div>
@@ -233,128 +230,136 @@ export default function Navbar() {
                                     )}
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2.5">
                                     <Link
                                         href="/register"
-                                        className="text-xs font-bold uppercase tracking-wider text-foreground hover:bg-foreground hover:text-background border border-transparent hover:border-foreground px-4 py-2 transition-all"
+                                        className="text-[13px] font-medium text-[#64748B] hover:text-[#0F172A] border border-[#E2E8F0] px-4 py-2 rounded-full hover:border-[#0EA5E9]/40 hover:bg-[#F8FAFC] transition-all"
                                     >
                                         Register
                                     </Link>
                                     <Link
                                         href="/login"
-                                        className="inline-flex items-center gap-1.5 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white bg-brand-primary border border-brand-primary hover:bg-background hover:text-brand-primary transition-all duration-0"
+                                        className="inline-flex items-center gap-1.5 px-5 py-2 text-[13px] font-semibold text-white bg-gradient-to-r from-[#0EA5E9] to-[#0D9488] rounded-full shadow-sm shadow-[#0EA5E9]/20 hover:shadow-md hover:shadow-[#0EA5E9]/30 hover:-translate-y-0.5 transition-all duration-200"
                                     >
                                         Sign In
                                     </Link>
                                 </div>
                             )}
-                            <div className="w-px h-6 bg-border mx-1" />
+
                             <ThemeToggle />
                         </div>
 
                         {/* ── HAMBURGER ── */}
                         <button
                             onClick={() => setIsOpen(!isOpen)}
-                            className="md:hidden relative w-9 h-9 flex flex-col items-center justify-center gap-[5px] border border-border bg-card hover:bg-foreground hover:text-background transition-all"
+                            className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl border border-[#E2E8F0] bg-white hover:bg-[#F0F9FF] hover:border-[#0EA5E9]/40 transition-all"
                             aria-label="Toggle menu"
                         >
-                            <span className={`block h-0.5 bg-current transition-all duration-0 origin-center ${isOpen ? "w-5 rotate-45 translate-y-[7px]" : "w-5"}`} />
-                            <span className={`block h-0.5 bg-current transition-all duration-0 ${isOpen ? "w-0 opacity-0" : "w-4"}`} />
-                            <span className={`block h-0.5 bg-current transition-all duration-0 origin-center ${isOpen ? "w-5 -rotate-45 -translate-y-[7px]" : "w-5"}`} />
+                            {isOpen
+                                ? <X className="w-4.5 h-4.5 text-[#0F172A]" />
+                                : <Menu className="w-4.5 h-4.5 text-[#0F172A]" />
+                            }
                         </button>
                     </div>
                 </div>
             </nav>
 
-            {/* ════════════════════ MOBILE DRAWER ════════════════════ */}
-            <div className={`md:hidden fixed inset-0 z-40 transition-all duration-0 ${isOpen ? "visible" : "invisible"}`}>
+            {/* ════════════════ MOBILE DRAWER ════════════════ */}
+            <div className={`md:hidden fixed inset-0 z-40 transition-all duration-300 ${isOpen ? "visible" : "invisible"}`}>
+                {/* backdrop */}
                 <div
-                    className={`absolute inset-0 bg-background transition-opacity duration-0 ${isOpen ? "opacity-100" : "opacity-0"}`}
+                    className={`absolute inset-0 bg-[#0F172A]/20 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}
                     onClick={() => setIsOpen(false)}
                 />
 
-                <div className={`absolute top-16 left-0 right-0 bottom-0 bg-background border-t border-border overflow-y-auto transition-all duration-150 ${
-                    isOpen ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0"
+                {/* panel */}
+                <div className={`absolute top-16 left-0 right-0 bottom-0 bg-white overflow-y-auto transition-all duration-300 shadow-xl ${
+                    isOpen ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
                 }`}>
 
+                    {/* user strip */}
                     {user && (
-                        <div className="flex items-center gap-3 px-5 py-6 border-b border-border bg-card">
-                            <div className="w-10 h-10 bg-foreground text-background flex items-center justify-center font-black shrink-0">
+                        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#E2E8F0] bg-gradient-to-r from-[#F0F9FF] to-[#F0FDFA]">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0EA5E9] to-[#0D9488] flex items-center justify-center font-bold text-white text-sm shrink-0">
                                 {initials}
                             </div>
                             <div className="min-w-0">
-                                <p className="text-sm font-bold text-foreground uppercase truncate">{profile?.name ?? "User"}</p>
-                                <p className="text-[10px] text-foreground/60 truncate">{user.email}</p>
+                                <p className="text-[13px] font-semibold text-[#0F172A] truncate">{profile?.name ?? "User"}</p>
+                                <p className="text-[11px] text-[#64748B] truncate">{user.email}</p>
                             </div>
                             {meta && (
-                                <span className={`ml-auto shrink-0 flex items-center gap-1 px-2.5 py-1 text-[9px] font-bold uppercase border ${meta.badge} ${meta.text}`}>
+                                <span className="ml-auto shrink-0 px-2.5 py-0.5 text-[10px] font-semibold bg-[#CCFBF1] text-[#0D9488] rounded-full">
                                     {meta.label}
                                 </span>
                             )}
                         </div>
                     )}
 
-                    <div className="p-3 space-y-1">
-                        {navLinks.map((link, i) => {
+                    {/* nav links */}
+                    <div className="px-3 py-3 space-y-1 border-b border-[#E2E8F0]">
+                        {navLinks.map((link) => {
                             const isActive = pathname === link.href;
                             return (
                                 <Link
                                     key={link.href}
                                     href={link.href}
                                     onClick={() => setIsOpen(false)}
-                                    className={`nav-item-enter flex items-center gap-3 px-4 py-4 text-xs font-bold uppercase tracking-wider transition-all border ${
+                                    className={`flex items-center gap-3 px-4 py-3 text-[13px] font-medium rounded-xl transition-all ${
                                         isActive
-                                            ? "border-brand-primary bg-brand-primary text-white"
-                                            : "border-transparent text-foreground hover:border-border hover:bg-card"
+                                            ? "bg-[#F0F9FF] text-[#0EA5E9]"
+                                            : "text-[#0F172A] hover:bg-[#F8FAFC]"
                                     }`}
-                                    style={{ animationDelay: `${i * 20}ms` }}
                                 >
+                                    {isActive && (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9] shrink-0" />
+                                    )}
                                     {link.name}
                                 </Link>
                             );
                         })}
                     </div>
 
-                    <div className="px-3 pb-6 border-t border-border pt-4 space-y-2">
+                    {/* account actions */}
+                    <div className="px-3 py-3 space-y-2">
                         {user ? (
                             <>
                                 <Link
                                     href="/profile"
                                     onClick={() => setIsOpen(false)}
-                                    className="flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wider text-foreground border border-transparent hover:border-border hover:bg-card transition-all"
+                                    className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-[#0F172A] hover:bg-[#F8FAFC] rounded-xl transition-colors"
                                 >
-                                    <User className="w-4 h-4" />
+                                    <User className="w-4 h-4 text-[#64748B]" />
                                     My Profile
                                 </Link>
                                 <Link
                                     href="/notifications"
                                     onClick={() => setIsOpen(false)}
-                                    className="flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wider text-foreground border border-transparent hover:border-border hover:bg-card transition-all"
+                                    className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-[#0F172A] hover:bg-[#F8FAFC] rounded-xl transition-colors"
                                 >
-                                    <Bell className="w-4 h-4" />
+                                    <Bell className="w-4 h-4 text-[#64748B]" />
                                     Notifications
                                 </Link>
                                 <button
                                     onClick={() => { signOut(); setIsOpen(false); }}
-                                    className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase tracking-wider text-brand-primary border border-brand-primary hover:bg-brand-primary hover:text-white transition-all"
+                                    className="w-full flex items-center gap-3 px-4 py-3 text-[13px] font-medium text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
                                 >
                                     <LogOut className="w-4 h-4" />
                                     Sign Out
                                 </button>
                             </>
                         ) : (
-                            <div className="space-y-2 px-3">
+                            <div className="space-y-2 px-1 pt-2">
                                 <Link
                                     href="/login"
                                     onClick={() => setIsOpen(false)}
-                                    className="w-full flex items-center justify-center gap-2 py-4 text-xs font-bold uppercase tracking-wider text-white bg-brand-primary border border-brand-primary hover:bg-background hover:text-brand-primary transition-all"
+                                    className="w-full flex items-center justify-center py-3 text-[13px] font-semibold text-white bg-gradient-to-r from-[#0EA5E9] to-[#0D9488] rounded-xl shadow-sm transition-all hover:opacity-90"
                                 >
                                     Sign In
                                 </Link>
                                 <Link
                                     href="/register"
                                     onClick={() => setIsOpen(false)}
-                                    className="w-full flex items-center justify-center py-4 text-xs font-bold uppercase tracking-wider text-foreground border border-border hover:bg-foreground hover:text-background transition-all"
+                                    className="w-full flex items-center justify-center py-3 text-[13px] font-medium text-[#0F172A] border border-[#E2E8F0] rounded-xl hover:bg-[#F8FAFC] transition-all"
                                 >
                                     Create Account
                                 </Link>
