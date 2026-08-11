@@ -37,13 +37,13 @@ const roleMeta: Record<string, {
     dot: string;
     icon: string;
 }> = {
-    admin:       { label: "Administrator", gradient: " ",  badge: "bg-violet-500/10 border-violet-500/20",  badgeText: "text-violet-500",  dot: "bg-violet-500", icon: "👑" },
-    lecturer:    { label: "Lecturer",      gradient: " ",   badge: "bg-emerald-500/10 border-emerald-500/20",badgeText: "text-emerald-500", dot: "bg-emerald-500",icon: "🎓" },
-    student:     { label: "Student",       gradient: " ",    badge: "bg-blue-500/10 border-blue-500/20",      badgeText: "text-blue-500",    dot: "bg-blue-500",   icon: "📚" },
-    maintenance: { label: "Maintenance",   gradient: " ",   badge: "bg-amber-500/10 border-amber-500/20",    badgeText: "text-amber-500",   dot: "bg-amber-500",  icon: "🔧" },
+    admin:       { label: "Administrator", gradient: "bg-gradient-to-br from-violet-600 to-indigo-600",  badge: "bg-violet-500/10 border-violet-500/20",  badgeText: "text-violet-500",  dot: "bg-violet-500", icon: "👑" },
+    lecturer:    { label: "Lecturer",      gradient: "bg-gradient-to-br from-emerald-500 to-teal-600",   badge: "bg-emerald-500/10 border-emerald-500/20",badgeText: "text-emerald-500", dot: "bg-emerald-500",icon: "🎓" },
+    student:     { label: "Student",       gradient: "bg-gradient-to-br from-blue-500 to-indigo-600",    badge: "bg-blue-500/10 border-blue-500/20",      badgeText: "text-blue-500",    dot: "bg-blue-500",   icon: "📚" },
+    maintenance: { label: "Maintenance",   gradient: "bg-gradient-to-br from-amber-500 to-orange-600",   badge: "bg-amber-500/10 border-amber-500/20",    badgeText: "text-amber-500",   dot: "bg-amber-500",  icon: "🔧" },
 };
 
-const defaultMeta = { label: "User", gradient: " ", badge: "bg-slate-500/10 border-slate-200", badgeText: "text-slate-700", dot: "bg-slate-500", icon: "👤" };
+const defaultMeta = { label: "User", gradient: "bg-gradient-to-br from-slate-500 to-slate-700", badge: "bg-slate-500/10 border-slate-200", badgeText: "text-slate-700", dot: "bg-slate-500", icon: "👤" };
 
 /* ── Custom Toggle Switch Component ── */
 interface SwitchProps {
