@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Line } from 'react-chartjs-2';
 import './ChartConfig'; // Ensure registration
 import { ChartOptions, ChartData } from 'chart.js';
@@ -12,7 +12,7 @@ interface LineChartProps {
   title?: string;
 }
 
-export const BookingLineChart: React.FC<LineChartProps> = ({ data, title }) => {
+export const BookingLineChart: React.FC<LineChartProps> = memo(({ data, title }) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
@@ -82,4 +82,6 @@ export const BookingLineChart: React.FC<LineChartProps> = ({ data, title }) => {
       <Line data={data} options={options} />
     </div>
   );
-};
+});
+
+BookingLineChart.displayName = 'BookingLineChart';

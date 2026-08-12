@@ -44,20 +44,23 @@ export const getResourceAnalytics = async (req: AuthRequest, res: Response) => {
         const supabase = req.supabase;
         const { department, startDate, endDate } = req.query as Record<string, string>;
 
-        // Category distribution
+        // Category distribution query
         let resQuery = supabase.from('resources').select('type');
         resQuery = applyDeptFilter(resQuery, department);
-        const { data: resourceData } = await resQuery;
+
+        // Top 5 most booked query
+        let bkQuery = supabase.from('bookings').select('resource_id, resources!inner(department)');
+        bkQuery = applyDeptFilter(bkQuery, department, 'resources');
+        bkQuery = applyDateRangeFilter(bkQuery, startDate, endDate);
+
+        const [resRes, bkRes] = await Promise.all([resQuery, bkQuery]);
+        const resourceData = resRes.data;
+        const bookingData = bkRes.data;
+
         const categoryDistribution: Record<string, number> = {};
         resourceData?.forEach((r: any) => {
             categoryDistribution[r.type] = (categoryDistribution[r.type] || 0) + 1;
         });
-
-        // Top 5 most booked — single name fetch batch
-        let bkQuery = supabase.from('bookings').select('resource_id, resources!inner(department)');
-        bkQuery = applyDeptFilter(bkQuery, department, 'resources');
-        bkQuery = applyDateRangeFilter(bkQuery, startDate, endDate);
-        const { data: bookingData } = await bkQuery;
 
         const counts: Record<string, number> = {};
         bookingData?.forEach((b: any) => counts[b.resource_id] = (counts[b.resource_id] || 0) + 1);

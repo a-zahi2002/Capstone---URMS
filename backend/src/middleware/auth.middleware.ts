@@ -39,6 +39,15 @@ export const verifyToken = async (req: AuthRequest, res: Response, next: NextFun
 
     const token = header.split(' ')[1];
 
+    // Allow mock-token bypass in development ONLY (for Quick Operator Access demo users)
+    if (token.startsWith('mock-token:') && process.env.NODE_ENV !== 'production') {
+        const parts = token.split(':');
+        const uid = parts[1] || 'dev-user';
+        const role = parts[2] || 'student';
+        req.user = { uid, role, admin: role === 'admin' };
+        return finalize();
+    }
+
     // Allow dev-token bypass in development ONLY — never in production
     if (token === 'dev-token' && process.env.NODE_ENV !== 'production') {
         req.user = { uid: 'dev-user', role: 'admin', admin: true };

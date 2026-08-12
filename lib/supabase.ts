@@ -32,6 +32,9 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   department?: string;
+  password_hash?: string;
+  phone?: string;
+  approval_status?: "Pending" | "Approved" | "Rejected";
   created_at: string;
 }
 
@@ -53,9 +56,45 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
 }
 
 export async function createUserProfile(profile: Omit<UserProfile, "created_at">) {
-  const { error } = await supabase.from("users").upsert(profile);
+  // Build the profile data, only including password_hash if it's provided
+  const profileData: Record<string, unknown> = { ...profile };
+  if (!profileData.password_hash) {
+    delete profileData.password_hash;
+  }
+
+  const { error } = await supabase.from("users").upsert(profileData);
   if (error) {
     console.error("Error creating user profile:", JSON.stringify(error, null, 2));
+    throw new Error(`Failed to create user profile: ${error.message || JSON.stringify(error)}`);
+  }
+}
+
+/**
+ * Creates a user profile using an authenticated Supabase client built from the
+ * user's Firebase ID token. This satisfies the RLS `insert_users` policy which
+ * reads `get_urms_uid()` from the JWT `sub` claim.
+ */
+export async function createUserProfileAuthenticated(
+  profile: Omit<UserProfile, "created_at">,
+  firebaseIdToken: string
+) {
+  // Build a Supabase client that carries the Firebase JWT so RLS can verify uid
+  const authenticatedClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${firebaseIdToken}`,
+      },
+    },
+  });
+
+  const profileData: Record<string, unknown> = { ...profile };
+  if (!profileData.password_hash) {
+    delete profileData.password_hash;
+  }
+
+  const { error } = await authenticatedClient.from("users").upsert(profileData);
+  if (error) {
+    console.error("Error creating user profile (authenticated):", JSON.stringify(error, null, 2));
     throw new Error(`Failed to create user profile: ${error.message || JSON.stringify(error)}`);
   }
 }

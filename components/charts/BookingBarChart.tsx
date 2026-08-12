@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Bar } from 'react-chartjs-2';
 import './ChartConfig';
 import { ChartOptions, ChartData } from 'chart.js';
@@ -13,7 +13,7 @@ interface BarChartProps {
   horizontal?: boolean;
 }
 
-export const BookingBarChart: React.FC<BarChartProps> = ({ data, title, horizontal = false }) => {
+export const BookingBarChart: React.FC<BarChartProps> = memo(({ data, title, horizontal = false }) => {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
@@ -69,4 +69,6 @@ export const BookingBarChart: React.FC<BarChartProps> = ({ data, title, horizont
       <Bar data={data} options={options} />
     </div>
   );
-};
+});
+
+BookingBarChart.displayName = 'BookingBarChart';

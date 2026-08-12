@@ -40,23 +40,66 @@ npm run dev
 
 ```
 Capstone-Group-15---URMS/
-├── app/                    # Next.js App Router (frontend)
-│   ├── admin/analytics/    # Reporting & Analytics Module
-│   ├── maintenance/        # Maintenance Management Module
-│   ├── dashboard/          # Main dashboard
-│   ├── bookings/           # Booking & Scheduling
-│   └── resources/          # Resource Management
-├── components/             # Shared UI components
-│   ├── charts/             # Chart.js wrappers
-│   └── MaintenanceTimeline.tsx
-├── backend/src/
-│   ├── controllers/        # Route handlers
-│   ├── models/             # Supabase data-access layer
-│   ├── routes/             # Express routers
-│   └── services/           # Business logic, PDF/Excel/Sheets export
-├── Docs/                   # Module documentation
-└── lib/                    # Frontend utilities & auth context
+├── app/                        # Next.js App Router (frontend)
+│   ├── admin/                  # Administrative Controls
+│   │   ├── analytics/          # Reporting & Analytics Dashboard
+│   │   └── user-management/    # Admin User Console
+│   ├── bookings/               # Resource Booking & Scheduling Page
+│   ├── dashboard/              # Role-Based Main Dashboards (Admin/Lecturer/Student/Maintenance)
+│   ├── explore/                # Resource Catalog Explorer
+│   ├── forgot-password/        # Password Recovery Page
+│   ├── login/                  # Authentication Sign-In Page
+│   ├── maintenance/            # Maintenance Tickets Console
+│   ├── notifications/          # Alerts & In-App Notification Center
+│   ├── profile/                # User Account Settings
+│   ├── register/               # New Account Registration Page
+│   ├── resources/              # Resource Registry Page
+│   ├── globals.css             # Main styling & CSS variables
+│   ├── layout.tsx              # Root HTML wrapper
+│   └── page.tsx                # Main home / landing page
+├── components/                 # Reusable React UI components
+│   ├── charts/                 # Chart.js visualization wrappers
+│   ├── dashboard/              # Dashboard sidebar & layouts
+│   ├── ui/                     # Generic design-system components (buttons, dropdowns, etc.)
+│   ├── BulkImport.tsx          # Excel/CSV resources importer
+│   ├── MaintenanceTimeline.tsx # Timeline visualization component
+│   ├── Navbar.tsx              # Navigation bar (responsive, auth-integrated)
+│   ├── Footer.tsx              # Application footer
+│   ├── GlobalSearch.tsx        # Omni search component
+│   └── ...                     # Popup Modals (AddResource, EditBooking, etc.)
+├── hooks/                      # Custom React hooks
+│   └── useIdleTimeout.ts       # Inactivity session monitoring
+├── lib/                        # Client-side utility functions & contexts
+│   ├── auth-context.tsx        # Firebase Authentication context provider
+│   ├── firebase.ts             # Firebase client SDK initialization
+│   ├── supabase.ts             # Supabase client SDK initialization & REST helpers
+│   ├── apiClient.ts            # Wrapper for Node/Express API requests
+│   └── session-utils.ts        # Client session validation helpers
+├── backend/                    # Express.js REST API
+│   ├── src/                    # Backend Source Files
+│   │   ├── config/             # DB configurations & service credentials
+│   │   │   ├── db.config.ts       # Legacy MySQL connection pool config
+│   │   │   ├── firebase.config.ts # Firebase Admin SDK initialization
+│   │   │   └── supabaseClient.ts  # Supabase client initialization (RLS scoped)
+│   │   ├── controllers/        # Route logic & controllers (resource, analytics, maintenance)
+│   │   ├── db/                 # Database schemas, migrations, & seeding
+│   │   │   ├── db.ts              # Canonical DB re-exporter (maps to Supabase)
+│   │   │   ├── supabase-schema.sql# PostgreSQL DDL schema definition
+│   │   │   └── seed.ts            # Mock data populator script
+│   │   ├── middleware/         # Express auth and role validation guards
+│   │   ├── models/             # Supabase queries data-access layer
+│   │   ├── routes/             # REST route routers
+│   │   ├── services/           # Exporters (PDF, Excel, Google Sheets) & Scheduler
+│   │   ├── app.ts              # Express application configuration
+│   │   └── server.ts           # Server entry point
+│   ├── package.json            # Backend dependency configuration
+│   └── tsconfig.json           # Backend TypeScript configuration
+├── Docs/                       # System module documentation & feature logs
+├── public/                     # Static assets (images, logos, etc.)
+├── package.json                # Frontend/Root workspace dependencies
+└── README.md                   # Project overview & quickstart guide
 ```
+
 
 **Stack:** Next.js 15 · Node.js + Express · Supabase (PostgreSQL) · Firebase Auth · Recharts · Chart.js
 

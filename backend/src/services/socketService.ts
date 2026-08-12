@@ -4,11 +4,18 @@ import { Server, Socket } from 'socket.io';
 let io: Server;
 
 export const initSocket = (httpServer: HttpServer) => {
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+        ? process.env.ALLOWED_ORIGINS.split(',')
+        : [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://127.0.0.1:3000'];
+
     io = new Server(httpServer, {
         cors: {
-            origin: process.env.ALLOWED_ORIGINS
-                ? process.env.ALLOWED_ORIGINS.split(',')
-                : ['http://localhost:3000', 'http://127.0.0.1:3000'],
+            origin: (origin, callback) => {
+                if (!origin) return callback(null, true);
+                if (/\.vercel\.app$/.test(origin)) return callback(null, true);
+                if (allowedOrigins.includes(origin)) return callback(null, true);
+                return callback(new Error(`CORS: Origin '${origin}' not allowed`));
+            },
             methods: ['GET', 'POST'],
             credentials: true
         }
@@ -56,3 +63,5 @@ export const broadcastNotification = (event: string, payload: any) => {
         io.emit(event, payload);
     }
 };
+
+// Trigger nodemon restart

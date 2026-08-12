@@ -3,9 +3,11 @@
 import React, { useState } from "react";
 import ResourceCard from "@/components/ResourceCard";
 import ResourceModal from "@/components/ResourceModal";
-import { resourcesData, ResourceInterface } from "@/data/resources";
+import { ResourceInterface } from "@/data/resources";
+import { useAuth } from "@/lib/auth-context";
 
 export default function ExploreResourcesPage() {
+  const { user } = useAuth();
   const [selectedResource, setSelectedResource] = useState<ResourceInterface | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [resourcesData, setResourcesData] = useState<ResourceInterface[]>([]);
@@ -16,13 +18,17 @@ export default function ExploreResourcesPage() {
   const [activeCategory, setActiveCategory] = useState("All");
 
   React.useEffect(() => {
-    fetch('http://localhost:5000/api/resources', {
-      headers: {
-        'Authorization': `Bearer dev-token`
-      }
-    })
-      .then(res => res.json())
-      .then(data => {
+    const fetchResources = async () => {
+      try {
+        const token = (user && typeof user.getIdToken === 'function') ? await user.getIdToken() : 'dev-token';
+        const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const res = await fetch(`${API}/api/resources`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        
         // Map backend resources to frontend interface
         const mapped = data.data?.map((r: any) => ({
           id: r.id.toString(),
@@ -36,10 +42,15 @@ export default function ExploreResourcesPage() {
           amenities: ["Wi-Fi", "Whiteboard"]
         })) || [];
         setResourcesData(mapped);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResources();
+  }, [user]);
 
   const filteredResources = resourcesData.filter((res) => 
     activeCategory === "All" ? true : res.category === activeCategory
@@ -77,7 +88,7 @@ export default function ExploreResourcesPage() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
+              className={`px-4 py-2 rounded-none text-sm font-semibold whitespace-nowrap transition-all ${
                 activeCategory === cat
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
                   : "bg-white text-slate-600 border border-slate-200 hover:border-blue-300 hover:bg-blue-50"
@@ -107,7 +118,7 @@ export default function ExploreResourcesPage() {
       )}
 
       {!loading && filteredResources.length === 0 && (
-        <div className="max-w-3xl mx-auto text-center py-20 bg-white rounded-3xl border border-slate-200 mt-8">
+        <div className="max-w-3xl mx-auto text-center py-20 bg-white rounded-none border border-slate-200 mt-8">
           <p className="text-slate-500 text-lg font-medium">No resources found in this category.</p>
         </div>
       )}

@@ -22,8 +22,13 @@ if (missingEnv.length > 0) {
   );
 }
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
+// Initialize the Firebase app once across the entire browser process.
+// Auth persistence is set at the AuthProvider level (inMemoryPersistence)
+// so that each browser tab maintains its own isolated auth state.
+const app: FirebaseApp =
+  getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
+const auth: Auth = getAuth(app);
 
 export { auth };
 export default app;

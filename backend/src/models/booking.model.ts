@@ -57,7 +57,7 @@ export class BookingModel {
     ): Promise<any[]> {
         let query = client
             .from('bookings')
-            .select('id, resource_id, user_id, start_time, end_time, status, created_at, resources ( id, name, type, location ), users ( id, name, email )')
+            .select('id, resource_id, user_id, start_time, end_time, status, created_at, resources ( id, name, type, location ), users ( id, name, email, phone )')
             .order('start_time', { ascending: false });
 
         if (filters.user_id)     query = query.eq('user_id', filters.user_id);
@@ -83,7 +83,7 @@ export class BookingModel {
     ): Promise<any | null> {
         const { data, error } = await client
             .from('bookings')
-            .select('id, resource_id, user_id, start_time, end_time, status, created_at, resources ( id, name, type, location ), users ( id, name, email )')
+            .select('id, resource_id, user_id, start_time, end_time, status, created_at, resources ( id, name, type, location ), users ( id, name, email, phone )')
             .eq('id', id)
             .maybeSingle();
 
@@ -188,6 +188,7 @@ export class BookingModel {
             .select('id')
             .eq('resource_id', resourceId)
             .neq('status', 'Cancelled')
+            .neq('status', 'Rejected')
             .lt('start_time', endTime)
             .gt('end_time', startTime)
             .limit(1);

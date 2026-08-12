@@ -99,7 +99,7 @@ async function searchResources(client: any, q: string, limit: number): Promise<a
     const { data, error } = await client
         .from("resources")
         .select("*")
-        .textSearch("fts", q, { type: "websearch", config: "english" })
+        .textSearch("fts", q, { config: "english", type: "websearch" })
         .limit(limit);
 
     if (error) throw error;
@@ -130,7 +130,7 @@ async function searchTickets(client: any, q: string, limit: number): Promise<any
                 name
             )
         `)
-        .textSearch("fts", q, { type: "websearch", config: "english" })
+        .textSearch("fts", q, { config: "english", type: "websearch" })
         .limit(limit);
 
     if (error) throw error;
@@ -165,7 +165,7 @@ async function searchUsers(client: any, q: string, limit: number): Promise<any[]
     const { data, error } = await client
         .from("users")
         .select("*")
-        .textSearch("fts", q, { type: "websearch", config: "english" })
+        .textSearch("fts", q, { config: "english", type: "websearch" })
         .limit(limit);
 
     if (error) throw error;
