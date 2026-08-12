@@ -93,8 +93,8 @@ const SERVICES = [
   },
   {
     icon: UserCheck,
-    title: "QR Pass Check-in",
-    desc: "Digital scannable passes generated on confirmation to verify attendance and monitor room utilization.",
+    title: "Digital Pass Check-in",
+    desc: "Digital passes generated on confirmation to verify attendance and monitor room utilization.",
   },
   {
     icon: Layers,
@@ -108,13 +108,13 @@ const ROLES_DATA = [
     id: "student",
     title: "Students",
     icon: GraduationCap,
-    desc: "Browse live campus catalog, hold study group spaces, track waitlists, and check in via scannable QR pass.",
+    desc: "Browse live campus catalog, hold study group spaces, track waitlists, and check in via digital pass.",
     stats: [
       { n: "128", l: "Credits Tracked" },
       { n: "6", l: "Active Holds" },
       { n: "100%", l: "Verified Access" },
     ],
-    features: ["Browse Live Catalog", "Self-Service Reservations", "Mobile QR Pass Access"],
+    features: ["Browse Live Catalog", "Self-Service Reservations", "Digital Pass Access"],
   },
   {
     id: "lecturer",
@@ -160,7 +160,7 @@ const PROCESS_STEPS = [
   },
   {
     step: "04",
-    title: "Instant QR Pass Issued",
+    title: "Instant Digital Pass Issued",
     desc: "Your booking is confirmed with a digital access pass ready for door check-in.",
   },
 ];
@@ -559,12 +559,6 @@ export default function LandingPage() {
                     : "border-slate-200 dark:border-slate-700 shadow-sm"
                 }`}
               >
-                {portal.popular && (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#0D9488] px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-                    Recommended
-                  </span>
-                )}
-
                 <div>
                   <h3 className="text-lg font-bold text-[#0F172A] dark:text-white">
                     {portal.name}
