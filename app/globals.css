@@ -1,9 +1,37 @@
 @import "tailwindcss";
+
 @variant dark (&:where(.dark, .dark *));
+
+/*
+ * URMS LIGHT BLUE DESIGN SYSTEM
+ * bg-base      : #F8FAFC  (Slate 50)
+ * surface      : #FFFFFF
+ * border       : #E2E8F0  (Slate 200)
+ * primary      : #0EA5E9  (Sky 500)
+ * primary-dark : #0284C7  (Sky 600)
+ * teal         : #0D9488  (Teal 600 - Main Accent)
+ * teal-light   : #CCFBF1  (Teal 100)
+ * ink-main     : #0F172A  (Slate 900)
+ * ink-muted    : #64748B  (Slate 500)
+ */
+
 @theme {
-  --color-brand-primary: #7C3AED;
-  --color-brand-secondary: #6D28D9;
-  --color-brand-accent: #8B5CF6;
+  /* ── URMS Light Blue Design Tokens ── */
+  --color-brand-primary: #0EA5E9;
+  --color-brand-secondary: #0284C7;
+  --color-brand-accent: #F0F9FF;
+  --color-brand-soft-blue: #E0F2FE;
+  --color-brand-very-light-blue: #F0F9FF;
+  --color-brand-dark-text: #0F172A;
+  --color-brand-primary-text: #0F172A;
+  --color-brand-secondary-text: #64748B;
+  --color-brand-muted-text: #94A3B8;
+  --color-brand-border: #E2E8F0;
+
+  /* Teal accent */
+  --color-brand-teal: #0D9488;
+  --color-brand-teal-light: #CCFBF1;
+
   --color-brand-success: #10B981;
   --color-brand-warning: #F59E0B;
   --color-brand-danger: #EF4444;
@@ -13,42 +41,218 @@
   --color-card: var(--card);
   --color-border: var(--border);
 
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
   :root {
-    --background: #fafafb; /* Clean premium gray-white */
-    --foreground: #09090b; /* High contrast dark text */
-    --card: #ffffff;
-    --border: #e2e8f0; /* slate-200 */
-    --ring: #7c3aed;
+    --background: #F8FAFC;
+    --foreground: #0F172A;
+    --card: #FFFFFF;
+    --border: #E2E8F0;
+    --ring: #0EA5E9;
   }
 
   .dark {
-    --background: #09070f; /* Deep purple-tinted dark */
-    --foreground: #f8fafc;
-    --card: rgba(18, 14, 28, 0.7); /* Frosted dark purple card */
-    --border: rgba(139, 92, 246, 0.15); /* Soft violet border */
-    --ring: #8b5cf6;
+    --background: #0B111E;
+    --foreground: #E2E8F0;
+    --card: #151E2E;
+    --border: #243145;
+    --ring: #0EA5E9;
   }
 
   * {
-    @apply border-border transition-colors duration-300;
+    @apply border-border;
+    transition: background-color 0.2s ease-out, border-color 0.2s ease-out, text-decoration-color 0.2s ease-out, fill 0.2s ease-out, stroke 0.2s ease-out;
   }
 
   body {
-    @apply antialiased bg-background text-foreground;
+    @apply antialiased bg-background text-foreground font-sans;
+    background-image: linear-gradient(135deg, #F8FAFC 0%, #F0F9FF 100%);
+    background-attachment: fixed;
+  }
+
+  .dark body, body:where(.dark *) {
+    background-image: linear-gradient(135deg, #0B111E 0%, #151E2E 100%) !important;
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+    color: var(--foreground);
+  }
+
+  /* Smooth interactions for interactive elements */
+  button, a, [role="button"], input, select, textarea {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-card backdrop-blur-xl border border-border shadow-xl;
+    @apply backdrop-blur-md bg-white/75 dark:bg-[#151E2E]/80 border border-white/20 dark:border-white/10 shadow-lg;
   }
   
-  /* High contrast text utilities for metadata */
   .text-meta {
-    @apply text-foreground/60 font-black uppercase tracking-widest text-[10px];
+    @apply text-foreground/80 font-bold uppercase tracking-widest text-[10px];
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* --- Global Design System Overrides --- */
+
+  /* Force rounded containers and cards */
+  .rounded-none,
+  div[class*="rounded-none"] {
+    border-radius: 20px !important;
+  }
+
+  /* Large panels and modals */
+  div[class*="rounded-[2rem]"],
+  div[class*="rounded-2xl"],
+  div[class*="rounded-3xl"] {
+    border-radius: 24px !important;
+  }
+
+  /* Inputs rounding */
+  input[class*="rounded-none"],
+  select[class*="rounded-none"],
+  textarea[class*="rounded-none"],
+  input, select, textarea {
+    border-radius: 12px !important;
+  }
+
+  /* Buttons rounding */
+  button[class*="rounded-none"],
+  a[class*="rounded-none"],
+  button, a {
+    border-radius: 12px !important;
+  }
+
+  /* Small status badges / dots */
+  span[class*="rounded-none"],
+  span[class*="rounded-md"] {
+    border-radius: 8px !important;
+  }
+
+  /* Eliminate brutalist borders and hard shadows — use Sky-tinted shadows */
+  [class*="shadow-[4px_4px_"], 
+  [class*="shadow-[8px_8px_"],
+  [class*="shadow-sm"],
+  [class*="shadow-md"],
+  [class*="shadow-lg"] {
+    box-shadow: 0 8px 30px rgba(14, 165, 233, 0.06) !important;
+    border-width: 1px !important;
+    border-color: var(--border) !important;
+  }
+
+  .dark [class*="shadow-[4px_4px_"], 
+  .dark [class*="shadow-[8px_8px_"] {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25) !important;
+    border-color: var(--border) !important;
+  }
+
+  /* Target thick borders and soften them */
+  .border-2.border-foreground, 
+  .border-2.border-current,
+  .border-foreground,
+  [class*="border-foreground"],
+  [class*="border-2"] {
+    border-width: 1px !important;
+    border-color: var(--border) !important;
+  }
+
+  /* Custom Card Styling overrides for elevation and consistency */
+  .bg-card, 
+  div[class*="bg-card"], 
+  div[class*="bg-white"][class*="shadow"],
+  div[class*="bg-slate-900"][class*="shadow"] {
+    background: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 8px 30px rgba(14, 165, 233, 0.05) !important;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .bg-card:hover, 
+  div[class*="bg-card"]:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 12px 35px rgba(30, 80, 120, 0.09) !important;
+  }
+
+  .dark .bg-card:hover, 
+  .dark div[class*="bg-card"]:hover {
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  /* Form controls focus styling overrides */
+  input, select, textarea {
+    background: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--foreground) !important;
+    font-weight: 500 !important;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--color-brand-primary) !important;
+    box-shadow: 0 0 0 3px rgba(22, 119, 232, 0.12) !important;
+    outline: none !important;
+  }
+
+  /* Flat button styles overrides to look modern SaaS style */
+  button[class*="bg-brand-primary"],
+  a[class*="bg-brand-primary"],
+  button[class*="bg-foreground"],
+  a[class*="bg-foreground"] {
+    background-color: var(--color-brand-primary) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    font-weight: 650 !important;
+    box-shadow: 0 4px 14px rgba(22, 119, 232, 0.15) !important;
+  }
+
+  button[class*="bg-brand-primary"]:hover,
+  a[class*="bg-brand-primary"]:hover,
+  button[class*="bg-foreground"]:hover,
+  a[class*="bg-foreground"]:hover {
+    background-color: var(--color-brand-secondary) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(22, 119, 232, 0.25) !important;
+  }
+
+  /* Table styling overrides */
+  table {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    background: var(--card) !important;
+  }
+
+  thead tr {
+    background-color: var(--color-brand-very-light-blue) !important;
+    color: var(--color-brand-primary-text) !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  .dark thead tr {
+    background-color: rgba(22, 119, 232, 0.08) !important;
+    color: var(--foreground) !important;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  tbody tr:hover {
+    background-color: rgba(22, 119, 232, 0.02) !important;
+  }
+
+  .dark tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.01) !important;
   }
 }

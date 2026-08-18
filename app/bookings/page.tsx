@@ -516,29 +516,41 @@ function BookingsPageContent() {
 
     return (
         <ProtectedRoute>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-foreground">
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-                    <div>
-                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
-                            {view === "my" || view === "status" ? "My Bookings" : "Resource Bookings"}
-                        </h1>
-                        <p className="text-slate-500 dark:text-foreground/50 font-medium">
-                            {view === "my" || view === "status"
-                                ? "Manage, track, and edit your personal resource reservations."
-                                : "Manage and monitor facility schedules across all university faculties."}
-                        </p>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-foreground">
+
+                {/* ── Sky Gradient Header ── */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#0284C7] p-6 md:p-8 text-white mb-8 shadow-lg shadow-sky-500/20">
+                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 pointer-events-none" />
+                    <div className="absolute -bottom-8 left-16 w-28 h-28 rounded-full bg-[#0D9488]/20 pointer-events-none" />
+
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider">
+                                    {view === "my" || view === "status" ? "My Reservations" : "All Bookings"}
+                                </span>
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                                {view === "my" || view === "status" ? "My Bookings" : "Resource Bookings"}
+                            </h1>
+                            <p className="mt-1.5 text-sky-100 text-sm font-medium">
+                                {view === "my" || view === "status"
+                                    ? "Manage, track, and edit your personal resource reservations."
+                                    : "Manage and monitor facility schedules across all university faculties."}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="inline-flex items-center gap-2 bg-white text-[#0EA5E9] font-semibold px-5 py-2.5 rounded-xl hover:bg-sky-50 active:scale-95 shadow-md transition-all whitespace-nowrap shrink-0"
+                        >
+                            <Plus className="w-4 h-4" />
+                            New Booking
+                        </button>
                     </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="inline-flex items-center justify-center gap-2 bg-brand-primary text-white font-bold px-6 py-3 rounded-2xl hover:bg-brand-secondary transition-all shadow-lg active:scale-95 whitespace-nowrap"
-                    >
-                        <Plus className="w-5 h-5" />
-                        New Booking
-                    </button>
-                </header>
+                </div>
 
                 {combinedError && (
-                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl text-sm font-semibold">
+                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-none text-sm font-semibold">
                         {combinedError}
                     </div>
                 )}
@@ -546,14 +558,14 @@ function BookingsPageContent() {
                 {/* Availability Calendar (Hidden in personal bookings view) */}
                 {view !== "my" && view !== "status" && (
                     <section className="mb-8">
-                    <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm p-6">
+                    <div className="bg-white dark:bg-slate-900/60 rounded-none border border-slate-100 dark:border-white/[0.06] shadow-sm p-6">
                         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6">
                             <div>
                                 <h2 className="text-xl font-black text-slate-900 dark:text-white">Booking Availability</h2>
                                 <p className="text-sm font-medium text-slate-500 dark:text-foreground/40">{calendarSubLabel}</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                <div className="flex items-center gap-2 px-2 py-1.5 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50 dark:bg-white/5">
+                                <div className="flex items-center gap-2 px-2 py-1.5 border border-slate-200 dark:border-white/10 rounded-none bg-slate-50 dark:bg-white/5">
                                     <button
                                         onClick={handlePrev}
                                         className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-white/5 transition-colors text-slate-500 dark:text-foreground/60"
@@ -579,18 +591,18 @@ function BookingsPageContent() {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setCalendarView("week")}
-                                        className={`px-3 py-2 border rounded-xl text-xs font-bold transition-colors ${calendarView === "week"
-                                            ? "bg-brand-primary text-white border-brand-primary"
-                                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5"
+                                        className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${calendarView === "week"
+                                            ? "bg-[#0EA5E9] text-white shadow-sm"
+                                            : "border border-[#E2E8F0] dark:border-white/10 text-[#64748B] dark:text-foreground/60 hover:bg-[#F0F9FF] dark:hover:bg-white/5"
                                             }`}
                                     >
                                         Week
                                     </button>
                                     <button
                                         onClick={() => setCalendarView("month")}
-                                        className={`px-3 py-2 border rounded-xl text-xs font-bold transition-colors ${calendarView === "month"
-                                            ? "bg-brand-primary text-white border-brand-primary"
-                                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5"
+                                        className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${calendarView === "month"
+                                            ? "bg-[#0EA5E9] text-white shadow-sm"
+                                            : "border border-[#E2E8F0] dark:border-white/10 text-[#64748B] dark:text-foreground/60 hover:bg-[#F0F9FF] dark:hover:bg-white/5"
                                             }`}
                                     >
                                         Month
@@ -600,7 +612,7 @@ function BookingsPageContent() {
                                     value={selectedResourceId}
                                     onChange={(e) => setSelectedResourceId(e.target.value)}
                                     disabled={loadingResources}
-                                    className="px-3 py-2 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-slate-600 dark:text-foreground/60 bg-slate-50 dark:bg-[#0c0a14] hover:bg-white dark:hover:bg-white/5 transition-colors min-w-[180px]"
+                                    className="px-3 py-2 border border-slate-200 dark:border-white/10 rounded-none text-xs font-bold text-slate-600 dark:text-foreground/60 bg-slate-50 dark:bg-[#0c0a14] hover:bg-white dark:hover:bg-white/5 transition-colors min-w-[180px]"
                                 >
                                     <option value="all">
                                         {loadingResources ? "Loading resources..." : "All resources"}
@@ -648,7 +660,7 @@ function BookingsPageContent() {
                                         return (
                                             <div
                                                 key={dayKey}
-                                                className={`rounded-2xl border p-3 min-h-[110px] flex flex-col justify-between ${isOutsideMonth
+                                                className={`rounded-none border p-3 min-h-[110px] flex flex-col justify-between ${isOutsideMonth
                                                     ? "bg-slate-50 dark:bg-white/[0.01] text-slate-400 dark:text-foreground/30 border-slate-100 dark:border-white/[0.04]"
                                                     : "bg-slate-50/60 dark:bg-white/[0.03] border-slate-100 dark:border-white/[0.06]"
                                                     } ${isToday
@@ -673,7 +685,7 @@ function BookingsPageContent() {
                                                 </div>
                                                 <div className="mt-2">
                                                     <span
-                                                        className={`inline-flex px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getAvailabilityClasses(status)
+                                                        className={`inline-flex px-2 py-1 rounded-none text-[10px] font-black uppercase tracking-widest ${getAvailabilityClasses(status)
                                                             }`}
                                                     >
                                                         {status}
@@ -691,15 +703,15 @@ function BookingsPageContent() {
 
                         <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-slate-500 dark:text-foreground/50">
                             <span className="inline-flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <span className="w-2.5 h-2.5 rounded-none bg-emerald-500"></span>
                                 Available
                             </span>
                             <span className="inline-flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                <span className="w-2.5 h-2.5 rounded-none bg-amber-500"></span>
                                 Limited
                             </span>
                             <span className="inline-flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                                <span className="w-2.5 h-2.5 rounded-none bg-rose-500"></span>
                                 Booked
                             </span>
                         </div>
@@ -719,7 +731,7 @@ function BookingsPageContent() {
                 ) : (
                     <>
                         {/* Filters & Search */}
-                        <div className="bg-white dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm mb-4 flex flex-col lg:flex-row gap-4">
+                        <div className="bg-white dark:bg-slate-900/60 p-4 rounded-none border border-slate-100 dark:border-white/[0.06] shadow-sm mb-4 flex flex-col lg:flex-row gap-4">
                             <div className="relative flex-1 group">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-brand-primary" />
                                 <input
@@ -730,15 +742,15 @@ function BookingsPageContent() {
                                         updateUrlParams(1, pageSize);
                                     }}
                                     placeholder="Search by resource name, type, or location..."
-                                    className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
+                                    className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-none text-sm font-semibold text-slate-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
                                 />
                             </div>
                             <div className="flex gap-4">
-                                <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-none text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                                     <Filter className="w-4 h-4" />
                                     Filters
                                 </button>
-                                <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                <button className="flex items-center gap-2 px-5 py-3 border border-slate-200 dark:border-white/10 rounded-none text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                                     <Calendar className="w-4 h-4" />
                                     {calendarLabel || "Select range"}
                                 </button>
@@ -779,7 +791,7 @@ function BookingsPageContent() {
                                         "bookings"
                                     );
                                 }}
-                                className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+                                className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-none shadow-sm transition-all duration-200 text-sm"
                             >
                                 <DownloadCloud className="w-4 h-4 text-emerald-500" />
                                 <span>Export CSV</span>
@@ -787,7 +799,7 @@ function BookingsPageContent() {
                         </div>
 
                         {/* Bookings Table */}
-                        <div className="bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden">
+                        <div className="bg-white dark:bg-slate-900/60 rounded-none border border-slate-100 dark:border-white/[0.06] shadow-sm overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
                                     <thead>
@@ -838,7 +850,7 @@ function BookingsPageContent() {
                                                     >
                                                         <td className="px-6 py-5">
                                                             <div className="flex items-center gap-4">
-                                                                <div className="w-10 h-10 rounded-2xl bg-brand-primary/5 flex items-center justify-center">
+                                                                <div className="w-10 h-10 rounded-none bg-brand-primary/5 flex items-center justify-center">
                                                                     <MapPin className="w-5 h-5 text-brand-primary" />
                                                                 </div>
                                                                 <div>
@@ -865,7 +877,7 @@ function BookingsPageContent() {
                                                         </td>
                                                         <td className="px-6 py-5">
                                                             <span
-                                                                className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${getBookingStatusClasses(
+                                                                className={`px-3 py-1 rounded-none text-[10px] font-black uppercase tracking-widest shadow-sm ${getBookingStatusClasses(
                                                                     statusLabel
                                                                 )}`}
                                                             >
@@ -881,7 +893,7 @@ function BookingsPageContent() {
                                                             </button>
                                                             
                                                             {activeDropdown === booking.id && (
-                                                                <div className="absolute right-8 top-10 z-10 w-48 bg-white dark:bg-slate-950 rounded-xl shadow-xl border border-slate-100 dark:border-white/10 overflow-hidden text-left animate-in fade-in zoom-in-95">
+                                                                <div className="absolute right-8 top-10 z-10 w-48 bg-white dark:bg-slate-950 rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-100 dark:border-white/10 overflow-hidden text-left animate-in fade-in zoom-in-95">
                                                                     <div className="py-1">
                                                                         {booking.status === "Pending" && (
                                                                             <button 

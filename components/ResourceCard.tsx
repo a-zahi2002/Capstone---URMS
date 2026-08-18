@@ -17,7 +17,7 @@ export default function ResourceCard({ resource, onClick }: ResourceCardProps) {
   return (
     <div
       onClick={onClick}
-      className="group bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:shadow-xl border border-slate-100 dark:border-white/[0.06] overflow-hidden cursor-pointer transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full"
+      className="group bg-white dark:bg-slate-900 rounded-none shadow-sm hover:border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-100 dark:border-white/[0.06] overflow-hidden cursor-pointer transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full"
     >
       {/* Image Section */}
       <div className="relative h-48 w-full overflow-hidden">
@@ -28,9 +28,9 @@ export default function ResourceCard({ resource, onClick }: ResourceCardProps) {
         />
         <div className="absolute top-4 right-4">
           <span
-            className={`px-3 py-1 text-xs font-bold rounded-full border ${
+            className={`px-3 py-1 text-xs font-bold rounded-none border ${
               statusColors[resource.status]
-            } shadow-sm backdrop-blur-sm bg-white/90 dark:bg-slate-900/90`}
+            } shadow-sm  bg-white/90 dark:bg-slate-900/90`}
           >
             {resource.status}
           </span>
@@ -78,7 +78,7 @@ export default function ResourceCard({ resource, onClick }: ResourceCardProps) {
         </div>
 
         <div className="pt-4 border-t border-slate-100 dark:border-white/[0.06]">
-          <button className="w-full py-2.5 rounded-xl bg-slate-50 dark:bg-white/5 text-blue-600 dark:text-blue-400 font-semibold text-sm hover:bg-blue-600 hover:text-white dark:hover:bg-brand-primary transition-colors duration-200">
+          <button className="w-full py-2.5 rounded-none bg-slate-50 dark:bg-white/5 text-blue-600 dark:text-blue-400 font-semibold text-sm hover:bg-blue-600 hover:text-white dark:hover:bg-brand-primary transition-colors duration-200">
             View Details
           </button>
         </div>
