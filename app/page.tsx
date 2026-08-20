@@ -93,8 +93,8 @@ const SERVICES = [
   },
   {
     icon: UserCheck,
-    title: "QR Pass Check-in",
-    desc: "Digital scannable passes generated on confirmation to verify attendance and monitor room utilization.",
+    title: "Digital Pass Check-in",
+    desc: "Digital passes generated on confirmation to verify attendance and monitor room utilization.",
   },
   {
     icon: Layers,
@@ -108,13 +108,13 @@ const ROLES_DATA = [
     id: "student",
     title: "Students",
     icon: GraduationCap,
-    desc: "Browse live campus catalog, hold study group spaces, track waitlists, and check in via scannable QR pass.",
+    desc: "Browse live campus catalog, hold study group spaces, track waitlists, and check in via digital pass.",
     stats: [
       { n: "128", l: "Credits Tracked" },
       { n: "6", l: "Active Holds" },
       { n: "100%", l: "Verified Access" },
     ],
-    features: ["Browse Live Catalog", "Self-Service Reservations", "Mobile QR Pass Access"],
+    features: ["Browse Live Catalog", "Self-Service Reservations", "Digital Pass Access"],
   },
   {
     id: "lecturer",
@@ -160,50 +160,8 @@ const PROCESS_STEPS = [
   },
   {
     step: "04",
-    title: "Instant QR Pass Issued",
+    title: "Instant Digital Pass Issued",
     desc: "Your booking is confirmed with a digital access pass ready for door check-in.",
-  },
-];
-
-const PRICING_TIERS = [
-  {
-    name: "Standard Student",
-    price: "Free",
-    period: "Campus Identity Login",
-    desc: "For general student study groups and society meetings.",
-    features: ["Up to 3 active bookings", "2-hour max block duration", "Standard room catalog", "Basic QR check-in"],
-    popular: false,
-    cta: "Access Student Portal",
-  },
-  {
-    name: "Faculty & Staff",
-    price: "Academic",
-    period: "Department Authorized",
-    desc: "For course lecturers, tutors, and faculty research labs.",
-    features: [
-      "Recurring term reservations",
-      "Full semester block lock",
-      "Specialised lab equipment",
-      "Priority collision override",
-      "Auditorium access",
-    ],
-    popular: true,
-    cta: "Launch Staff Console",
-  },
-  {
-    name: "Campus Operations",
-    price: "Enterprise",
-    period: "Full System Audit",
-    desc: "For university administration and estate management.",
-    features: [
-      "Real-time building heatmap",
-      "Maintenance workflow routing",
-      "Global conflict engine",
-      "Unlimited system overrides",
-      "Complete API integrations",
-    ],
-    popular: false,
-    cta: "Manage System",
   },
 ];
 
@@ -214,14 +172,14 @@ export default function LandingPage() {
   const selectedRoleInfo = ROLES_DATA.find((r) => r.id === activeRole) || ROLES_DATA[0];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans antialiased selection:bg-[#0EA5E9] selection:text-white">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B111E] text-[#0F172A] dark:text-[#E2E8F0] font-sans antialiased selection:bg-[#0EA5E9] selection:text-white">
       
       {/* ── HERO SECTION ── */}
       <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28">
         {/* Soft Background Accent Graphics */}
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-24 right-0 h-[500px] w-[500px] rounded-full bg-gradient-to-bl from-[#0EA5E9]/10 via-[#0D9488]/10 to-transparent blur-3xl" />
-          <div className="absolute top-1/2 -left-24 h-[400px] w-[400px] rounded-full bg-sky-100/60 blur-3xl" />
+          <div className="absolute -top-24 right-0 h-[500px] w-[500px] rounded-full bg-gradient-to-bl from-[#0EA5E9]/10 via-[#0D9488]/10 to-transparent blur-3xl dark:from-[#0EA5E9]/20 dark:via-[#0D9488]/15" />
+          <div className="absolute top-1/2 -left-24 h-[400px] w-[400px] rounded-full bg-sky-100/60 dark:bg-sky-900/20 blur-3xl" />
         </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -229,10 +187,10 @@ export default function LandingPage() {
             {/* Hero Left Content */}
             <div className="lg:col-span-6">
               <div>
-                
+              
               </div>
 
-              <h1 className="text-4xl font-extrabold tracking-tight text-[#0F172A] sm:text-5xl lg:text-6xl lg:leading-[1.12]">
+              <h1 className="text-4xl font-extrabold tracking-tight text-[#0F172A] dark:text-white sm:text-5xl lg:text-6xl lg:leading-[1.12]">
                 Campus Spaces <br />
                 Scheduled Without <br />
                 <span className="bg-gradient-to-r from-[#0EA5E9] to-[#0D9488] bg-clip-text text-transparent">
@@ -240,7 +198,7 @@ export default function LandingPage() {
                 </span>
               </h1>
 
-              <p className="mt-5 max-w-xl text-base text-slate-600 leading-relaxed sm:text-lg">
+              <p className="mt-5 max-w-xl text-base text-slate-600 dark:text-slate-400 leading-relaxed sm:text-lg">
                 One centralized index for every lecture hall, computing laboratory, and seminar space on campus.
                 Booked, verified, and audited in real-time.
               </p>
@@ -257,35 +215,35 @@ export default function LandingPage() {
 
                 <a
                   href="#process"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#151E2E] px-6 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-300 shadow-sm transition-colors hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <span>How It Works</span>
                 </a>
               </div>
 
               {/* Social Proof / Stats Bar */}
-              <div className="mt-10 flex items-center gap-6 border-t border-slate-200/80 pt-6">
+              <div className="mt-10 flex items-center gap-6 border-t border-slate-200/80 dark:border-slate-700/60 pt-6">
                 <div className="flex -space-x-2 overflow-hidden">
-                  <div className="inline-block h-9 w-9 rounded-full bg-sky-500 ring-2 ring-white text-white font-bold text-xs flex items-center justify-center">
+                  <div className="inline-block h-9 w-9 rounded-full bg-sky-500 ring-2 ring-white dark:ring-[#0B111E] text-white font-bold text-xs flex items-center justify-center">
                     CS
                   </div>
-                  <div className="inline-block h-9 w-9 rounded-full bg-teal-500 ring-2 ring-white text-white font-bold text-xs flex items-center justify-center">
+                  <div className="inline-block h-9 w-9 rounded-full bg-teal-500 ring-2 ring-white dark:ring-[#0B111E] text-white font-bold text-xs flex items-center justify-center">
                     ENG
                   </div>
-                  <div className="inline-block h-9 w-9 rounded-full bg-slate-700 ring-2 ring-white text-white font-bold text-xs flex items-center justify-center">
+                  <div className="inline-block h-9 w-9 rounded-full bg-slate-700 ring-2 ring-white dark:ring-[#0B111E] text-white font-bold text-xs flex items-center justify-center">
                     SCI
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-[#0F172A]">480+ Campus Spaces</p>
-                  <p className="text-xs font-medium text-slate-500">Synced across all faculties daily</p>
+                  <p className="text-sm font-bold text-[#0F172A] dark:text-white">480+ Campus Spaces</p>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Synced across all faculties daily</p>
                 </div>
               </div>
             </div>
 
             {/* Hero Right Visual Showcase */}
             <div className="relative lg:col-span-6">
-              <div className="relative mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-200/60 sm:max-w-none">
+              <div className="relative mx-auto max-w-md rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#151E2E] p-4 shadow-2xl shadow-slate-200/60 dark:shadow-black/40 sm:max-w-none">
                 {/* Visual Image Header */}
                 <div className="relative h-64 overflow-hidden rounded-2xl sm:h-80">
                   <img
@@ -307,22 +265,22 @@ export default function LandingPage() {
 
                 {/* Floating Metric Badges */}
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-sky-50/80 p-3.5 border border-sky-100">
-                    <div className="flex items-center gap-2 text-sky-700">
+                  <div className="rounded-xl bg-sky-50/80 dark:bg-sky-900/30 p-3.5 border border-sky-100 dark:border-sky-800/50">
+                    <div className="flex items-center gap-2 text-sky-700 dark:text-sky-400">
                       <Clock className="h-4 w-4" />
                       <span className="text-xs font-bold uppercase tracking-wide">Sync Speed</span>
                     </div>
-                    <p className="mt-1 text-xl font-extrabold text-[#0F172A]">0.2s</p>
-                    <p className="text-[11px] text-slate-500">Instant collision detection</p>
+                    <p className="mt-1 text-xl font-extrabold text-[#0F172A] dark:text-white">0.2s</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">Instant collision detection</p>
                   </div>
 
-                  <div className="rounded-xl bg-teal-50/80 p-3.5 border border-teal-100">
-                    <div className="flex items-center gap-2 text-teal-700">
+                  <div className="rounded-xl bg-teal-50/80 dark:bg-teal-900/30 p-3.5 border border-teal-100 dark:border-teal-800/50">
+                    <div className="flex items-center gap-2 text-teal-700 dark:text-teal-400">
                       <CheckCircle2 className="h-4 w-4" />
                       <span className="text-xs font-bold uppercase tracking-wide">Weekly Load</span>
                     </div>
-                    <p className="mt-1 text-xl font-extrabold text-[#0F172A]">98.4%</p>
-                    <p className="text-[11px] text-slate-500">Zero double-bookings</p>
+                    <p className="mt-1 text-xl font-extrabold text-[#0F172A] dark:text-white">98.4%</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">Zero double-bookings</p>
                   </div>
                 </div>
               </div>
@@ -332,12 +290,12 @@ export default function LandingPage() {
       </section>
 
       {/* ── FEATURED ROOM CATALOG ── */}
-      <section id="catalog" className="bg-white py-16 border-y border-slate-200/80">
+      <section id="catalog" className="bg-white dark:bg-[#0F1623] py-16 border-y border-slate-200/80 dark:border-slate-700/60">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end mb-10">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#0EA5E9]">Active Facilities</p>
-              <h2 className="mt-1 text-2xl font-bold text-[#0F172A] sm:text-3xl">Featured Campus Spaces</h2>
+              <h2 className="mt-1 text-2xl font-bold text-[#0F172A] dark:text-white sm:text-3xl">Featured Campus Spaces</h2>
             </div>
             <Link
               href="/login"
@@ -352,7 +310,7 @@ export default function LandingPage() {
             {ROOM_FACULTIES.map((room) => (
               <div
                 key={room.id}
-                className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:border-sky-300 hover:shadow-lg hover:shadow-sky-100"
+                className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#151E2E] transition-all hover:border-sky-300 dark:hover:border-sky-600 hover:shadow-lg hover:shadow-sky-100 dark:hover:shadow-sky-900/20"
               >
                 <div>
                   <div className="relative h-44 overflow-hidden">
@@ -367,19 +325,19 @@ export default function LandingPage() {
                   </div>
                   <div className="p-4">
                     <p className="text-xs font-semibold text-[#0EA5E9]">{room.type}</p>
-                    <h3 className="mt-1 text-base font-bold text-[#0F172A]">{room.title}</h3>
-                    <p className="mt-1 text-xs text-slate-500">{room.capacity}</p>
+                    <h3 className="mt-1 text-base font-bold text-[#0F172A] dark:text-white">{room.title}</h3>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{room.capacity}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 bg-slate-50/50">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700">
+                <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/60 px-4 py-3 bg-slate-50/50 dark:bg-slate-800/30">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 dark:text-teal-400">
                     <span className="h-2 w-2 rounded-full bg-teal-500" />
                     {room.status}
                   </span>
                   <Link
                     href="/login"
-                    className="rounded-lg bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-sky-400 hover:text-[#0EA5E9]"
+                    className="rounded-lg bg-white dark:bg-[#1E2D42] border border-slate-200 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors hover:border-sky-400 hover:text-[#0EA5E9]"
                   >
                     Hold Room
                   </Link>
@@ -391,22 +349,22 @@ export default function LandingPage() {
       </section>
 
       {/* ── SERVICES SECTION ── */}
-      <section id="services" className="py-20">
+      <section id="services" className="py-20 bg-[#F8FAFC] dark:bg-[#0B111E]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-12">
             {/* Left Header */}
             <div className="lg:col-span-5">
               <p className="text-xs font-bold uppercase tracking-wider text-[#0EA5E9]">System Capabilities</p>
-              <h2 className="mt-2 text-3xl font-extrabold text-[#0F172A] sm:text-4xl">
+              <h2 className="mt-2 text-3xl font-extrabold text-[#0F172A] dark:text-white sm:text-4xl">
                 Services Offered By URMS Index
               </h2>
-              <p className="mt-4 text-sm leading-relaxed text-slate-600">
+              <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 Designed to handle high-density university scheduling requests while strictly eliminating administrative delays and double-booking errors.
               </p>
               <div className="mt-6">
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-2 rounded-full bg-[#0EA5E9] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-sky-200 transition-all hover:bg-sky-600"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0EA5E9] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-sky-200 dark:shadow-sky-900/30 transition-all hover:bg-sky-600"
                 >
                   <span>Request Custom Access</span>
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -421,13 +379,13 @@ export default function LandingPage() {
                 return (
                   <div
                     key={idx}
-                    className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-teal-200 hover:shadow-md"
+                    className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#151E2E] p-5 shadow-sm transition-all hover:border-teal-200 dark:hover:border-teal-700 hover:shadow-md"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-[#0D9488]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 dark:bg-teal-900/30 text-[#0D9488] dark:text-teal-400">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="mt-4 text-base font-bold text-[#0F172A]">{srv.title}</h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600">{srv.desc}</p>
+                    <h3 className="mt-4 text-base font-bold text-[#0F172A] dark:text-white">{srv.title}</h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{srv.desc}</p>
                   </div>
                 );
               })}
@@ -437,14 +395,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── ROLE WORKSPACES (TABBED HUB) ── */}
-      <section id="workspaces" className="bg-slate-100/70 py-20 border-y border-slate-200/80">
+      <section id="workspaces" className="bg-slate-100/70 dark:bg-[#0F1623] py-20 border-y border-slate-200/80 dark:border-slate-700/60">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <p className="text-xs font-bold uppercase tracking-wider text-[#0EA5E9]">Role Architecture</p>
-            <h2 className="mt-1 text-3xl font-extrabold text-[#0F172A] sm:text-4xl">
+            <h2 className="mt-1 text-3xl font-extrabold text-[#0F172A] dark:text-white sm:text-4xl">
               One Engine, Tailored Workspaces
             </h2>
-            <p className="mt-3 text-sm text-slate-600">
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
               Granular access control ensuring each campus member interacts with the exact features required for their responsibility level.
             </p>
           </div>
@@ -460,8 +418,8 @@ export default function LandingPage() {
                   onClick={() => setActiveRole(role.id)}
                   className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold transition-all ${
                     isActive
-                      ? "bg-[#0D9488] text-white shadow-md shadow-teal-200"
-                      : "bg-white text-slate-600 hover:bg-slate-200/60"
+                      ? "bg-[#0D9488] text-white shadow-md shadow-teal-200 dark:shadow-teal-900/40"
+                      : "bg-white dark:bg-[#151E2E] text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -472,18 +430,18 @@ export default function LandingPage() {
           </div>
 
           {/* Selected Role Display Card */}
-          <div className="mx-auto max-w-4xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b border-slate-100 pb-6">
+          <div className="mx-auto max-w-4xl rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#151E2E] p-6 shadow-xl sm:p-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b border-slate-100 dark:border-slate-700/60 pb-6">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#0EA5E9]">Role Profile</span>
-                <h3 className="text-2xl font-bold text-[#0F172A]">{selectedRoleInfo.title} Workspace</h3>
-                <p className="mt-2 text-sm text-slate-600 max-w-xl">{selectedRoleInfo.desc}</p>
+                <h3 className="text-2xl font-bold text-[#0F172A] dark:text-white">{selectedRoleInfo.title} Workspace</h3>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 max-w-xl">{selectedRoleInfo.desc}</p>
               </div>
 
               <div className="flex items-center gap-2">
                 {selectedRoleInfo.stats.map((s, idx) => (
-                  <div key={idx} className="rounded-xl bg-slate-50 p-3 text-center border border-slate-100 min-w-[100px]">
-                    <p className="text-base font-bold text-[#0F172A]">{s.n}</p>
+                  <div key={idx} className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-center border border-slate-100 dark:border-slate-700 min-w-[100px]">
+                    <p className="text-base font-bold text-[#0F172A] dark:text-white">{s.n}</p>
                     <p className="text-[10px] font-semibold text-slate-400 uppercase">{s.l}</p>
                   </div>
                 ))}
@@ -494,7 +452,7 @@ export default function LandingPage() {
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Key Role Capabilities</p>
               <div className="grid gap-3 sm:grid-cols-3">
                 {selectedRoleInfo.features.map((feat, idx) => (
-                  <div key={idx} className="flex items-center gap-2 rounded-xl bg-sky-50/60 p-3 text-xs font-semibold text-sky-900 border border-sky-100">
+                  <div key={idx} className="flex items-center gap-2 rounded-xl bg-sky-50/60 dark:bg-sky-900/20 p-3 text-xs font-semibold text-sky-900 dark:text-sky-300 border border-sky-100 dark:border-sky-800/40">
                     <Check className="h-4 w-4 text-[#0EA5E9] shrink-0" />
                     <span>{feat}</span>
                   </div>
@@ -506,24 +464,24 @@ export default function LandingPage() {
       </section>
 
       {/* ── PROCESS SECTION ── */}
-      <section id="process" className="py-20">
+      <section id="process" className="py-20 bg-[#F8FAFC] dark:bg-[#0B111E]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <p className="text-xs font-bold uppercase tracking-wider text-[#0EA5E9]">System Mechanics</p>
-            <h2 className="mt-1 text-3xl font-extrabold text-[#0F172A] sm:text-4xl">
+            <h2 className="mt-1 text-3xl font-extrabold text-[#0F172A] dark:text-white sm:text-4xl">
               Our Design Process & Workflow
             </h2>
-            <p className="mt-3 text-sm text-slate-600">
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
               Four structured checkpoints behind every single reservation on campus.
             </p>
           </div>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {PROCESS_STEPS.map((step, idx) => (
-              <div key={idx} className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <span className="text-3xl font-extrabold text-sky-200">{step.step}</span>
-                <h3 className="mt-3 text-base font-bold text-[#0F172A]">{step.title}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-slate-600">{step.desc}</p>
+              <div key={idx} className="relative rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#151E2E] p-6 shadow-sm">
+                <span className="text-3xl font-extrabold text-sky-200 dark:text-sky-900">{step.step}</span>
+                <h3 className="mt-3 text-base font-bold text-[#0F172A] dark:text-white">{step.title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -531,133 +489,127 @@ export default function LandingPage() {
       </section>
 
       {/* ── PORTAL ACCESS ── */}
-<section className="py-20">
-  <div className="mx-auto max-w-7xl px-6 lg:px-8">
-    
-    {/* Section Header */}
-    <div className="mx-auto max-w-2xl text-center">
-      <span className="text-xs font-bold uppercase tracking-widest text-[#0D9488]">
-        Portal Access
-      </span>
-
-      <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[#0F172A] sm:text-4xl">
-        Choose Your Portal
-      </h2>
-
-      <p className="mt-4 text-sm leading-6 text-slate-500">
-        Access the UniLink Resource Management System through the portal
-        designed for your role and responsibilities.
-      </p>
-    </div>
-
-    {/* Portal Cards */}
-    <div className="mt-12 grid gap-8 lg:grid-cols-3 lg:items-center">
-      {[
-        {
-          name: "Student Portal",
-          desc: "For students to access and reserve university resources.",
-          features: [
-            "View available resources",
-            "Make resource reservations",
-            "Track reservation status",
-            "View booking history",
-            "Manage personal profile",
-          ],
-          cta: "Access Student Portal",
-          popular: false,
-        },
-        {
-          name: "Academic Portal",
-          desc: "For academic staff to manage and coordinate university resources.",
-          features: [
-            "Manage academic resources",
-            "Review resource reservations",
-            "Approve or reject requests",
-            "Monitor resource availability",
-            "Manage academic schedules",
-          ],
-          cta: "Access Academic Portal",
-          popular: true,
-        },
-        {
-          name: "Maintenance Portal",
-          desc: "For maintenance teams to monitor and manage resource issues.",
-          features: [
-            "View maintenance requests",
-            "Track reported issues",
-            "Manage maintenance tasks",
-            "Update repair status",
-            "Monitor resource conditions",
-          ],
-          cta: "Access Maintenance Portal",
-          popular: false,
-        },
-      ].map((portal, idx) => (
-        <div
-          key={idx}
-          className={`relative flex flex-col justify-between rounded-3xl border p-8 bg-white transition-all ${
-            portal.popular
-              ? "border-[#0D9488] shadow-xl ring-2 ring-[#0D9488]/20 lg:-translate-y-2"
-              : "border-slate-200 shadow-sm"
-          }`}
-        >
-          {portal.popular && (
-            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#0D9488] px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-              Recommended
+      <section className="py-20 bg-white dark:bg-[#0F1623]">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          
+          {/* Section Header */}
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#0D9488]">
+              Portal Access
             </span>
-          )}
 
-          <div>
-            <h3 className="text-lg font-bold text-[#0F172A]">
-              {portal.name}
-            </h3>
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[#0F172A] dark:text-white sm:text-4xl">
+              Choose Your Portal
+            </h2>
 
-            <p className="mt-1 text-xs text-slate-500">
-              {portal.desc}
+            <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
+              Access the UniLink Resource Management System through the portal
+              designed for your role and responsibilities.
             </p>
-
-            <ul className="mt-8 space-y-3 border-t border-slate-100 pt-6">
-              {portal.features.map((feat, fIdx) => (
-                <li
-                  key={fIdx}
-                  className="flex items-center gap-2.5 text-xs text-slate-600"
-                >
-                  <Check className="h-4 w-4 shrink-0 text-[#0D9488]" />
-                  <span>{feat}</span>
-                </li>
-              ))}
-            </ul>
           </div>
 
-          <div className="mt-8 pt-4">
-            <Link
-              href="/login"
-              className={`block w-full rounded-full py-3 text-center text-xs font-bold transition-all ${
-                portal.popular
-                  ? "bg-[#0D9488] text-white shadow-md shadow-teal-200 hover:bg-[#0F766E]"
-                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              {portal.cta}
-            </Link>
+          {/* Portal Cards */}
+          <div className="mt-12 grid gap-8 lg:grid-cols-3 lg:items-center">
+            {[
+              {
+                name: "Student Portal",
+                desc: "For students to access and reserve university resources.",
+                features: [
+                  "View available resources",
+                  "Make resource reservations",
+                  "Track reservation status",
+                  "View booking history",
+                  "Manage personal profile",
+                ],
+                cta: "Access Student Portal",
+                popular: false,
+              },
+              {
+                name: "Academic Portal",
+                desc: "For academic staff to manage and coordinate university resources.",
+                features: [
+                  "Manage academic resources",
+                  "Review resource reservations",
+                  "Approve or reject requests",
+                  "Monitor resource availability",
+                  "Manage academic schedules",
+                ],
+                cta: "Access Academic Portal",
+                popular: true,
+              },
+              {
+                name: "Maintenance Portal",
+                desc: "For maintenance teams to monitor and manage resource issues.",
+                features: [
+                  "View maintenance requests",
+                  "Track reported issues",
+                  "Manage maintenance tasks",
+                  "Update repair status",
+                  "Monitor resource conditions",
+                ],
+                cta: "Access Maintenance Portal",
+                popular: false,
+              },
+            ].map((portal, idx) => (
+              <div
+                key={idx}
+                className={`relative flex flex-col justify-between rounded-3xl border p-8 bg-white dark:bg-[#151E2E] transition-all ${
+                  portal.popular
+                    ? "border-[#0D9488] shadow-xl ring-2 ring-[#0D9488]/20 lg:-translate-y-2"
+                    : "border-slate-200 dark:border-slate-700 shadow-sm"
+                }`}
+              >
+                <div>
+                  <h3 className="text-lg font-bold text-[#0F172A] dark:text-white">
+                    {portal.name}
+                  </h3>
+
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    {portal.desc}
+                  </p>
+
+                  <ul className="mt-8 space-y-3 border-t border-slate-100 dark:border-slate-700/60 pt-6">
+                    {portal.features.map((feat, fIdx) => (
+                      <li
+                        key={fIdx}
+                        className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-400"
+                      >
+                        <Check className="h-4 w-4 shrink-0 text-[#0D9488]" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="mt-8 pt-4">
+                  <Link
+                    href="/login"
+                    className={`block w-full rounded-full py-3 text-center text-xs font-bold transition-all ${
+                      portal.popular
+                        ? "bg-[#0D9488] text-white shadow-md shadow-teal-200 dark:shadow-teal-900/30 hover:bg-[#0F766E]"
+                        : "border border-slate-300 dark:border-slate-600 bg-white dark:bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    {portal.cta}
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      ))}
-    </div>
-  </div>
-</section>
+      </section>
 
       {/* ── INQUIRY & CONTACT SECTION ── */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#F8FAFC] dark:bg-[#0B111E]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 p-8 text-white shadow-2xl sm:p-12">
+          <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 dark:from-[#0F1623] dark:to-[#151E2E] dark:border dark:border-slate-700 p-8 text-white shadow-2xl sm:p-12">
             <div className="grid gap-10 lg:grid-cols-12 lg:items-center">
               {/* Contact Info */}
               <div className="lg:col-span-5">
                 <p className="text-xs font-bold uppercase tracking-wider text-sky-400">Direct Support</p>
                 <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-  Let's Build Something Great Together
-</h2>
+                  Let's Build Something Great Together
+                </h2>
                 <p className="mt-4 text-sm text-slate-300 leading-relaxed">
                   Have questions regarding faculty resource integration, custom lab setups, or system access? Reach out to the IT administration team.
                 </p>
@@ -734,8 +686,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      
 
     </div>
   );

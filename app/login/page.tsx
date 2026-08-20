@@ -599,7 +599,6 @@ function AuthContent() {
                             <option value="Faculty of Computing">Computing</option>
                             <option value="Faculty of Applied Sciences">Applied Sci.</option>
                             <option value="Faculty of Management">Management</option>
-                            <option value="Faculty of Engineering">Engineering</option>
                           </select>
                           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94A3B8] pointer-events-none" />
                         </div>
