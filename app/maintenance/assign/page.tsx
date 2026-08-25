@@ -199,7 +199,7 @@ export default function AssignMaintenancePage() {
 
   return (
     <div className="flex-grow flex items-center justify-center p-4 md:p-8 bg-slate-50 min-h-[calc(100vh-140px)]">
-      <div className="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden transform transition-all hover:shadow-2xl hover:shadow-slate-200/50">
+      <div className="w-full max-w-2xl bg-white rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-100 overflow-hidden transform transition-all hover:border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] hover:shadow-slate-200/50">
         
         {/* Header - Using a darker professional theme for Admin functionality */}
         <div className="bg-slate-900 p-8 text-white relative">
@@ -218,10 +218,10 @@ export default function AssignMaintenancePage() {
 
         <div className="p-8">
           {isSuccess ? (
-            <div className="py-12 text-center space-y-6 animate-in fade-in zoom-in slide-in-from-bottom-4 duration-500">
+            <div className="py-12 text-center space-y-6 animate-in fade-in zoom-in slide-in- duration-500">
               <div className="relative w-24 h-24 mx-auto">
-                <div className="absolute inset-0 bg-brand-success/20 rounded-full animate-ping"></div>
-                <div className="relative bg-brand-success w-24 h-24 rounded-full flex items-center justify-center text-white shadow-lg">
+                <div className="absolute inset-0 bg-brand-success/20 rounded-none animate-ping"></div>
+                <div className="relative bg-brand-success w-24 h-24 rounded-none flex items-center justify-center text-white border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
@@ -243,8 +243,8 @@ export default function AssignMaintenancePage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-7">
               {error && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-655 dark:text-red-400 text-sm font-semibold rounded-2xl flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-655 dark:text-red-400 text-sm font-semibold rounded-none flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-none bg-red-500 animate-pulse shrink-0" />
                   {error}
                 </div>
               )}
@@ -256,7 +256,7 @@ export default function AssignMaintenancePage() {
                 </label>
                 <div className="relative">
                   {loading ? (
-                    <div className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2">
+                    <div className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-none flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin text-brand-primary" />
                       <span className="text-sm font-bold text-slate-400">Loading pending requests...</span>
                     </div>
@@ -267,7 +267,7 @@ export default function AssignMaintenancePage() {
                       value={formData.requestId}
                       onChange={handleChange}
                       disabled={submitting}
-                      className={`w-full appearance-none px-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
+                      className={`w-full appearance-none px-4 py-3.5 bg-slate-50 border rounded-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
                         errors.requestId ? "border-brand-danger bg-red-50" : "border-slate-200"
                       }`}
                     >
@@ -297,9 +297,9 @@ export default function AssignMaintenancePage() {
 
               {/* Priority Display (Read-only Highlight) */}
               {currentPriority && (
-                <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+                <div className="animate-in fade-in slide-in- duration-300">
                   <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-lg border text-sm font-bold ${currentPriority.color}`}>
-                    <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
+                    <span className="w-2 h-2 rounded-none bg-current animate-pulse"></span>
                     Priority Level: {currentPriority.label}
                   </div>
                 </div>
@@ -312,7 +312,7 @@ export default function AssignMaintenancePage() {
                 </label>
                 <div className="relative">
                   {loading ? (
-                    <div className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2">
+                    <div className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-none flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin text-brand-primary" />
                       <span className="text-sm font-bold text-slate-400">Loading technicians...</span>
                     </div>
@@ -323,7 +323,7 @@ export default function AssignMaintenancePage() {
                       value={formData.staffId}
                       onChange={handleChange}
                       disabled={submitting}
-                      className={`w-full appearance-none px-4 py-3.5 bg-slate-50 border rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
+                      className={`w-full appearance-none px-4 py-3.5 bg-slate-50 border rounded-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all cursor-pointer ${
                         errors.staffId ? "border-brand-danger bg-red-50" : "border-slate-200"
                       }`}
                     >
@@ -364,7 +364,7 @@ export default function AssignMaintenancePage() {
                   value={formData.notes}
                   onChange={handleChange}
                   disabled={submitting}
-                  className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all resize-none placeholder:text-slate-400"
+                  className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary outline-none transition-all resize-none placeholder:text-slate-400"
                 ></textarea>
               </div>
 
@@ -373,7 +373,7 @@ export default function AssignMaintenancePage() {
                 <button
                   type="submit"
                   disabled={submitting || loading}
-                  className="w-full bg-brand-primary hover:bg-brand-secondary active:scale-[0.98] text-white font-bold py-4.5 px-6 rounded-xl shadow-lg shadow-brand-primary/20 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="w-full bg-brand-primary hover:bg-brand-secondary active:scale-[0.98] text-white font-bold py-4.5 px-6 rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-brand-primary/20 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {submitting ? (
                     <><Loader2 className="w-5 h-5 animate-spin" /> Assigning Task...</>

@@ -24,18 +24,10 @@ export async function loginAs(page: Page, email: string, password = "Password123
 }
 
 export async function clickDemoBadge(page: Page, role: "admin" | "maintenance" | "lecturer" | "student") {
-  await page.goto('/login');
-  
-  // Wait for login card to appear
-  await page.waitForSelector('h1:has-text("Welcome Back")');
-  
-  // Click on the corresponding demo badge
-  // Using selector that matches the role uppercase text in button
-  await page.click(`button:has-text("${role.toUpperCase()}")`);
-  
-  // Verify redirect to dashboard
-  await page.waitForURL('**/dashboard**');
-  await page.waitForSelector('text=Sign Out');
+  // Instead of clicking the removed demo badge, log in using credentials
+  const email = `${role}@demo.lk`;
+  const password = "Password123";
+  await loginAs(page, email, password);
 }
 
 export async function logout(page: Page) {

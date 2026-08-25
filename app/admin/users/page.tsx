@@ -40,6 +40,7 @@ interface DBUser {
     role: "admin" | "student" | "lecturer" | "maintenance";
     department: string;
     phone?: string;
+    approval_status?: "Pending" | "Approved" | "Rejected";
     created_at: string;
 }
 
@@ -48,6 +49,12 @@ const roleBadges: Record<string, string> = {
     lecturer: "bg-emerald-500/10 border-emerald-500/20 text-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-400",
     student: "bg-blue-500/10 border-blue-500/20 text-blue-500 dark:bg-blue-500/20 dark:text-blue-400",
     maintenance: "bg-amber-500/10 border-amber-500/20 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400",
+};
+
+const approvalStatusBadges: Record<string, string> = {
+    Approved: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
+    Pending: "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:bg-amber-500/20 dark:text-amber-450",
+    Rejected: "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400",
 };
 
 const departments = [
@@ -77,6 +84,7 @@ function UserManagementPageContent() {
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("");
     const [deptFilter, setDeptFilter] = useState("");
+    const [approvalFilter, setApprovalFilter] = useState("");
 
     const [currentPage, setCurrentPage] = useState(urlPage);
     const [pageSize, setPageSize] = useState(urlPageSize);
@@ -110,7 +118,8 @@ function UserManagementPageContent() {
         role: "student",
         department: "",
         password: "",
-        phone: ""
+        phone: "",
+        approval_status: "Approved"
     });
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
@@ -181,7 +190,7 @@ function UserManagementPageContent() {
 
             setSuccess("User created successfully!");
             setCreateModalOpen(false);
-            setFormData({ name: "", email: "", role: "student", department: "", password: "", phone: "" });
+            setFormData({ name: "", email: "", role: "student", department: "", password: "", phone: "", approval_status: "Approved" });
             fetchUsers();
             setTimeout(() => setSuccess(null), 3000);
         } catch (err: any) {
@@ -198,7 +207,7 @@ function UserManagementPageContent() {
         setFormError(null);
         setFormLoading(true);
 
-        const { name, role, department, password, phone } = formData;
+        const { name, role, department, password, phone, approval_status } = formData;
 
         try {
             const token = await getToken();
@@ -208,7 +217,7 @@ function UserManagementPageContent() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({ name, role, department, phone, ...(password ? { password } : {}) })
+                body: JSON.stringify({ name, role, department, phone, approval_status, ...(password ? { password } : {}) })
             });
 
             const result = await res.json();
@@ -255,6 +264,39 @@ function UserManagementPageContent() {
         }
     };
 
+    const handleSetApprovalStatus = async (userToUpdate: DBUser, status: "Approved" | "Rejected") => {
+        setLoading(true);
+        setError(null);
+        try {
+            const token = await getToken();
+            const res = await fetch(`${BASE_URL}/users/${userToUpdate.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: userToUpdate.name,
+                    role: userToUpdate.role,
+                    department: userToUpdate.department,
+                    phone: userToUpdate.phone,
+                    approval_status: status
+                })
+            });
+
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.message || `Failed to update status to ${status}.`);
+
+            setSuccess(`User registration ${status.toLowerCase()} successfully!`);
+            fetchUsers();
+            setTimeout(() => setSuccess(null), 3000);
+        } catch (err: any) {
+            setError(err.message || "Failed to update user status.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Open Edit Modal and fill values
     const openEditModal = (userToEdit: DBUser) => {
         setSelectedUser(userToEdit);
@@ -264,7 +306,8 @@ function UserManagementPageContent() {
             role: userToEdit.role,
             department: userToEdit.department || "",
             password: "", // Keep empty unless updating
-            phone: userToEdit.phone || ""
+            phone: userToEdit.phone || "",
+            approval_status: userToEdit.approval_status || "Approved"
         });
         setFormError(null);
         setShowFormPassword(false);
@@ -284,7 +327,8 @@ function UserManagementPageContent() {
             u.email.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = roleFilter ? u.role === roleFilter : true;
         const matchesDept = deptFilter ? u.department === deptFilter : true;
-        return matchesSearch && matchesRole && matchesDept;
+        const matchesApproval = approvalFilter ? (u.approval_status || "Approved") === approvalFilter : true;
+        return matchesSearch && matchesRole && matchesDept && matchesApproval;
     });
 
     const paginatedUsers = filteredUsers.slice(
@@ -300,7 +344,7 @@ function UserManagementPageContent() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
                     <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 mb-8">
                         <div className="flex items-center gap-5">
-                            <Link href="/dashboard" className="p-2.5 bg-card border border-slate-200 dark:border-border rounded-2xl hover:bg-slate-100 dark:bg-foreground/5 transition-colors shadow-sm">
+                            <Link href="/dashboard" className="p-2.5 bg-card border border-slate-200 dark:border-border rounded-none hover:bg-slate-100 dark:bg-foreground/5 transition-colors shadow-sm">
                                 <ArrowLeft className="w-5 h-5 text-slate-700 dark:text-foreground/70" />
                             </Link>
                             <div>
@@ -313,26 +357,26 @@ function UserManagementPageContent() {
 
                         <button
                             onClick={() => {
-                                setFormData({ name: "", email: "", role: "student", department: "", password: "", phone: "" });
+                                setFormData({ name: "", email: "", role: "student", department: "", password: "", phone: "", approval_status: "Approved" });
                                 setFormError(null);
                                 setShowFormPassword(false);
                                 setCreateModalOpen(true);
                             }}
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-primary text-white font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-brand-primary/20"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-none bg-brand-primary text-white font-bold text-sm hover:opacity-90 transition-all border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-brand-primary/20"
                         >
                             <UserPlus className="w-4 h-4" /> Create Member
                         </button>
                     </div>
 
                     {success && (
-                        <div className="mb-6 flex items-center gap-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-250 dark:border-emerald-500/20 p-4 rounded-2xl shadow-sm">
+                        <div className="mb-6 flex items-center gap-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-250 dark:border-emerald-500/20 p-4 rounded-none shadow-sm">
                             <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                             <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{success}</p>
                         </div>
                     )}
 
                     {error && (
-                        <div className="mb-6 flex items-center justify-between p-4 bg-red-500/10 border border-red-500/20 text-red-655 dark:text-red-300 rounded-2xl backdrop-blur-md">
+                        <div className="mb-6 flex items-center justify-between p-4 bg-red-500/10 border border-red-500/20 text-red-655 dark:text-red-300 rounded-none ">
                             <div className="flex items-center gap-3">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                                 <p className="font-bold text-sm">{error}</p>
@@ -347,7 +391,7 @@ function UserManagementPageContent() {
                     )}
 
                     {/* Filter controls */}
-                    <div className="bg-card border border-slate-200 dark:border-border rounded-2xl p-4 shadow-sm mb-4 flex flex-col md:flex-row gap-4 items-center">
+                    <div className="bg-card border border-slate-200 dark:border-border rounded-none p-4 shadow-sm mb-4 flex flex-col md:flex-row gap-4 items-center">
                         <div className="relative w-full md:flex-1">
                             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                                 <Search className="w-4 h-4 text-slate-400" />
@@ -360,7 +404,7 @@ function UserManagementPageContent() {
                                     setSearchTerm(e.target.value);
                                     updateUrlParams(1, pageSize);
                                 }}
-                                className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+                                className="block w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
                             />
                         </div>
 
@@ -371,7 +415,7 @@ function UserManagementPageContent() {
                                     setRoleFilter(e.target.value);
                                     updateUrlParams(1, pageSize);
                                 }}
-                                className="px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-foreground/70 focus:outline-none cursor-pointer"
+                                className="px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-black uppercase tracking-widest text-slate-600 dark:text-foreground/70 focus:outline-none cursor-pointer"
                             >
                                 <option value="">All Roles</option>
                                 <option value="admin">Admin</option>
@@ -386,12 +430,26 @@ function UserManagementPageContent() {
                                     setDeptFilter(e.target.value);
                                     updateUrlParams(1, pageSize);
                                 }}
-                                className="px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-black uppercase tracking-widest text-slate-600 dark:text-foreground/70 focus:outline-none cursor-pointer max-w-[200px]"
+                                className="px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-black uppercase tracking-widest text-slate-600 dark:text-foreground/70 focus:outline-none cursor-pointer max-w-[200px]"
                             >
                                 <option value="">All Departments</option>
                                 {departments.map((d) => (
                                     <option key={d} value={d}>{d}</option>
                                 ))}
+                            </select>
+
+                            <select
+                                value={approvalFilter}
+                                onChange={(e) => {
+                                    setApprovalFilter(e.target.value);
+                                    updateUrlParams(1, pageSize);
+                                }}
+                                className="px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-black uppercase tracking-widest text-slate-600 dark:text-foreground/70 focus:outline-none cursor-pointer"
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Rejected">Rejected</option>
                             </select>
                         </div>
                     </div>
@@ -404,11 +462,13 @@ function UserManagementPageContent() {
                                 searchTerm,
                                 roleFilter,
                                 deptFilter,
+                                approvalFilter,
                             }}
                             onLoadFilters={(filters) => {
                                 if (filters.searchTerm !== undefined) setSearchTerm(filters.searchTerm);
                                 if (filters.roleFilter !== undefined) setRoleFilter(filters.roleFilter);
                                 if (filters.deptFilter !== undefined) setDeptFilter(filters.deptFilter);
+                                if (filters.approvalFilter !== undefined) setApprovalFilter(filters.approvalFilter);
                                 updateUrlParams(1, pageSize);
                             }}
                         />
@@ -421,7 +481,7 @@ function UserManagementPageContent() {
                                     "users"
                                 );
                             }}
-                            className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+                            className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-none shadow-sm transition-all duration-200 text-sm"
                         >
                             <DownloadCloud className="w-4 h-4 text-emerald-500" />
                             <span>Export CSV</span>
@@ -429,7 +489,7 @@ function UserManagementPageContent() {
                     </div>
 
                     {/* Users Directory List */}
-                    <div className="bg-card border border-slate-200 dark:border-border rounded-3xl overflow-hidden shadow-xl">
+                    <div className="bg-card border border-slate-200 dark:border-border rounded-none overflow-hidden border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]">
                         {loading ? (
                             <div className="h-64 flex flex-col items-center justify-center gap-4">
                                 <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
@@ -451,6 +511,7 @@ function UserManagementPageContent() {
                                             <th className="py-4 px-6">Role</th>
                                             <th className="py-4 px-6">Faculty / Department</th>
                                             <th className="py-4 px-6">Phone</th>
+                                            <th className="py-4 px-6">Status</th>
                                             <th className="py-4 px-6">Joined Date</th>
                                             <th className="py-4 px-6 text-right">Actions</th>
                                         </tr>
@@ -460,7 +521,7 @@ function UserManagementPageContent() {
                                             <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-foreground/[0.01] transition-colors">
                                                 <td className="py-4.5 px-6">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-primary/10 to-indigo-500/10 flex items-center justify-center text-sm font-black text-brand-primary">
+                                                        <div className="w-9 h-9 rounded-none bg-card   flex items-center justify-center text-sm font-black text-brand-primary">
                                                             {item.name.charAt(0).toUpperCase()}
                                                         </div>
                                                         <span className="text-sm font-bold text-foreground">{item.name}</span>
@@ -470,7 +531,7 @@ function UserManagementPageContent() {
                                                     {item.email}
                                                 </td>
                                                 <td className="py-4.5 px-6">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${roleBadges[item.role] || "bg-slate-100 border-slate-200 text-slate-600"}`}>
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-none text-[9px] font-black uppercase tracking-wider border ${roleBadges[item.role] || "bg-slate-100 border-slate-200 text-slate-600"}`}>
                                                         {item.role}
                                                     </span>
                                                 </td>
@@ -480,11 +541,34 @@ function UserManagementPageContent() {
                                                 <td className="py-4.5 px-6 text-xs font-bold text-slate-500 dark:text-foreground/50">
                                                     {item.phone || "—"}
                                                 </td>
+                                                <td className="py-4.5 px-6">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-none text-[9px] font-black uppercase tracking-wider border ${approvalStatusBadges[item.approval_status || "Approved"]}`}>
+                                                        {item.approval_status || "Approved"}
+                                                    </span>
+                                                </td>
                                                 <td className="py-4.5 px-6 text-xs font-bold text-slate-500 dark:text-foreground/50">
                                                     {new Date(item.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
                                                 </td>
                                                 <td className="py-4.5 px-6 text-right">
                                                     <div className="flex items-center justify-end gap-2">
+                                                        {item.approval_status !== "Approved" && (
+                                                            <button
+                                                                onClick={() => handleSetApprovalStatus(item, "Approved")}
+                                                                className="p-2 bg-emerald-100 dark:bg-emerald-500/10 rounded-lg text-emerald-600 hover:bg-emerald-200 dark:text-emerald-450 dark:hover:bg-emerald-550/20 transition-colors"
+                                                                title="Approve Member"
+                                                            >
+                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
+                                                        {item.approval_status !== "Rejected" && (
+                                                            <button
+                                                                onClick={() => handleSetApprovalStatus(item, "Rejected")}
+                                                                className="p-2 bg-rose-100 dark:bg-rose-500/10 rounded-lg text-rose-600 hover:bg-rose-200 dark:text-rose-400 dark:hover:bg-rose-550/20 transition-colors"
+                                                                title="Reject Member"
+                                                            >
+                                                                <X className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
                                                         <button
                                                             onClick={() => openEditModal(item)}
                                                             className="p-2 bg-slate-100 dark:bg-foreground/5 rounded-lg text-slate-600 hover:text-brand-primary dark:text-slate-400 dark:hover:text-white transition-colors"
@@ -529,7 +613,7 @@ function UserManagementPageContent() {
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={() => { setCreateModalOpen(false); setEditModalOpen(false); setShowFormPassword(false); }}
-                                className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+                                className="absolute inset-0 bg-slate-900/50 "
                             />
 
                             {/* Modal Box */}
@@ -537,7 +621,7 @@ function UserManagementPageContent() {
                                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                className="bg-card border border-slate-200 dark:border-border rounded-[2rem] w-full max-w-md p-8 shadow-2xl relative z-10 overflow-hidden"
+                                className="bg-card border border-slate-200 dark:border-border rounded-[2rem] w-full max-w-md p-8 border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] relative z-10 overflow-hidden"
                             >
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-xl font-black text-foreground flex items-center gap-2">
@@ -553,7 +637,7 @@ function UserManagementPageContent() {
                                 </div>
 
                                 {formError && (
-                                    <div className="mb-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 p-3.5 rounded-xl">
+                                    <div className="mb-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 p-3.5 rounded-none">
                                         <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                                         <p className="text-xs font-bold text-red-500 leading-tight">{formError}</p>
                                     </div>
@@ -569,7 +653,7 @@ function UserManagementPageContent() {
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             placeholder="Jane Doe"
-                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-bold text-foreground focus:outline-none"
                                         />
                                     </div>
 
@@ -583,7 +667,7 @@ function UserManagementPageContent() {
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             placeholder="jane@university.ac.lk"
-                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-bold text-foreground focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                                         />
                                     </div>
 
@@ -593,7 +677,7 @@ function UserManagementPageContent() {
                                         <select
                                             value={formData.role}
                                             onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none cursor-pointer"
+                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-bold text-foreground focus:outline-none cursor-pointer"
                                         >
                                             <option value="student">Student</option>
                                             <option value="lecturer">Lecturer</option>
@@ -602,6 +686,22 @@ function UserManagementPageContent() {
                                         </select>
                                     </div>
 
+                                    {/* Approval Status (Edit mode only) */}
+                                    {editModalOpen && (
+                                        <div>
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">Approval Status</label>
+                                            <select
+                                                value={formData.approval_status}
+                                                onChange={(e) => setFormData({ ...formData, approval_status: e.target.value as any })}
+                                                className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-bold text-foreground focus:outline-none cursor-pointer"
+                                            >
+                                                <option value="Approved">Approved</option>
+                                                <option value="Pending">Pending</option>
+                                                <option value="Rejected">Rejected</option>
+                                            </select>
+                                        </div>
+                                    )}
+
                                     {/* Faculty / Dept */}
                                     <div>
                                         <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">Faculty / Department</label>
@@ -609,7 +709,7 @@ function UserManagementPageContent() {
                                             value={formData.department}
                                             onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                                             required
-                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none cursor-pointer"
+                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-bold text-foreground focus:outline-none cursor-pointer"
                                         >
                                             <option value="" disabled>Select Department</option>
                                             {departments.map((d) => (
@@ -626,7 +726,7 @@ function UserManagementPageContent() {
                                             value={formData.phone}
                                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                             placeholder="+1234567890"
-                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                                            className="block w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-bold text-foreground focus:outline-none"
                                         />
                                     </div>
 
@@ -642,7 +742,7 @@ function UserManagementPageContent() {
                                                 value={formData.password}
                                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                                 placeholder={createModalOpen ? "Min 8 characters" : "Leave blank to keep unchanged"}
-                                                className="block w-full pl-4 pr-11 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-xl text-xs font-bold text-foreground focus:outline-none"
+                                                className="block w-full pl-4 pr-11 py-2.5 bg-slate-50 dark:bg-slate-950/20 border border-slate-200 dark:border-border rounded-none text-xs font-bold text-foreground focus:outline-none"
                                             />
                                             <button
                                                 type="button"
@@ -664,7 +764,7 @@ function UserManagementPageContent() {
                                         <button
                                             type="submit"
                                             disabled={formLoading}
-                                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-primary hover:opacity-90 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md"
+                                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-primary hover:opacity-90 text-white font-bold text-xs uppercase tracking-widest rounded-none transition-all shadow-md"
                                         >
                                             {formLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                             {createModalOpen ? "Create" : "Save Changes"}
@@ -672,7 +772,7 @@ function UserManagementPageContent() {
                                         <button
                                             type="button"
                                             onClick={() => { setCreateModalOpen(false); setEditModalOpen(false); setShowFormPassword(false); }}
-                                            className="px-5 py-3 border border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-foreground/5 text-slate-600 dark:text-slate-400 font-bold text-xs uppercase tracking-widest rounded-xl transition-all"
+                                            className="px-5 py-3 border border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-foreground/5 text-slate-600 dark:text-slate-400 font-bold text-xs uppercase tracking-widest rounded-none transition-all"
                                         >
                                             Cancel
                                         </button>
@@ -691,7 +791,7 @@ function UserManagementPageContent() {
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={() => setDeleteModalOpen(false)}
-                                className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+                                className="absolute inset-0 bg-slate-900/50 "
                             />
 
                             {/* Modal Box */}
@@ -699,10 +799,10 @@ function UserManagementPageContent() {
                                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                className="bg-card border border-slate-200 dark:border-border rounded-[2rem] w-full max-w-sm p-8 shadow-2xl relative z-10"
+                                className="bg-card border border-slate-200 dark:border-border rounded-[2rem] w-full max-w-sm p-8 border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] relative z-10"
                             >
                                 <div className="text-center space-y-4">
-                                    <div className="w-12 h-12 bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-500 flex items-center justify-center rounded-2xl mx-auto shadow-md">
+                                    <div className="w-12 h-12 bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-500 flex items-center justify-center rounded-none mx-auto shadow-md">
                                         <Trash2 className="w-5 h-5" />
                                     </div>
                                     <div>
@@ -711,7 +811,7 @@ function UserManagementPageContent() {
                                             Are you sure you want to delete <strong>{selectedUser.name}</strong> ({selectedUser.email})?
                                         </p>
                                     </div>
-                                    <div className="p-3 bg-red-500/5 rounded-xl border border-red-5500/10">
+                                    <div className="p-3 bg-red-500/5 rounded-none border border-red-5500/10">
                                         <p className="text-[10px] text-red-655 dark:text-red-400 font-bold leading-normal">
                                             Warning: This action will permanently remove this account from Firebase Auth and the database, and nullify/cascade references in bookings or tickets.
                                         </p>
@@ -720,13 +820,13 @@ function UserManagementPageContent() {
                                         <button
                                             onClick={handleDeleteSubmit}
                                             disabled={formLoading}
-                                            className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md shadow-red-500/10"
+                                            className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold text-xs uppercase tracking-widest rounded-none transition-all shadow-md shadow-red-500/10"
                                         >
                                             {formLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Delete"}
                                         </button>
                                         <button
                                             onClick={() => setDeleteModalOpen(false)}
-                                            className="flex-1 py-3 border border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-foreground/5 text-slate-655 dark:text-slate-400 font-bold text-xs uppercase tracking-widest rounded-xl transition-all"
+                                            className="flex-1 py-3 border border-slate-200 dark:border-border hover:bg-slate-50 dark:hover:bg-foreground/5 text-slate-655 dark:text-slate-400 font-bold text-xs uppercase tracking-widest rounded-none transition-all"
                                         >
                                             Cancel
                                         </button>

@@ -7,13 +7,19 @@ import {
     getAllUsers,
     adminCreateUser,
     adminUpdateUser,
-    adminDeleteUser
+    adminDeleteUser,
+    selfRegister
 } from "../controllers/userCtrl";
 import { verifyToken, requireAdmin } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
-// Apply auth middleware to all user routes
+// ── Public routes (no auth required) ─────────────────────────
+// Self-registration: the handler verifies the Firebase token internally
+// and writes to Supabase via the service role key (bypasses RLS).
+router.post("/register", selfRegister as any);
+
+// Apply auth middleware to all routes below this line
 router.use(verifyToken);
 
 // Profile routes
