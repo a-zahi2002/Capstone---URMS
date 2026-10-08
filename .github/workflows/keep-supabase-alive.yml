@@ -1,0 +1,73 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Runs every 3 days at 00:00 UTC to prevent 7-day inactivity pause
+    - cron: '0 0 */3 * *'
+  workflow_dispatch: # Allows manual trigger anytime from GitHub UI
+
+jobs:
+  ping-supabase:
+    name: Ping Supabase Database
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Keep-Alive Ping to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          echo "=========================================="
+          echo "   Supabase Keep-Alive Health Ping        "
+          echo "=========================================="
+          
+          SUCCESS=0
+
+          # 1. Ping Supabase REST API directly if secrets exist
+          if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ]; then
+            echo "Pinging Supabase REST API: $SUPABASE_URL/rest/v1/users?select=id&limit=1"
+            
+            RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+              "$SUPABASE_URL/rest/v1/users?select=id&limit=1")
+
+            HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE:" | cut -d':' -f2)
+            BODY=$(echo "$RESPONSE" | grep -v "HTTP_CODE:")
+
+            echo "Response Status: $HTTP_CODE"
+            echo "Response Body: $BODY"
+
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 400 ]; then
+              echo "✅ Supabase REST API successfully pinged!"
+              SUCCESS=1
+            else
+              echo "❌ Direct Supabase REST ping failed with HTTP $HTTP_CODE"
+            fi
+          else
+            echo "⚠️ SUPABASE_URL or SUPABASE_ANON_KEY secret is not set in GitHub repository secrets."
+          fi
+
+          # 2. Ping deployed Next.js Keep-Alive endpoint if APP_URL is provided
+          if [ -n "$APP_URL" ]; then
+            echo "------------------------------------------"
+            echo "Pinging Next.js endpoint: $APP_URL/api/keep-alive"
+            
+            APP_RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" "$APP_URL/api/keep-alive")
+            APP_HTTP_CODE=$(echo "$APP_RESPONSE" | grep "HTTP_CODE:" | cut -d':' -f2)
+            APP_BODY=$(echo "$APP_RESPONSE" | grep -v "HTTP_CODE:")
+
+            echo "App Response Status: $APP_HTTP_CODE"
+            echo "App Response Body: $APP_BODY"
+
+            if [ "$APP_HTTP_CODE" -ge 200 ] && [ "$APP_HTTP_CODE" -lt 400 ]; then
+              echo "✅ Next.js keep-alive endpoint successfully pinged!"
+              SUCCESS=1
+            fi
+          fi
+
+          if [ $SUCCESS -eq 0 ] && [ -z "$SUPABASE_URL" ] && [ -z "$APP_URL" ]; then
+            echo "❌ ERROR: No secrets configured! Please add SUPABASE_URL & SUPABASE_ANON_KEY or APP_URL to GitHub Repository Secrets."
+            exit 1
+          fi

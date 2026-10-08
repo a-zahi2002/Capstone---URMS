@@ -104,22 +104,22 @@ export default function ReportSchedulingPage() {
         <ProtectedRoute allowedRoles={['admin']}>
             <div className="min-h-screen bg-[#0B0F19] text-white pb-20 relative overflow-hidden">
                 {/* Background effects */}
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
-                <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-violet-500/10 rounded-full blur-[150px] pointer-events-none" />
+                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-none blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-violet-500/10 rounded-none blur-[150px] pointer-events-none" />
 
                 {/* Header */}
                 <motion.div 
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="sticky top-0 z-30 bg-[#0B0F19]/80 backdrop-blur-xl border-b border-white/5"
+                    className="sticky top-0 z-30 bg-[#0B0F19]/80  border-b border-white/5"
                 >
                     <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <Link href="/admin/analytics" className="p-2.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:bg-white/10 rounded-xl transition-all text-slate-300 hover:text-white border border-slate-200 dark:border-white/10">
+                            <Link href="/admin/analytics" className="p-2.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:bg-white/10 rounded-none transition-all text-slate-300 hover:text-white border border-slate-200 dark:border-white/10">
                                 <ChevronLeft className="w-5 h-5" />
                             </Link>
                             <div>
-                                <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Report Scheduling</h1>
+                                <h1 className="text-2xl font-bold bg-card   bg-clip-text text-transparent">Report Scheduling</h1>
                                 <p className="text-slate-400 text-sm">Automated weekly performance reports</p>
                             </div>
                         </div>
@@ -128,7 +128,7 @@ export default function ReportSchedulingPage() {
                                 setEditingSchedule(null);
                                 setShowModal(true);
                             }}
-                            className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] border border-slate-200 dark:border-white/10"
+                            className="flex items-center gap-2 bg-card   hover: hover: text-white px-5 py-2.5 rounded-none font-semibold text-sm transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] border border-slate-200 dark:border-white/10"
                         >
                             <Plus className="w-4 h-4" /> Create Schedule
                         </button>
@@ -138,23 +138,23 @@ export default function ReportSchedulingPage() {
                 <div className="max-w-7xl mx-auto px-6 mt-10 relative z-10">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20">
-                            <div className="w-12 h-12 border-4 border-slate-200 dark:border-white/10 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
+                            <div className="w-12 h-12 border-4 border-slate-200 dark:border-white/10 border-t-cyan-500 rounded-none animate-spin mb-4"></div>
                             <p className="text-slate-400 font-medium">Syncing schedules...</p>
                         </div>
                     ) : schedules.length === 0 ? (
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="bg-slate-50 dark:bg-white/5 backdrop-blur-xl rounded-[2rem] p-16 text-center border border-slate-200 dark:border-white/10"
+                            className="bg-slate-50 dark:bg-white/5  rounded-[2rem] p-16 text-center border border-slate-200 dark:border-white/10"
                         >
-                            <div className="w-20 h-20 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(6,182,212,0.2)]">
+                            <div className="w-20 h-20 bg-card   border border-cyan-500/30 rounded-none flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(6,182,212,0.2)]">
                                 <BellRing className="w-10 h-10 text-cyan-400" />
                             </div>
                             <h2 className="text-2xl font-bold text-white mb-2">No Active Schedules</h2>
                             <p className="text-slate-400 max-w-sm mx-auto mb-10">Configure automated reports to be delivered to your inbox every week.</p>
                             <button 
                                 onClick={() => setShowModal(true)}
-                                className="bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:bg-white/20 text-white px-8 py-3 rounded-2xl font-semibold transition-all border border-slate-200 dark:border-white/10"
+                                className="bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:bg-white/20 text-white px-8 py-3 rounded-none font-semibold transition-all border border-slate-200 dark:border-white/10"
                             >
                                 Setup Your First Schedule
                             </button>
@@ -168,19 +168,19 @@ export default function ReportSchedulingPage() {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.1 }}
                                         key={s.id} 
-                                        className="bg-slate-50 dark:bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-slate-200 dark:border-white/10 hover:border-cyan-500/50 transition-all group relative overflow-hidden shadow-lg"
+                                        className="bg-slate-50 dark:bg-white/5  rounded-none p-6 border border-slate-200 dark:border-white/10 hover:border-cyan-500/50 transition-all group relative overflow-hidden border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)]"
                                     >
                                         {/* Decorative gradient */}
-                                        <div className={`absolute -top-16 -right-16 w-32 h-32 rounded-full opacity-20 blur-2xl transition-all ${s.is_enabled ? 'bg-cyan-500' : 'bg-slate-500'}`}></div>
+                                        <div className={`absolute -top-16 -right-16 w-32 h-32 rounded-none opacity-20 blur-2xl transition-all ${s.is_enabled ? 'bg-cyan-500' : 'bg-slate-500'}`}></div>
                                         
                                         <div className="flex items-start justify-between mb-6 relative z-10">
-                                            <div className={`p-3 rounded-2xl border ${s.is_enabled ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400'}`}>
+                                            <div className={`p-3 rounded-none border ${s.is_enabled ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400'}`}>
                                                 <BellRing className="w-6 h-6" />
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <button 
                                                     onClick={() => handleToggleEnabled(s)}
-                                                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${s.is_enabled ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 hover:bg-slate-100 dark:bg-white/10'}`}
+                                                    className={`px-3 py-1.5 rounded-none text-[10px] font-bold uppercase tracking-wider transition-all border ${s.is_enabled ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-300' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 hover:bg-slate-100 dark:bg-white/10'}`}
                                                 >
                                                     {s.is_enabled ? 'Active' : 'Disabled'}
                                                 </button>
@@ -200,13 +200,13 @@ export default function ReportSchedulingPage() {
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-white/5">
+                                                <div className="bg-slate-50 dark:bg-white/5 rounded-none p-3 border border-white/5">
                                                     <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Delivery Day</p>
                                                     <div className="flex items-center gap-1.5 text-slate-200 font-medium text-sm">
                                                         <Calendar className="w-3.5 h-3.5 text-blue-400" /> {DAYS[s.delivery_day]}
                                                     </div>
                                                 </div>
-                                                <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-white/5">
+                                                <div className="bg-slate-50 dark:bg-white/5 rounded-none p-3 border border-white/5">
                                                     <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Timing</p>
                                                     <div className="flex items-center gap-1.5 text-slate-200 font-medium text-sm">
                                                         <Clock className="w-3.5 h-3.5 text-amber-400" /> {s.delivery_time.substring(0, 5)}
@@ -214,14 +214,14 @@ export default function ReportSchedulingPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="bg-slate-50 dark:bg-white/5 rounded-xl p-3 border border-white/5">
+                                            <div className="bg-slate-50 dark:bg-white/5 rounded-none p-3 border border-white/5">
                                                 <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-1">Format & Recipients</p>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-1.5 text-slate-200 font-medium text-sm">
                                                         {s.format === 'pdf' ? <FileText className="w-3.5 h-3.5 text-rose-400" /> : <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />}
                                                         <span className="uppercase">{s.format}</span>
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium bg-slate-50 dark:bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                                                    <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium bg-slate-50 dark:bg-white/5 px-2 py-0.5 rounded-none border border-white/5">
                                                         <Mail className="w-3 h-3" /> {s.recipients.length} Recipients
                                                     </div>
                                                 </div>
@@ -234,13 +234,13 @@ export default function ReportSchedulingPage() {
                                                     setEditingSchedule(s);
                                                     setShowModal(true);
                                                 }}
-                                                className="flex-1 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:bg-white/10 text-white font-medium text-xs py-2.5 rounded-xl transition-all border border-slate-200 dark:border-white/10"
+                                                className="flex-1 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:bg-white/10 text-white font-medium text-xs py-2.5 rounded-none transition-all border border-slate-200 dark:border-white/10"
                                             >
                                                 Edit Configuration
                                             </button>
                                             <button 
                                                 onClick={() => handleDelete(s.id)}
-                                                className="p-2.5 text-rose-400 hover:text-white hover:bg-rose-500/20 rounded-xl transition-all border border-rose-500/20 hover:border-rose-500/50"
+                                                className="p-2.5 text-rose-400 hover:text-white hover:bg-rose-500/20 rounded-none transition-all border border-rose-500/20 hover:border-rose-500/50"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -343,7 +343,7 @@ function ScheduleModal({ schedule, onClose, onSuccess, reportTypes, days, userTo
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#0B0F19]/80 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-[#0B0F19]/80 "
         >
             <motion.div 
                 initial={{ scale: 0.95, y: 20 }}
@@ -357,7 +357,7 @@ function ScheduleModal({ schedule, onClose, onSuccess, reportTypes, days, userTo
                             <h2 className="text-2xl font-bold text-white">{schedule ? 'Edit Schedule' : 'New Report Schedule'}</h2>
                             <p className="text-slate-400 text-sm">Configure your automated reporting cycle</p>
                         </div>
-                        <button onClick={onClose} className="p-2.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-2xl transition-all text-slate-400 hover:text-white">
+                        <button onClick={onClose} className="p-2.5 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-none transition-all text-slate-400 hover:text-white">
                             <XCircle className="w-6 h-6" />
                         </button>
                     </div>
@@ -371,13 +371,13 @@ function ScheduleModal({ schedule, onClose, onSuccess, reportTypes, days, userTo
                                     <button 
                                         key={type.id}
                                         onClick={() => toggleReportType(type.id)}
-                                        className={`flex items-center gap-3 p-4 rounded-2xl border transition-all text-left ${
+                                        className={`flex items-center gap-3 p-4 rounded-none border transition-all text-left ${
                                             formData.report_types.includes(type.id)
                                             ? 'border-cyan-500/50 bg-cyan-500/10 text-white shadow-[0_0_15px_rgba(6,182,212,0.15)]'
                                             : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-400 hover:border-slate-300 dark:border-white/20 hover:bg-slate-100 dark:bg-white/10'
                                         }`}
                                     >
-                                        <div className={`p-2 rounded-xl border ${formData.report_types.includes(type.id) ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10'}`}>
+                                        <div className={`p-2 rounded-none border ${formData.report_types.includes(type.id) ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10'}`}>
                                             {type.icon}
                                         </div>
                                         <span className="font-medium text-sm">{type.label}</span>
@@ -394,7 +394,7 @@ function ScheduleModal({ schedule, onClose, onSuccess, reportTypes, days, userTo
                                     <select 
                                         value={formData.delivery_day}
                                         onChange={(e) => setFormData({...formData, delivery_day: parseInt(e.target.value)})}
-                                        className="w-full bg-[#0B0F19] border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3.5 font-medium text-white appearance-none focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+                                        className="w-full bg-[#0B0F19] border border-slate-200 dark:border-white/10 rounded-none px-4 py-3.5 font-medium text-white appearance-none focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
                                     >
                                         {days.map((day: string, idx: number) => (
                                             <option key={idx} value={idx}>{day}</option>
@@ -410,7 +410,7 @@ function ScheduleModal({ schedule, onClose, onSuccess, reportTypes, days, userTo
                                         type="time"
                                         value={formData.delivery_time}
                                         onChange={(e) => setFormData({...formData, delivery_time: e.target.value})}
-                                        className="w-full bg-[#0B0F19] border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3.5 font-medium text-white focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+                                        className="w-full bg-[#0B0F19] border border-slate-200 dark:border-white/10 rounded-none px-4 py-3.5 font-medium text-white focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
                                         style={{ colorScheme: 'dark' }}
                                     />
                                     <Clock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
@@ -426,7 +426,7 @@ function ScheduleModal({ schedule, onClose, onSuccess, reportTypes, days, userTo
                                     placeholder="admin@demo.lk, manager@demo.lk"
                                     value={formData.recipients}
                                     onChange={(e) => setFormData({...formData, recipients: e.target.value})}
-                                    className="w-full bg-[#0B0F19] border border-slate-200 dark:border-white/10 rounded-2xl px-12 py-3.5 font-medium text-white min-h-[80px] focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all placeholder:text-slate-600"
+                                    className="w-full bg-[#0B0F19] border border-slate-200 dark:border-white/10 rounded-none px-12 py-3.5 font-medium text-white min-h-[80px] focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all placeholder:text-slate-600"
                                 />
                                 <Mail className="absolute left-4 top-4 w-5 h-5 text-slate-500" />
                             </div>
@@ -439,7 +439,7 @@ function ScheduleModal({ schedule, onClose, onSuccess, reportTypes, days, userTo
                             <div className="flex gap-4">
                                 <button 
                                     onClick={() => setFormData({...formData, format: 'pdf'})}
-                                    className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border transition-all font-medium ${
+                                    className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-none border transition-all font-medium ${
                                         formData.format === 'pdf' ? 'border-rose-500/50 bg-rose-500/10 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-400 hover:bg-slate-100 dark:bg-white/10'
                                     }`}
                                 >
@@ -447,7 +447,7 @@ function ScheduleModal({ schedule, onClose, onSuccess, reportTypes, days, userTo
                                 </button>
                                 <button 
                                     onClick={() => setFormData({...formData, format: 'excel'})}
-                                    className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-2xl border transition-all font-medium ${
+                                    className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-none border transition-all font-medium ${
                                         formData.format === 'excel' ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-400 hover:bg-slate-100 dark:bg-white/10'
                                     }`}
                                 >
@@ -460,16 +460,16 @@ function ScheduleModal({ schedule, onClose, onSuccess, reportTypes, days, userTo
                     <div className="mt-12 flex gap-4">
                         <button 
                             onClick={onClose}
-                            className="flex-1 px-8 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-white font-medium rounded-2xl hover:bg-slate-100 dark:bg-white/10 transition-all"
+                            className="flex-1 px-8 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-white font-medium rounded-none hover:bg-slate-100 dark:bg-white/10 transition-all"
                         >
                             Cancel
                         </button>
                         <button 
                             onClick={handleSave}
                             disabled={saving}
-                            className="flex-[2] px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-bold rounded-2xl transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="flex-[2] px-8 py-4 bg-card   hover: hover: text-white font-bold rounded-none transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center justify-center gap-2 disabled:opacity-50"
                         >
-                            {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Save className="w-5 h-5" />}
+                            {saving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-none animate-spin"></div> : <Save className="w-5 h-5" />}
                             {schedule ? 'Update Schedule' : 'Activate Schedule'}
                         </button>
                     </div>

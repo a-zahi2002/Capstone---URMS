@@ -16,17 +16,23 @@ import {
     ListTodo,
     RefreshCcw,
     Search,
+    Star,
+    ArrowRight
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.45 } },
+    hidden: { opacity: 0, y: 24 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
 };
 const staggerContainer = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+};
+const cardVariant = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
 interface MaintenanceTicket {
@@ -70,6 +76,14 @@ export default function MaintenanceDashboard() {
     const [search, setSearch] = useState("");
     const [completingTask, setCompletingTask] = useState<Task | null>(null);
     const [outcome, setOutcome] = useState<"Fixed" | "Faulty" | "Decommissioned">("Fixed");
+    const [greeting, setGreeting] = useState("Hello");
+
+    useEffect(() => {
+        const h = new Date().getHours();
+        if (h < 12) setGreeting("Good morning");
+        else if (h < 17) setGreeting("Good afternoon");
+        else setGreeting("Good evening");
+    }, []);
 
     const getToken = useCallback(async () => {
         if (user && typeof user.getIdToken === "function") return user.getIdToken();
@@ -166,185 +180,226 @@ export default function MaintenanceDashboard() {
     ];
 
     return (
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-8">
-            {/* ── Header ── */}
-            <motion.header
-                variants={fadeInUp}
-                className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4"
-            >
-                <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                            <PenTool className="w-5 h-5 text-amber-500" />
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+
+            {/* ── Welcome Hero Banner ── */}
+            <motion.div variants={fadeInUp} className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0EA5E9] to-[#0284C7] p-6 md:p-8 text-white shadow-lg shadow-sky-500/20">
+                {/* Decorative circles */}
+                <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
+                <div className="absolute -bottom-8 -left-8 w-36 h-36 rounded-full bg-white/5 pointer-events-none" />
+                <div className="absolute top-4 right-32 w-20 h-20 rounded-full bg-[#0D9488]/20 pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider">
+                                <PenTool className="w-3 h-3" /> Operations Hub
+                            </span>
                         </div>
-                        Operations Hub
-                    </h1>
-                    <p className="text-slate-600 dark:text-foreground/50 mt-2 font-medium">
-                        Welcome, {profile?.name || "Technician"}. {stats.highPriority > 0
-                            ? <span className="text-amber-600 dark:text-amber-400 font-bold">{stats.highPriority} high priority ticket{stats.highPriority !== 1 ? "s" : ""} need attention.</span>
-                            : <span className="text-emerald-600 dark:text-emerald-400 font-bold">All systems running smoothly.</span>
-                        }
-                    </p>
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                            {greeting}, {profile?.name?.split(" ")[0] || "Technician"} 👋
+                        </h1>
+                        <p className="mt-1.5 text-sky-100 text-sm font-medium">
+                            {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                        </p>
+                        {stats.highPriority > 0 ? (
+                            <p className="mt-2 text-sky-200 text-sm">
+                                You have <span className="text-white font-bold">{stats.highPriority} high priority ticket{stats.highPriority !== 1 ? "s" : ""}</span> to attend to.
+                            </p>
+                        ) : (
+                            <p className="mt-2 text-sky-200 text-sm font-medium">
+                                All systems are running smoothly.
+                            </p>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={fetchTasks}
+                        className="bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl p-3 border border-white/20 flex items-center justify-center transition-colors shadow-sm"
+                        title="Refresh Tasks"
+                    >
+                        <RefreshCcw className="w-5 h-5 text-white" />
+                    </button>
                 </div>
-                <button
-                    onClick={fetchTasks}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-sm hover:bg-amber-500/20 transition-colors"
-                >
-                    <RefreshCcw className="w-4 h-4" /> Refresh
-                </button>
-            </motion.header>
+            </motion.div>
 
             {/* ── Stat Cards ── */}
-            <motion.div variants={fadeInUp} className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <motion.div variants={staggerContainer} className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
-                    { label: "Total Tickets", value: stats.total, icon: ListTodo, color: "blue" },
-                    { label: "Open", value: stats.open, icon: AlertCircle, color: "red" },
-                    { label: "In Progress", value: stats.inProgress, icon: Activity, color: "amber" },
-                    { label: "Completed", value: stats.completed, icon: CheckCircle2, color: "emerald" },
-                    { label: "High Priority", value: stats.highPriority, icon: AlertCircle, color: "red" },
-                ].map(({ label, value, icon: Icon, color }) => (
-                    <div key={label} className="bg-card border border-slate-200 dark:border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                        <div className={`w-9 h-9 rounded-xl bg-${color}-500/10 flex items-center justify-center mb-3`}>
-                            <Icon className={`w-4 h-4 text-${color}-500`} />
+                    { label: "Total Tickets", value: stats.total, icon: ListTodo, bg: "#F0F9FF", fg: "#0EA5E9" },
+                    { label: "Open", value: stats.open, icon: AlertCircle, bg: "#FFF1F2", fg: "#E11D48" },
+                    { label: "In Progress", value: stats.inProgress, icon: Activity, bg: "#FFFBEB", fg: "#D97706" },
+                    { label: "Completed", value: stats.completed, icon: CheckCircle2, bg: "#CCFBF1", fg: "#0D9488" },
+                    { label: "High Priority", value: stats.highPriority, icon: AlertCircle, bg: "#FFF1F2", fg: "#E11D48" },
+                ].map(({ label, value, icon: Icon, bg, fg }) => (
+                    <motion.div
+                        key={label}
+                        variants={cardVariant}
+                        className="bg-white dark:bg-slate-800/60 rounded-xl p-5 border border-[#E2E8F0] dark:border-slate-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: bg }}>
+                            <Icon className="w-5 h-5" style={{ color: fg }} />
                         </div>
-                        <p className="text-[10px] font-black text-slate-500 dark:text-foreground/40 uppercase tracking-widest">{label}</p>
-                        <p className="text-2xl font-black text-foreground mt-1">{loading ? "—" : value}</p>
-                    </div>
+                        <p className="text-[11px] font-semibold text-[#64748B] dark:text-slate-400 uppercase tracking-wider">{label}</p>
+                        <p className="text-3xl font-bold text-[#0F172A] dark:text-white mt-1">
+                            {loading ? <Loader2 className="w-6 h-6 animate-spin opacity-30" /> : value}
+                        </p>
+                    </motion.div>
                 ))}
             </motion.div>
 
             {/* ── Main Grid ── */}
             <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Critical Tasks */}
-                <div className="bg-card border border-red-200 dark:border-red-500/20 rounded-3xl p-6 shadow-sm">
-                    <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5 text-red-500" />
-                        Critical Tasks
+                <div className="bg-white dark:bg-slate-800/60 rounded-xl border border-[#E2E8F0] dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0] dark:border-slate-700">
+                        <h3 className="text-sm font-bold text-[#0F172A] dark:text-white flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 text-[#E11D48]" /> Critical Tasks
+                        </h3>
                         {criticalTasks.length > 0 && (
-                            <span className="ml-auto text-xs font-black bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full border border-red-500/20">
-                                {criticalTasks.length}
+                            <span className="text-[11px] font-semibold bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 px-2.5 py-0.5 rounded-full">
+                                {criticalTasks.length} pending
                             </span>
                         )}
-                    </h3>
-                    <div className="space-y-3">
+                    </div>
+                    
+                    <div className="p-4 flex-1">
                         {loading ? (
                             <div className="flex items-center justify-center py-8">
-                                <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+                                <Loader2 className="w-5 h-5 animate-spin text-[#0EA5E9]" />
                             </div>
                         ) : criticalTasks.length === 0 ? (
-                            <div className="text-center py-8">
-                                <CheckCircle2 className="w-10 h-10 text-emerald-300 dark:text-emerald-500/30 mx-auto mb-3" />
-                                <p className="text-sm text-slate-500 dark:text-foreground/40 font-bold">No critical tasks</p>
+                            <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                                <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mb-3">
+                                    <CheckCircle2 className="w-7 h-7 text-emerald-500" />
+                                </div>
+                                <p className="font-semibold text-[#0F172A] dark:text-white">No critical tasks</p>
+                                <p className="text-sm text-[#64748B] dark:text-slate-400 mt-1">All high-priority issues resolved</p>
                             </div>
                         ) : (
-                            criticalTasks.slice(0, 4).map(task => (
-                                <div key={task.rawId} className="bg-red-50 dark:bg-red-500/5 p-4 rounded-xl border border-red-200 dark:border-red-500/15 flex justify-between items-center gap-3">
-                                    <div className="min-w-0">
-                                        <p className="font-bold text-foreground text-sm truncate">{task.title}</p>
-                                        <p className="text-xs text-slate-500 dark:text-foreground/40 mt-0.5">{task.resourceName}</p>
+                            <div className="space-y-3">
+                                {criticalTasks.slice(0, 4).map(task => (
+                                    <div key={task.rawId} className="bg-rose-50/50 dark:bg-rose-500/5 p-4 rounded-xl border border-rose-100 dark:border-rose-500/15 flex justify-between items-center gap-3 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors">
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-[#0F172A] dark:text-white text-sm truncate">{task.title}</p>
+                                            <p className="text-[11px] text-[#64748B] dark:text-slate-400 mt-1">{task.resourceName}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleAdvanceStatus(task)}
+                                            className="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-[#0EA5E9] bg-sky-50 hover:bg-sky-100 dark:bg-sky-500/10 dark:hover:bg-sky-500/20 px-3 py-1.5 rounded-lg transition-colors"
+                                        >
+                                            {task.rawStatus === "OPEN" ? "Start" : "Complete"} <ChevronRight className="w-3 h-3" />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => handleAdvanceStatus(task)}
-                                        className="shrink-0 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 px-2.5 py-1.5 rounded-lg transition-all border border-transparent hover:border-amber-500/20"
-                                    >
-                                        {task.rawStatus === "OPEN" ? "Start" : "Complete"} <ChevronRight className="w-3 h-3" />
-                                    </button>
-                                </div>
-                            ))
+                                ))}
+                            </div>
                         )}
                     </div>
                 </div>
 
                 {/* Routine Maintenance Schedule */}
-                <div className="bg-card border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm">
-                    <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                        <CalendarDays className="w-5 h-5 text-amber-500" />
-                        Routine Maintenance
-                    </h3>
-                    <div className="space-y-3">
-                        {routineMaintenance.map((item, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-border bg-slate-50 dark:bg-white/[0.03] gap-3">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                                        <Wrench className="w-4 h-4 text-amber-500" />
+                <div className="bg-white dark:bg-slate-800/60 rounded-xl border border-[#E2E8F0] dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
+                    <div className="px-6 py-4 border-b border-[#E2E8F0] dark:border-slate-700">
+                        <h3 className="text-sm font-bold text-[#0F172A] dark:text-white flex items-center gap-2">
+                            <CalendarDays className="w-4 h-4 text-[#0EA5E9]" /> Routine Maintenance
+                        </h3>
+                    </div>
+                    <div className="p-4 flex-1">
+                        <div className="space-y-3">
+                            {routineMaintenance.map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-4 rounded-xl border border-[#E2E8F0] dark:border-slate-700 bg-slate-50/50 dark:bg-white/[0.02] gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-10 h-10 rounded-xl bg-[#F0F9FF] dark:bg-sky-500/10 flex items-center justify-center shrink-0">
+                                            <Wrench className="w-4.5 h-4.5 text-[#0EA5E9]" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-[#0F172A] dark:text-white text-sm truncate">{item.title}</p>
+                                            <p className="text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5">{item.location}</p>
+                                        </div>
                                     </div>
-                                    <div className="min-w-0">
-                                        <p className="font-bold text-foreground text-sm truncate">{item.title}</p>
-                                        <p className="text-xs text-slate-500 dark:text-foreground/40">{item.location}</p>
+                                    <div className="text-right shrink-0">
+                                        <p className="text-sm font-semibold text-[#0F172A] dark:text-white">{item.due}</p>
+                                        <p className="text-[11px] font-semibold text-[#0EA5E9] mt-0.5">{item.status}</p>
                                     </div>
                                 </div>
-                                <div className="text-right shrink-0">
-                                    <p className="text-xs font-bold text-foreground">{item.due}</p>
-                                    <p className="text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">{item.status}</p>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
             </motion.div>
 
             {/* ── Active Ticket Queue ── */}
-            <motion.div variants={fadeInUp} className="bg-card border border-slate-200 dark:border-border rounded-3xl shadow-sm overflow-hidden">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-slate-200 dark:border-border">
-                    <h3 className="text-lg font-bold text-foreground">Active Ticket Queue</h3>
+            <motion.div variants={fadeInUp} className="bg-white dark:bg-slate-800/60 rounded-xl border border-[#E2E8F0] dark:border-slate-700 shadow-sm overflow-hidden">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-6 py-5 border-b border-[#E2E8F0] dark:border-slate-700">
+                    <h3 className="text-sm font-bold text-[#0F172A] dark:text-white flex items-center gap-2">
+                        <ListTodo className="w-4 h-4 text-[#0EA5E9]" /> Active Ticket Queue
+                    </h3>
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
                         <input
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder="Search tickets..."
-                            className="pl-9 pr-4 py-2 bg-slate-100 dark:bg-foreground/5 border border-slate-200 dark:border-border rounded-xl text-sm font-bold text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/40 w-52"
+                            className="pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 rounded-lg text-sm text-[#0F172A] dark:text-white placeholder:text-[#64748B] focus:outline-none focus:ring-2 focus:ring-[#0EA5E9]/50 w-full sm:w-64 transition-all"
                         />
                     </div>
                 </div>
-                <div className="divide-y divide-slate-100 dark:divide-border/50">
+                <div className="divide-y divide-[#E2E8F0] dark:divide-slate-700">
                     {loading ? (
-                        <div className="flex items-center justify-center py-12">
-                            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-                            <span className="ml-2 text-sm text-slate-400 font-medium">Loading tickets...</span>
+                        <div className="flex items-center justify-center py-12 text-[#64748B]">
+                            <Loader2 className="w-5 h-5 animate-spin text-[#0EA5E9]" />
+                            <span className="ml-2 text-sm font-medium">Loading tickets...</span>
                         </div>
                     ) : activeTasks.length === 0 ? (
-                        <div className="text-center py-12">
-                            <Wrench className="w-10 h-10 text-slate-300 dark:text-foreground/20 mx-auto mb-3" />
-                            <p className="text-sm font-bold text-slate-500 dark:text-foreground/40">No active tickets</p>
-                            <p className="text-xs text-slate-400 mt-1">All maintenance tasks are completed</p>
+                        <div className="text-center py-12 px-4">
+                            <div className="w-14 h-14 rounded-2xl bg-[#F0F9FF] flex items-center justify-center mx-auto mb-3">
+                                <Wrench className="w-7 h-7 text-[#0EA5E9]" />
+                            </div>
+                            <p className="font-semibold text-[#0F172A] dark:text-white">No active tickets</p>
+                            <p className="text-sm text-[#64748B] mt-1">All maintenance tasks are completed.</p>
                         </div>
                     ) : (
                         activeTasks.map(task => {
                             const priorityColors: Record<string, string> = {
-                                High: "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
+                                High: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20",
                                 Medium: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
-                                Low: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-foreground/50 dark:border-border",
+                                Low: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-500/20",
                             };
                             const statusColors: Record<string, string> = {
-                                "Pending": "bg-slate-100 text-slate-700 border-slate-200 dark:bg-white/5 dark:text-foreground/50 dark:border-border",
-                                "In Progress": "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
+                                "Pending": "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-300 dark:border-slate-500/20",
+                                "In Progress": "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20",
                             };
                             return (
-                                <div key={task.rawId} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors gap-4">
+                                <div key={task.rawId} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 hover:bg-[#F8FAFC] dark:hover:bg-slate-700/30 transition-colors gap-4">
                                     <div className="flex items-center gap-4 min-w-0">
-                                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-                                            <Wrench className="w-5 h-5 text-amber-500" />
+                                        <div className="w-10 h-10 rounded-xl bg-[#F0F9FF] dark:bg-sky-500/10 flex items-center justify-center shrink-0">
+                                            <Wrench className="w-5 h-5 text-[#0EA5E9]" />
                                         </div>
                                         <div className="min-w-0">
-                                            <p className="text-sm font-bold text-foreground truncate">{task.title}</p>
-                                            <p className="text-xs text-slate-500 dark:text-foreground/40 mt-0.5">
-                                                {task.resourceName} • {task.requestedDate}
-                                            </p>
+                                            <p className="text-sm font-semibold text-[#0F172A] dark:text-white truncate">{task.title}</p>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <p className="text-[11px] text-[#64748B] dark:text-slate-400 truncate">
+                                                    {task.resourceName}
+                                                </p>
+                                                <span className="text-[#E2E8F0] dark:text-slate-600">·</span>
+                                                <p className="text-[11px] text-[#64748B] dark:text-slate-400 flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" /> {task.requestedDate}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
-                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${priorityColors[task.priority]}`}>
+                                        <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${priorityColors[task.priority]}`}>
                                             {task.priority}
                                         </span>
-                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${statusColors[task.status]}`}>
+                                        <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${statusColors[task.status]}`}>
                                             {task.status}
                                         </span>
                                         <button
                                             onClick={() => handleAdvanceStatus(task)}
-                                            className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-brand-primary hover:bg-brand-primary/10 px-2.5 py-1.5 rounded-lg transition-all border border-transparent hover:border-brand-primary/20 ml-1"
+                                            className="flex items-center gap-1 text-[11px] font-semibold text-white bg-[#0EA5E9] hover:bg-[#0284C7] px-3 py-1.5 rounded-lg transition-colors ml-2 shadow-sm shadow-sky-500/20"
                                         >
-                                            {task.rawStatus === "OPEN" ? "Start" : "Complete"} <ChevronRight className="w-3 h-3" />
+                                            {task.rawStatus === "OPEN" ? "Start" : "Complete"}
                                         </button>
                                     </div>
                                 </div>
@@ -356,23 +411,30 @@ export default function MaintenanceDashboard() {
 
             {/* Outcome Selection Modal */}
             {completingTask && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-card border border-slate-200 dark:border-border rounded-3xl shadow-2xl w-full max-w-md overflow-hidden text-left">
-                        <div className="bg-slate-900 p-6 text-white relative font-sans">
-                            <h3 className="text-xl font-black">Select Maintenance Outcome</h3>
-                            <p className="text-slate-400 text-xs mt-1 font-medium">Specify resolution to update resource status</p>
+                <div className="fixed inset-0 bg-[#0F172A]/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-white dark:bg-slate-800 rounded-2xl border border-[#E2E8F0] dark:border-slate-700 shadow-xl w-full max-w-md overflow-hidden text-left"
+                    >
+                        <div className="p-6 border-b border-[#E2E8F0] dark:border-slate-700">
+                            <h3 className="text-lg font-bold text-[#0F172A] dark:text-white flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 text-[#0EA5E9]" />
+                                Complete Maintenance
+                            </h3>
+                            <p className="text-[#64748B] text-sm mt-1">Specify resolution to update resource status</p>
                         </div>
-                        <div className="p-6 space-y-4 font-sans">
+                        <div className="p-6 space-y-4">
                             <div className="space-y-3">
                                 {[
                                     { value: "Fixed", label: "Fixed (Available)", desc: "Set resource availability status to 'Available'" },
                                     { value: "Faulty", label: "Faulty (Under Maintenance)", desc: "Keep resource status as 'Under Maintenance'" },
                                     { value: "Decommissioned", label: "Decommissioned (Inactive)", desc: "Set resource status to 'Inactive' (retired)" }
                                 ].map(opt => (
-                                    <label key={opt.value} className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${
+                                    <label key={opt.value} className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
                                         outcome === opt.value 
-                                            ? "border-amber-500 bg-amber-500/5 text-foreground" 
-                                            : "border-slate-200 dark:border-border text-foreground hover:bg-slate-50 dark:hover:bg-white/[0.02]"
+                                            ? "border-[#0EA5E9] bg-[#F0F9FF] dark:bg-sky-500/10 dark:border-sky-500/50 text-[#0F172A] dark:text-white" 
+                                            : "border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700/50"
                                     }`}>
                                         <input 
                                             type="radio" 
@@ -380,20 +442,20 @@ export default function MaintenanceDashboard() {
                                             value={opt.value} 
                                             checked={outcome === opt.value} 
                                             onChange={() => setOutcome(opt.value as any)}
-                                            className="mt-1 accent-amber-500"
+                                            className="mt-1 accent-[#0EA5E9]"
                                         />
                                         <div>
-                                            <div className="font-bold text-sm">{opt.label}</div>
-                                            <div className="text-xs text-slate-400 dark:text-foreground/45 mt-0.5 font-medium">{opt.desc}</div>
+                                            <div className="font-semibold text-sm">{opt.label}</div>
+                                            <div className="text-[11px] text-[#64748B] dark:text-slate-400 mt-0.5">{opt.desc}</div>
                                         </div>
                                     </label>
                                 ))}
                             </div>
-                            <div className="flex gap-3 pt-2">
+                            <div className="flex gap-3 pt-4">
                                 <button 
                                     type="button" 
                                     onClick={() => setCompletingTask(null)}
-                                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-border text-foreground font-black text-sm hover:bg-slate-50 dark:hover:bg-foreground/5 transition-all"
+                                    className="flex-1 px-4 py-2.5 rounded-xl border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                                 >
                                     Cancel
                                 </button>
@@ -403,13 +465,13 @@ export default function MaintenanceDashboard() {
                                         await updateStatus(completingTask.rawId, "COMPLETED", outcome);
                                         setCompletingTask(null);
                                     }}
-                                    className="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                                    className="flex-1 px-4 py-2.5 rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm shadow-sky-500/20"
                                 >
-                                    <CheckCircle2 className="w-4 h-4" /> Confirm & Complete
+                                    Confirm
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             )}
         </motion.div>

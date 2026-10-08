@@ -76,9 +76,9 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 ">
             <div
-                className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden"
+                className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-100 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -89,7 +89,7 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 dark:text-foreground/45 hover:text-slate-600 dark:hover:text-foreground transition-colors"
+                        className="p-2 rounded-none hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 dark:text-foreground/45 hover:text-slate-600 dark:hover:text-foreground transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -98,7 +98,7 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
                 {/* Body */}
                 <div className="overflow-y-auto flex-1 px-7 py-6">
                     {error && (
-                        <div className="mb-5 p-3.5 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium flex items-center gap-2">
+                        <div className="mb-5 p-3.5 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-none text-sm font-medium flex items-center gap-2">
                             <X className="w-4 h-4 shrink-0" />
                             {error}
                         </div>
@@ -116,7 +116,7 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
                                 value={formData.name}
                                 onChange={handleChange}
                                 placeholder="e.g. Lab 01, Hall A"
-                                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 rounded-xl text-sm font-medium text-slate-800 dark:text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all"
+                                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 rounded-none text-sm font-medium text-slate-800 dark:text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all"
                             />
                         </div>
 
@@ -130,7 +130,7 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
                                     name="type"
                                     value={formData.type}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 rounded-xl text-sm font-medium text-slate-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all appearance-none"
+                                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 rounded-none text-sm font-medium text-slate-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all appearance-none"
                                 >
                                     {CATEGORIES.map(c => <option key={c} className="dark:bg-slate-900">{c}</option>)}
                                 </select>
@@ -147,7 +147,7 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
                                     value={formData.capacity}
                                     onChange={handleChange}
                                     placeholder="e.g. 60"
-                                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 rounded-xl text-sm font-medium text-slate-800 dark:text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all"
+                                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 rounded-none text-sm font-medium text-slate-800 dark:text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all"
                                 />
                             </div>
                         </div>
@@ -163,7 +163,7 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
                                 value={formData.location}
                                 onChange={handleChange}
                                 placeholder="e.g. Block A, Floor 2"
-                                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 rounded-xl text-sm font-medium text-slate-800 dark:text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all"
+                                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 rounded-none text-sm font-medium text-slate-800 dark:text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all"
                             />
                         </div>
 
@@ -199,7 +199,7 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
                                 name="availability_status"
                                 value={formData.availability_status}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 rounded-xl text-sm font-medium text-slate-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all appearance-none"
+                                className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/40 rounded-none text-sm font-medium text-slate-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all appearance-none"
                             >
                                 {STATUSES.map(s => <option key={s} className="dark:bg-slate-900">{s}</option>)}
                             </select>
@@ -212,7 +212,7 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-foreground/60 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                        className="px-5 py-2.5 rounded-none border border-slate-200 dark:border-white/10 text-slate-600 dark:text-foreground/60 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
                     >
                         Cancel
                     </button>
@@ -220,7 +220,7 @@ export default function AddResourceModal({ isOpen, onClose, onSuccess }: AddReso
                         type="submit"
                         form="add-resource-form"
                         disabled={loading}
-                        className="px-6 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-secondary text-white text-sm font-semibold flex items-center gap-2 transition-colors shadow-md shadow-brand-primary/20 disabled:opacity-60 active:scale-95"
+                        className="px-6 py-2.5 rounded-none bg-brand-primary hover:bg-brand-secondary text-white text-sm font-semibold flex items-center gap-2 transition-colors shadow-md shadow-brand-primary/20 disabled:opacity-60 active:scale-95"
                     >
                         {loading ? (
                             <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>

@@ -89,10 +89,10 @@ export default function DeleteBookingModal({ isOpen, onClose, onSuccess, booking
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/40 " onClick={onClose} />
 
             {/* Modal */}
-            <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
                     <div>
@@ -106,7 +106,7 @@ export default function DeleteBookingModal({ isOpen, onClose, onSuccess, booking
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors text-slate-400 hover:text-slate-600"
+                        className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-none transition-colors text-slate-400 hover:text-slate-600"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -115,22 +115,22 @@ export default function DeleteBookingModal({ isOpen, onClose, onSuccess, booking
                 {/* Content */}
                 <div className="p-6 space-y-5">
                     {error && (
-                        <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-red-500/10 border border-rose-100 dark:border-red-500/20 rounded-2xl text-rose-600 dark:text-red-400 text-xs font-semibold">
+                        <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-red-500/10 border border-rose-100 dark:border-red-500/20 rounded-none text-rose-600 dark:text-red-400 text-xs font-semibold">
                             <AlertTriangle className="w-4 h-4 shrink-0" />
                             <p>{error}</p>
                         </div>
                     )}
 
                     {/* Warning */}
-                    <div className="p-4 bg-rose-50 dark:bg-red-500/5 border border-rose-200 dark:border-red-500/20 rounded-2xl">
+                    <div className="p-4 bg-rose-50 dark:bg-red-500/5 border border-rose-200 dark:border-red-500/20 rounded-none">
                         <p className="text-sm font-semibold text-rose-800 dark:text-red-300">
                             Are you sure you want to permanently delete this booking record?
                         </p>
                     </div>
 
                     {/* Booking details */}
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-800 rounded-2xl">
-                        <div className="w-10 h-10 rounded-xl bg-brand-primary/10 flex items-center justify-center shrink-0">
+                    <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-slate-800 rounded-none">
+                        <div className="w-10 h-10 rounded-none bg-brand-primary/10 flex items-center justify-center shrink-0">
                             <MapPin className="w-5 h-5 text-brand-primary" />
                         </div>
                         <div className="min-w-0">
@@ -148,7 +148,7 @@ export default function DeleteBookingModal({ isOpen, onClose, onSuccess, booking
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-5 py-3 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                            className="px-5 py-3 border border-slate-200 dark:border-slate-700 rounded-none text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
                         >
                             Cancel
                         </button>
@@ -156,7 +156,7 @@ export default function DeleteBookingModal({ isOpen, onClose, onSuccess, booking
                             type="button"
                             onClick={handleDelete}
                             disabled={isDeleting}
-                            className="inline-flex items-center gap-2 bg-rose-600 text-white font-bold px-6 py-3 rounded-2xl hover:bg-rose-500 transition-all shadow-lg shadow-rose-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-2 bg-rose-600 text-white font-bold px-6 py-3 rounded-none hover:bg-rose-500 transition-all border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] shadow-rose-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Trash2 className="w-4 h-4" />
                             {isDeleting ? "Deleting..." : "Delete Booking"}

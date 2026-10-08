@@ -24,7 +24,7 @@ test.describe('Authentication Flows', () => {
     await expect(errorAlert.first()).toBeVisible();
   });
 
-  test('Quick Operator Access - Admin Badge', async ({ page }) => {
+  test('Role Access - Admin Console', async ({ page }) => {
     await clickDemoBadge(page, 'admin');
     await expect(page).toHaveURL(/.*dashboard/);
     
@@ -33,7 +33,7 @@ test.describe('Authentication Flows', () => {
     await logout(page);
   });
 
-  test('Quick Operator Access - Maintenance Badge', async ({ page }) => {
+  test('Role Access - Maintenance Console', async ({ page }) => {
     await clickDemoBadge(page, 'maintenance');
     await expect(page).toHaveURL(/.*dashboard/);
     

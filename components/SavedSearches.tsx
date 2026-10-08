@@ -173,7 +173,7 @@ export default function SavedSearches({ pageKey, currentFilters, onLoadFilters }
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 text-sm"
+          className="inline-flex items-center gap-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-foreground/80 font-semibold px-4 py-2.5 rounded-none shadow-sm transition-all duration-200 text-sm"
         >
           <Bookmark className="w-4 h-4 text-brand-primary text-blue-500" />
           <span>Saved Searches</span>
@@ -182,7 +182,7 @@ export default function SavedSearches({ pageKey, currentFilters, onLoadFilters }
       </div>
 
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-72 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xl z-50 overflow-hidden animate-in fade-in-50 slide-in-from-top-1">
+        <div className="absolute left-0 mt-2 w-72 rounded-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] z-50 overflow-hidden animate-in fade-in-50 slide-in-">
           <div className="p-3 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/[0.01]">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">My Searches</span>
             <button

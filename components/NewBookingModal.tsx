@@ -115,10 +115,10 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/40 " onClick={onClose} />
 
             {/* Modal */}
-            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95">
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-none border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] border border-slate-100 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800">
                     <div>
@@ -127,7 +127,7 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors text-slate-400 dark:text-foreground/45 hover:text-slate-600 dark:hover:text-foreground"
+                        className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-none transition-colors text-slate-400 dark:text-foreground/45 hover:text-slate-600 dark:hover:text-foreground"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -136,7 +136,7 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     {error && (
-                        <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 rounded-2xl text-rose-600 dark:text-rose-400 text-xs font-semibold">
+                        <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 rounded-none text-rose-600 dark:text-rose-400 text-xs font-semibold">
                             <AlertTriangle className="w-4 h-4 shrink-0" />
                             <p>{error}</p>
                         </div>
@@ -155,7 +155,7 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
                                 onChange={handleChange}
                                 required
                                 disabled={loadingResources}
-                                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all appearance-none"
+                                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-none text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all appearance-none"
                             >
                                 <option value="" className="dark:bg-slate-900">
                                     {loadingResources ? "Loading resources..." : "Select Resource"}
@@ -181,7 +181,7 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
                                 value={formData.faculty}
                                 onChange={handleChange}
                                 required
-                                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all appearance-none"
+                                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-none text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all appearance-none"
                             >
                                 <option value="" className="dark:bg-slate-900">Select Faculty</option>
                                 <option value="Engineering" className="dark:bg-slate-900">Engineering</option>
@@ -207,7 +207,7 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
                                 value={formData.date}
                                 onChange={handleChange}
                                 required
-                                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
+                                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-none text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
                             />
                         </div>
                     </div>
@@ -226,7 +226,7 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
                                     value={formData.startTime}
                                     onChange={handleChange}
                                     required
-                                    className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
+                                    className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-none text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
                                 />
                             </div>
                         </div>
@@ -242,7 +242,7 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
                                     value={formData.endTime}
                                     onChange={handleChange}
                                     required
-                                    className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
+                                    className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-none text-sm font-semibold text-foreground focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all"
                                 />
                             </div>
                         </div>
@@ -259,7 +259,7 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
                             onChange={handleChange}
                             rows={3}
                             placeholder="Brief description of the booking purpose..."
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-semibold text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all resize-none"
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-none text-sm font-semibold text-foreground placeholder-slate-400 dark:placeholder-foreground/30 focus:outline-none focus:ring-4 focus:ring-brand-primary/10 transition-all resize-none"
                         />
                     </div>
 
@@ -268,14 +268,14 @@ export default function NewBookingModal({ isOpen, onClose, onSuccess }: NewBooki
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-5 py-3 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                            className="px-5 py-3 border border-slate-200 dark:border-white/10 rounded-none text-sm font-bold text-slate-600 dark:text-foreground/60 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="inline-flex items-center gap-2 bg-brand-primary text-white font-bold px-6 py-3 rounded-2xl hover:bg-brand-secondary transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-2 bg-brand-primary text-white font-bold px-6 py-3 rounded-none hover:bg-brand-secondary transition-all border-2 border-foreground shadow-[4px_4px_0_0_rgba(0,0,0,1)] dark:shadow-[4px_4px_0_0_rgba(255,255,255,0.2)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? "Booking..." : "Confirm Booking"}
                         </button>
